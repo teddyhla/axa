@@ -1,5 +1,5 @@
 ---
-title: "planalysis"
+title: "Preliminary Analysis"
 author: "teddyhla"
 date: "25/01/2022"
 output: html_document
@@ -9,22 +9,58 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Source of Data
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This document details the data cleaning and pre-liminary analysis of anti Xa measurements on VV ecmo patients. 
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+Three cohorts of VV ecmo patients are identified :- 
+- wave 1 of covid - 19, defined as between 01-03-2020 to 31-08-2020 inclusive.
+- wave 2 of covid - 19, defined as between 01-09-2020 to 01-03-2021 inclusive.
+- historical flu, defined as 01-01-2015 and 31-12-2019 inclusive. 
 
-```{r cars}
-summary(cars)
+## Questions
+- what about non covid and non flu patients in this period?
+- what about large gaps - is it true?
+- what about lmwh / flolan / argotraban ? 
+
+## Sensecheck 
+- no repeat admissions?
+- peak 3 ecmo admission in 24 hour ?
+
+
+## Patient identification
+- ecmo blood pump speed was calculated from min to max dates and substracted to get ecmo run times and patients
+
+## Heparin administration
+Heparin was administered in 4 different formats 
+- heparin units/hr
+- heparin ecmo xa iv infusion units/kg/hr
+- heparin iv injection units
+- heprin rrt inf 2000 iu units
+- heparin systemic inf 2000 units units/hr
+
+weight is also extracted to calculate units/hr/hr 
+
+## Coagulation lab results
+- anti Xa and APTTR results were extracted
+
+## Bleeding scores are extracted from ICIP. 
+
+# Cleaning Pt 
+
+```{r}
+head(pt)
+summary(pt)
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+ggplot(data = pt, aes(x=AdmissionDate))+
+               geom_freqpoly(binwidth = 86400)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+
+```
+
+crude mortality rate per waves
+5 number summary per waves

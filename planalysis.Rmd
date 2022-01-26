@@ -22,6 +22,7 @@ Three cohorts of VV ecmo patients are identified :-
 - what about non covid and non flu patients in this period?
 - what about large gaps - is it true?
 - what about lmwh / flolan / argotraban ? 
+- mrn 6960892X as admission date = as discharge date ? typo
 
 ## Sensecheck 
 - no repeat admissions?
@@ -46,6 +47,12 @@ weight is also extracted to calculate units/hr/hr
 
 ## Bleeding scores are extracted from ICIP. 
 
+
+# Source the cleaned files
+```{r}
+source("datatidy.R")
+```
+
 # Cleaning Pt 
 
 ```{r}
@@ -59,7 +66,9 @@ ggplot(data = pt, aes(x=AdmissionDate))+
 ```
 
 ```{r}
-
+pt %>% 
+        count(mrn) %>%
+        filter(n>1)
 ```
 
 crude mortality rate per waves

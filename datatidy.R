@@ -3,6 +3,7 @@
 library(tidyverse)
 library(readxl)
 library(lubridate)
+library(compare)
 
 ## ## will read data from source excel file .xlsx into 4 different data frames
 
@@ -88,5 +89,50 @@ levels(pt$Mode) <- c("vv","vv")
 levels(pt$SurvivedECMO) <- c("no","no","yes","yes")
 levels(pt$SurvivedICU) <- c("no","no","yes","yes")
 #sense check 1 : - summary(unique(pt$Number))
-# this is 0 which made sense as no pts gonna receive a 2nd ecmo. 
+# this is 0 which made sense as no pts gonna receive a 2nd ecmo.
+#change col names to easily typed names
+
+colnames(pt) <- c(
+        "cohort",
+        "admissiondate",
+        "mrn",
+        "age",
+        "diagnosis",
+        "diagnosiscat",
+        "mode",
+        "datecannulated",
+        "dateDEcannulated",
+        "survivedecmo",
+        "survivedicu",
+        "dischargedate",
+        "dxsum"
+)
+        
 print ("02_df pt is cleaned and in appropriate data classes.")
+
+#datetime sensechecks : 
+#logic - discharge date => admission date, decann date > cann date, date cann >= admn date
+
+#pt$dateDEcannulated > pt$datecannulated - all true
+#pt$admissiondate < pt$dischargedate 
+
+#Now we will address lab df.
+
+#change colnames to easily typed names.
+colnames(lab) <- c("mrn","dtm","axa","apttr")
+
+#mrn in lab df should link and be identical to mrn in pt df. 
+#sensecheck : setdiff(unique(pt$mrn),unique(lab$mrn))
+#this is not identical and is different in "6606299s" in small letter "s".
+pt$mrn[pt$mrn == "6606299s"] <- "6606299S"
+#above to fix the typo.
+#repeat sense check. 
+#sensecheck : compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = TRUE)
+#we are now satisfied that lab mrn and pt mrn are the same.
+
+#now we gonna change df lab to all correct col classes.
+lab$axa <- as.double(lab$axa)
+lab$apttr <- as.double(lab$apttr)
+
+## note quite a lot of NAs, is there a pattern ? 
+#the date range of each pt should correspond to date range of ecmo run times.

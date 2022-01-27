@@ -92,6 +92,7 @@ levels(pt$SurvivedICU) <- c("no","no","yes","yes")
 # this is 0 which made sense as no pts gonna receive a 2nd ecmo.
 #change col names to easily typed names
 
+
 colnames(pt) <- c(
         "cohort",
         "admissiondate",
@@ -107,14 +108,29 @@ colnames(pt) <- c(
         "dischargedate",
         "dxsum"
 )
-        
+ 
+if (sum(duplicated(pt$mrn)) == 0 ) {
+        print("All patients only received one run of ECMO")
+} else {
+        print("Some patients receive more than one run of ECMO. RECHECK.")
+}
+       
 print ("02_df pt is cleaned and in appropriate data classes.")
 
 #datetime sensechecks : 
 #logic - discharge date => admission date, decann date > cann date, date cann >= admn date
 
 #pt$dateDEcannulated > pt$datecannulated - all true
-#pt$admissiondate < pt$dischargedate 
+#pt$admissiondate < pt$dischargedate  - not true for 6960892X - to review.
+#pt$admissiondate <= pt$datecannulated - not true 5 entries. thus will explore. 
+
+#pt %>% 
+#        select(mrn, admissiondate,datecannulated) %>% 
+#        mutate(timetocan = datecannulated - admissiondate) %>% 
+#        group_by(timetocan) %>% 
+#        arrange((timetocan))
+
+#This above code showed 6842347C,6578155C,6578347K,1087895N,6939825N have issues.
 
 #Now we will address lab df.
 
@@ -129,10 +145,63 @@ pt$mrn[pt$mrn == "6606299s"] <- "6606299S"
 #repeat sense check. 
 #sensecheck : compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = TRUE)
 #we are now satisfied that lab mrn and pt mrn are the same.
-
+if (compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = T)$result == TRUE ) { 
+        print("mrn's in dataframe lab and pt matched.")
+}else {
+                print("mrn in dataframes lab and pt are not matched.")
+        }
 #now we gonna change df lab to all correct col classes.
 lab$axa <- as.double(lab$axa)
 lab$apttr <- as.double(lab$apttr)
 
 ## note quite a lot of NAs, is there a pattern ? 
 #the date range of each pt should correspond to date range of ecmo run times.
+
+#need to check date and time range for the lab values match the ecmo run times.
+#need to count number of NAs for each mrn.
+
+#will work in dates only as individual second / hour difference on the day of ecmo run 
+#wont matter.
+
+labdur <- lab %>% 
+        group_by(mrn) %>% 
+        mutate(dtmd = as.Date(dtm)) %>% 
+        summarise(
+                dayone = min(dtmd), 
+                dayn = max (dtmd), 
+                labdur = max(dtmd)-min(dtmd)
+                )
+
+ptdur <- pt %>%
+        select(mrn,datecannulated,dateDEcannulated) %>%
+        mutate(dcn = as.Date(datecannulated),dDEcn=as.Date(dateDEcannulated))%>% 
+        group_by(mrn) %>% 
+        select(mrn,dcn,dDEcn)%>% 
+        mutate(ptdur = dDEcn - dcn)
+
+checkdf <- full_join(ptdur,labdur, by = "mrn")
+
+checkdf$ptdur - checkdf$labdur
+#this showed that patient duration is shorter than lab duration.
+# could it be that lab counts the date admission to date discharge from icu ?
+# but pt dur shouldnt be longer than lab duration (which suggests missing data in lab)
+sum(checkdf$ptdur - checkdf$labdur > 0)
+checkdf[(checkdf$ptdur - checkdf$labdur >0 ),]
+#looking at this data frame looks like there is only one or two discrepancy for most cases.
+#except 6381359H (missing data 3 days on blood),6855512Y(missing data 2/3 days pre),
+
+#lets check the admission date - discharge date and compare with lab data. 
+
+ptdur2 <- pt %>%
+        select(mrn,admissiondate,dischargedate) %>%
+        mutate(admn = as.Date(admissiondate),dcd=as.Date(dischargedate))%>% 
+        group_by(mrn) %>% 
+        select(mrn,admn,dcd)%>% 
+        mutate(ptadmndur = dcd - admn)
+
+checkdf2 <- full_join(ptdur2,labdur,by = "mrn")
+checkdf2$ptadmndur - checkdf2$labdur
+# looks abit better
+checkdf2[(checkdf2$ptadmndur - checkdf2$labdur < 0),]
+
+#should really use ecmo run time as gold standard. 

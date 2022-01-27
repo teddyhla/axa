@@ -205,3 +205,37 @@ checkdf2$ptadmndur - checkdf2$labdur
 checkdf2[(checkdf2$ptadmndur - checkdf2$labdur < 0),]
 
 #should really use ecmo run time as gold standard. 
+
+#now we will look at NA's within those ranges. 
+ptdur$datedecanplus2 <- ptdur$dDEcn + 2
+ptdur$datedecanplus2 <- as.POSIXct(ptdur$datedecanplus2, tz = "GMT")
+#to c onvert to UTC in mid seconds as 
+
+ptd <- ptdur %>% select(mrn,datedecanplus2)
+labecmod <- full_join(lab,ptd, by = "mrn")
+
+clab <- labecmod %>% 
+        group_by (mrn) %>% 
+        filter (dtm >= min(dtm) & dtm <datedecanplus2)
+
+#subset date into ecmo runs only.
+#then we will find out how much NA's there are.
+
+#lets make sense of this NA value by appending cohort information.
+
+jv <- pt %>% select(mrn,cohort)
+clab <- full_join(clab,jv,by="mrn")
+rm(jv)
+
+clab<- clab %>% 
+        select(mrn,axa,apttr,cohort,dtm)%>%
+        group_by(mrn) %>%
+        mutate(
+                dtm = min(dtm),
+                na_axa = sum(is.na(axa)),
+                na_axa_perc = ((sum(is.na(axa)))/n()) * 100,
+                na_apttr = sum(is.na(apttr)),
+                na_apttr_perc = ((sum(is.na(apttr)))/n()) * 100,
+        )
+
+

@@ -238,4 +238,17 @@ clab<- clab %>%
                 na_apttr_perc = ((sum(is.na(apttr)))/n()) * 100,
         )
 
+#let's explore maximum , median, mean, and minimum NA's per axa apttr in each pt.
+#let's adjust for ecmorunt
+t <- pt %>% mutate(ecmorunt = dateDEcannulated - datecannulated)
+dlab <- full_join(clab,t,by = "mrn")
+
+so actually what we need is a data frame with column names 
+- mrn
+- cohort
+- ecmorunt
+- bloodtestrunt
+-no of na in axa
+- no of na in apttr
+- propn 
 

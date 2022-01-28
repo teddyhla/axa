@@ -88,4 +88,16 @@ pt %>%
         
 ```
 
+
+```{r}
+pt %>% 
+        mutate (ecmorunt= dateDEcannulated - datecannulated) %>%
+        group_by(cohort) %>%
+        summarise (
+                mean = mean(ecmorunt),
+                mode = max(ecmorunt),
+                min = min(ecmorunt),
+                median=median(ecmorunt))
+```
+
 5 number summary per waves

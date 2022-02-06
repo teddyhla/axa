@@ -252,3 +252,5 @@ so actually what we need is a data frame with column names
 - no of na in apttr
 - propn 
 
+
+coud use make_difftime , unit = "days"

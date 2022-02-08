@@ -296,5 +296,59 @@ clab$day_on_e <- round(difftime(clab$dtm,clab$dcn , units = "days"))
 
 message("Df 2 is cleaned and ready as `clab`")
 
-### CLEANING DF 3 of 4.
+# CLEANING DF 3 of 4 ------
 
+#rename the colnames appropriately.
+colnames(hep) <- c(
+        "mrn",#for MRN
+        "chart_t",#for chartTIME
+        "s_label",#for shortLabel
+        "t_form",#for terseForm
+        "unit",#for unitOfMeasure
+        "kg"#forkg
+        )
+
+#note setdiff order is important.
+#setdiff x , y means things that are in x that is not in y. 
+#so ideally should be applied both ways.
+
+#sensecheck with summary(hep$mrn %in% pt$mrn) showed that all the patients in this df are also in main df.
+#sensecheck 2 with setdiff showed the following is missing.
+#setdiff(unique(pt$mrn),unique(hep$mrn))
+
+#this code showed the missing hep prescriptions.
+
+# (compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = T)$result == TRUE ) { 
+#      message("mrn's in dataframe lab and pt matched.")
+#lse {
+#      message("mrn in dataframes lab and pt are not matched.")
+#
+#
+
+hep$t_form <- as.numeric(hep$t_form)
+hep$s_label <- as.factor(hep$s_label)
+hep$unit <- as.factor(hep$unit)
+
+
+# CLEANING DF 4 of 4 -----
+
+#change col names into appropriate forms
+colnames(bl) <- c(
+        "mrn",#lifeTimeNumber
+        "chart_t",#chartTime
+        "s_label",#shortLabel
+        "sd_label",#attr_shortLabel
+        "t_form",#terseForm
+        "v_form"#verboseform
+)
+
+#significant number of missing data in this- there is only 63 patients.
+
+#setdiff(unique(pt$mrn),unique(bl$mrn))
+
+bl$s_label <- as.factor(bl$s_label)
+bl$sd_label <- as.factor(bl$sd_label)
+bl$t_form <- as.factor(bl$t_form)
+bl$v_form <- as.factor(bl$v_form)
+
+message ("all df cleaned")

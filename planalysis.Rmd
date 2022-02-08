@@ -11,7 +11,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Source of Data
 
-This document details the data cleaning and pre-liminary analysis of anti Xa measurements on VV ecmo patients. 
+This document details the data cleaning and preliminary analysis of anti Xa measurements on VV ecmo patients. 
 
 Three cohorts of VV ecmo patients are identified :- 
 - wave 1 of covid - 19, defined as between 01-03-2020 to 31-08-2020 inclusive.
@@ -19,7 +19,7 @@ Three cohorts of VV ecmo patients are identified :-
 - historical flu, defined as 01-01-2015 and 31-12-2019 inclusive. 
 
 ## Questions
-- what about non covid and non flu patients in this period?
+- what about non covid and non flu patients in this period? isnt it better to capture 01-01-2015 to 01-01-2022 ? 
 - what about large gaps - is it true?
 - what about lmwh / flolan / argotraban ? 
 - mrn 6960892X as admission date = as discharge date ? typo
@@ -53,6 +53,16 @@ weight is also extracted to calculate units/hr/hr
 
 ## Bleeding scores are extracted from ICIP. 
 
+
+Intravenous unfractionated heparin infusion (UFH) was used with 50 IU/kg as a bolus at the
+time of cannulation with 2,500 units in the priming fluid for the circuit unless contraindicated
+due to bleeding.
+Prior to 1st November 2019, UFH infusions were monitored by activated partial thromboplastin
+time ratio (APTTr) with a target level of 1.5-2.0 if evidence of no thrombosis and haemorrhage
+and 2.0-2.5 if a thrombotic event.
+From 1st November 2019 to present, anti-Xa activity was used for monitoring targeting levels
+of 0.3 - 0.7 unit/mL if no evidence of thrombosis or haemorrhage were present and 0.6 - 1.0
+unit/mL if there was a thrombotic ev
 
 # Source the cleaned files
 ```{r}
@@ -100,4 +110,58 @@ pt %>%
                 median=median(ecmorunt))
 ```
 
+```{r}
+labdur <- full_join(
+        labdur,
+        pt %>% select(mrn,cohort), 
+        by = "mrn")
+```
+
+```{r}
+labdur %>% 
+        group_by(cohort) %>%
+        summarise (
+                meand = mean (labd),
+                mode = max(labd),
+                min = min (labd),
+                median = median(labd))
+```
+
+```{r}
+summary(as.numeric(tdiff))
+```
+
+
+two different type of missing data.
+recorded as NA
+and not in the sheets at all.
+- i believe should use a clean admin duration vs. ecmo run duration.
+
 5 number summary per waves
+
+as seen above there is wildly different ranges. 
+
+ [1] "5766199G" "5933615A" "2553305Z" "5981704A" "6019233K" "6388792B" "2746912G"
+ [8] "6396244K" "6578155C" "6776201S" "6851184E" "5277619S" "6852899A" "6855137S"
+[15] "6860416Y" "6908775W"
+
+above is missing from hep df.
+
+so units need deciding ? units vs. units/hr vs units/kg/hr
+so kg needs deciding as "NA" vs "TRUE
+
+how are the rprescriotns changed ? e.g., is it hourly built up ? 
+
+may be that it is not NA but if you generate a time stamp for each time blood is monitored, then those with less frequent will have more NAs?
+
+
+for example >there are values attached to it.
+
+lab[lab$dtm < as.Date("2015-01-01"),]
+# A tibble: 4 × 4
+  mrn      dtm                   axa apttr
+  <chr>    <dttm>              <dbl> <dbl>
+1 4169075Q 2012-12-24 00:00:00    NA NA   
+2 4169075Q 2012-12-24 02:21:00    NA  1   
+3 5299955S 2012-06-11 09:41:00    NA  1   
+4 1419834R 2006-04-28 17:54:00    NA  1.07

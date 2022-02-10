@@ -77,7 +77,7 @@ summary(pt)
 ```
 
 ```{r}
-ggplot(data = pt, aes(x=AdmissionDate))+
+ggplot(data = pt, aes(x=admissiondate))+
                geom_freqpoly(binwidth = 86400)
 ```
 
@@ -165,3 +165,34 @@ lab[lab$dtm < as.Date("2015-01-01"),]
 2 4169075Q 2012-12-24 02:21:00    NA  1   
 3 5299955S 2012-06-11 09:41:00    NA  1   
 4 1419834R 2006-04-28 17:54:00    NA  1.07
+
+playing around
+
+```{r}
+
+gh <- clab
+gh$day_on_e <- as.factor(gh$day_on_e)
+ylim1 <- boxplot.stats(clab$axa)$stats[c(1,5)]
+ylim2 <- boxplot.stats(clab$apttr)$stats[c(1,5)]
+
+p1 <- ggplot(data = gh, aes(x=day_on_e,y = axa)) + 
+        geom_boxplot(outlier.shape = NA)+
+        geom_hline(yintercept = 0.3)+
+        geom_hline(yintercept = 0.7)+
+        coord_cartesian(ylim = ylim1*1.05)+
+        ggtitle("axa")+
+        facet_wrap(~cohort)
+      
+
+p2 <- ggplot(data = gh, aes(x=day_on_e,y=apttr))+
+      geom_boxplot(outlier.shape = NA)+
+      geom_hline(yintercept = 1.5) +
+      geom_hline(yintercept = 2.0)+
+      coord_cartesian(ylim = ylim2*1.05)+
+      ggtitle("apttr")+
+      facet_wrap(~cohort)
+
+p3 <- plot_grid(p1,p2)
+
+```
+

@@ -114,6 +114,9 @@ colnames(pt) <- c(
 # this is 0 which made sense as no pts gonna receive a 2nd ecmo.
 #change col names to easily typed names
 
+# need a data column to indicate PE patients will have higher target.
+pt$pe <- ifelse(pt$dxsum == "flu_a+bac+pe","yes","no")
+pt$ecmorunt <- pt$dateDEcannulated  - pt$datecannulated
 ##---DF1 Sense Check -----
 if (sum(duplicated(pt$mrn)) == 0 ) {
         message("All patients only received one run of ECMO")

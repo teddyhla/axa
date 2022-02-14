@@ -1,0 +1,94 @@
+---
+title: "Anti Xa monitoring in ECMO "
+subtitle: "⚔<br/>Journal Club"
+author: "Teddy Tun Win HLA <br/> Senior Clinical Fellow in Intensive Care Medicine"
+institute: "University College London Hospital "
+date: "2022/02/01 (updated: `r Sys.Date()`)"
+output: 
+  xaringan::moon_reader:
+    self_contained : true
+    css: [default, metropolis, metropolis-fonts]
+    lib_dir : libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+# PLAN
+
+<br>
+<br>
+- Brief background
+- Current Findings
+- Further Steps
+- Discussion
+<br>
+
+```{r}
+library(knitr)
+library(ggplot2)
+source("datatidy.R")
+```
+
+--
+
+
+<br>
+
+- Estimated time : **30 mins.**
+---
+# Anticoagulation in ECMO 
+
+- Extra corporeal therapies - > anticoagulation. 
+- GSTT - a large volume severe respiratory failure centre providing predominant VV-ECMO service. 
+- Bleeding and thrombotic complications during ECMO are NOT uncommon
+- __Multiple options__ : Activated Clotting Time (ACT), Activated Partial Thromboplastic time (aPTT),anti-factor Xa (Anti-Xa),prothrombin time and internationalised normal ratio (PT/INR)
+--
+<br>
+<br>
+<br>
+- __apTT vs aXa__ ? 
+- factor VIII, fibrinogen, lupus anticoagulant, acute phase reactants affect apTT
+- Research challenging : due to low volume.
+- small signal aXa may be a superior correlate - paediatric ecmo<sup>1</sup> 
+
+.footnote[
+[1] Paeds ecmo aXa
+[link](https://pubmed.ncbi.nlm.nih.gov/24335992/)
+]
+--
+
+---
+# Is anti-Xa monitoring better?
+
+### Methodology
+- single centre retrospective cohort review with electronic health records interrogation
+- ?Ethics
+### Opportunities
+- Large volume centre
+- COVID viral pneumonia and previous flu pandemic : viral aetiology
+### Clinical Outcomes
+- Time to first therapeutic range, Time in therapeutic range
+- Bleeding and Thrombotic Complications (e.g., Time to 1st complication)
+### Non Clinical Outcomes
+- Frequency of prescription change (reduced workload on clinical team)
+---
+# Early Findings
+n = 201 (Flu : 80, COVID
+Wave 1 : 59, COVID Wave 2 : 62)
+```{r plot1, echo=FALSE,message = FALSE,warning = FALSE, out.width = "500px",fig.retina=2}
+
+ggplot(pt, aes(x=admissiondate,color = cohort))+
+               geom_bar(binwidth = 86400)
+
+```
+
+---
+# Missing Data
+---
+# Next Steps
+---
+# Discussion
+---
+# Feedback
+---

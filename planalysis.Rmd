@@ -20,8 +20,11 @@ Three cohorts of VV ecmo patients are identified :-
 
 ## Questions
 - what about non covid and non flu patients in this period? isnt it better to capture 01-01-2015 to 01-01-2022 ? 
+- Ans : better to focus on viral aetiology. 
 - what about large gaps - is it true?
+- Ans : as per above 
 - what about lmwh / flolan / argotraban ? 
+- Ans : only heparin was used 
 - mrn 6960892X as admission date = as discharge date ? typo
 - 6842347C has wrong time to cannulation, 
 the rest may be one day off ? - 6578155C,6578347K,1087895N,6939825N have issues.
@@ -29,11 +32,13 @@ the rest may be one day off ? - 6578155C,6578347K,1087895N,6939825N have issues.
 - for looking at labs data,6381359H (missing data 3 days on blood),6855512Y(missing data 2/3 days pre),6855430Y,6922730D,6971769E
 - for looking at labs data duration , 
 - ecmo run time as gold standard? 
+- Ans : agreed 
 
 ## Sensecheck 
 - no repeat admissions?
+- Ans : true
 - peak 3 ecmo admission in 24 hour ?
-
+- Ans : true
 
 ## Patient identification
 - ecmo blood pump speed was calculated from min to max dates and substracted to get ecmo run times and patients
@@ -45,15 +50,7 @@ Heparin was administered in 4 different formats
 - heparin iv injection units
 - heprin rrt inf 2000 iu units
 - heparin systemic inf 2000 units units/hr
-
-weight is also extracted to calculate units/hr/hr 
-
-## Coagulation lab results
-- anti Xa and APTTR results were extracted
-
-## Bleeding scores are extracted from ICIP. 
-
-
+- Ans : agree this is the complexity of heparin prescription in ecmo.
 Intravenous unfractionated heparin infusion (UFH) was used with 50 IU/kg as a bolus at the
 time of cannulation with 2,500 units in the priming fluid for the circuit unless contraindicated
 due to bleeding.
@@ -63,6 +60,22 @@ and 2.0-2.5 if a thrombotic event.
 From 1st November 2019 to present, anti-Xa activity was used for monitoring targeting levels
 of 0.3 - 0.7 unit/mL if no evidence of thrombosis or haemorrhage were present and 0.6 - 1.0
 unit/mL if there was a thrombotic ev
+
+weight is also extracted to calculate units/hr/hr 
+
+## Coagulation lab results
+- anti Xa and APTTR results were extracted
+
+## Bleeding scores are extracted from ICIP. 
+
+# Load dependencies
+
+```{r}
+library(ggplot2)
+library(cowplot)
+library(survminer)
+library(survival)
+```
 
 # Source the cleaned files
 ```{r}
@@ -77,8 +90,8 @@ summary(pt)
 ```
 
 ```{r}
-ggplot(data = pt, aes(x=admissiondate))+
-               geom_freqpoly(binwidth = 86400)
+ggplot(data = pt, aes(x=admissiondate,color = cohort))+
+               geom_bar(binwidth = 86400)
 ```
 
 ```{r}
@@ -193,6 +206,23 @@ p2 <- ggplot(data = gh, aes(x=day_on_e,y=apttr))+
       facet_wrap(~cohort)
 
 p3 <- plot_grid(p1,p2)
+
+```
+
+
+# Survival 
+```{r }
+pts <- pt %>%
+        select(ecmorunt,cohort,survivedecmo)
+summary(pts)
+levels(pts$survivedecmo) <- c("0","1")
+summary(pts)
+```
+
+```{r}
+pts <- lapply(pts,as.numeric)
+ps <- survfit(Surv(ecmorunt,survivedecmo)~cohort, data = pts)
+
 
 ```
 

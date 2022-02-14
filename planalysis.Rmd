@@ -117,6 +117,7 @@ pt %>%
         mutate (ecmorunt= dateDEcannulated - datecannulated) %>%
         group_by(cohort) %>%
         summarise (
+                count = n(),
                 mean = mean(ecmorunt),
                 mode = max(ecmorunt),
                 min = min(ecmorunt),
@@ -215,14 +216,12 @@ p3 <- plot_grid(p1,p2)
 pts <- pt %>%
         select(ecmorunt,cohort,survivedecmo)
 summary(pts)
-levels(pts$survivedecmo) <- c("0","1")
-summary(pts)
+
 ```
 
 ```{r}
-pts <- lapply(pts,as.numeric)
-ps <- survfit(Surv(ecmorunt,survivedecmo)~cohort, data = pts)
-
+ps <- survfit (Surv(ecmorunt,survivedecmo == "no")~cohort, data = pts)
+ggsurvplot(ps,pval = TRUE,risk.table = TRUE, risk.table.col = "cohort",risk.table.height = 0.3,surv.median.line = "hv")
 
 ```
 

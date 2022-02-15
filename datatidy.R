@@ -119,9 +119,9 @@ pt$pe <- ifelse(pt$dxsum == "flu_a+bac+pe","yes","no")
 pt$ecmorunt <- pt$dateDEcannulated  - pt$datecannulated
 ##---DF1 Sense Check -----
 if (sum(duplicated(pt$mrn)) == 0 ) {
-        message("All patients only received one run of ECMO")
+        message("Sensecheck 1 : All patients only received one run of ECMO")
 } else {
-        message("Some patients receive more than one run of ECMO. RECHECK.")
+        message("NEED ACTION -Some patients receive more than one run of ECMO. RECHECK.")
 }
        
 message ("02_df pt is cleaned and in appropriate data classes.")
@@ -181,7 +181,7 @@ labdur <- lab %>%
                 dn = max (dtmd), 
                 labd = max(dtmd)-min(dtmd)
                 )
-
+##VERBOSE
 ptdur <- pt %>%
         select(mrn,datecannulated,dateDEcannulated) %>%
         mutate(dcn = as.Date(datecannulated),dDEcn=as.Date(dateDEcannulated))%>% 

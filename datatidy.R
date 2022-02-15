@@ -16,20 +16,21 @@ bl <- read_excel("data/antixa_data_extract_20211203_nopt.xlsx",sheet = "bleeding
 message ("01_all relevant data are loaded into 4 df.")
   
 ## the source data is an excel spread sheet with 4 tabs. 
-## Tab 1 is a master tab of patient in a unique MRNs
+## Tab 1 is a master tab of patient in a unique MRNs, age, date information about admission and ecmo. 
 # Tab 2 is a patient heparin prescription
-# tab 3 is a labresults 
+# tab 3 is a labresults of patients.
 # tab 4 is a bleeding scores.
 ## all read as per above code into 4 df. 
 
-## ensure data is in appropriate classes.
+## Afterwards, data cleaning , relevant transformation and engineering will be done.
 
 # CLEANING DF 1 of 4 -----
 # first we clean pt df 
 
+#first, we put the columns into appropriate classes. 
+#assign factors.
 ftptcols <- c("Cohort","Diagnosis","DiagnosisCategory","Mode","SurvivedECMO","SurvivedICU")
 pt[ftptcols] <- lapply(pt[ftptcols],factor)
-
 # clean the levels of these factor columns
 # keen to keep original column  make a new column which is a summary of diagnosis column.
 pt$dxsum <- pt$Diagnosis
@@ -92,8 +93,7 @@ levels(pt$dxsum) <-
 levels(pt$Mode) <- c("vv","vv")
 levels(pt$SurvivedECMO) <- c("no","no","yes","yes")
 levels(pt$SurvivedICU) <- c("no","no","yes","yes")
-
-
+#recode column names to allow easier access.
 colnames(pt) <- c(
         "cohort",
         "admissiondate",
@@ -111,11 +111,13 @@ colnames(pt) <- c(
 )
 
 #sense check 1 : - summary(unique(pt$Number))
-# this is 0 which made sense as no pts gonna receive a 2nd ecmo.
-#change col names to easily typed names
+# this is 0 which made sense as no pts gonna receive a 2nd ecmo.CLARIFIED with Dr R.
+
 
 # need a data column to indicate PE patients will have higher target.
 pt$pe <- ifelse(pt$dxsum == "flu_a+bac+pe","yes","no")
+#showed only 2 patients are on PE.
+#create new column of ecmoruntimes.
 pt$ecmorunt <- pt$dateDEcannulated  - pt$datecannulated
 ##---DF1 Sense Check -----
 if (sum(duplicated(pt$mrn)) == 0 ) {
@@ -140,6 +142,7 @@ message ("02_df pt is cleaned and in appropriate data classes.")
 #        arrange((timetocan))
 
 #This above code showed 6842347C,6578155C,6578347K,1087895N,6939825N have issues.
+#these will be discussed to resolve those issues.
 
 # CLEANING DF 2 of 4 -----
 #Now we will address lab df.
@@ -156,9 +159,9 @@ pt$mrn[pt$mrn == "6606299s"] <- "6606299S"
 #sensecheck : compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = TRUE)
 #we are now satisfied that lab mrn and pt mrn are the same.
 if (compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = T)$result == TRUE ) { 
-        message("mrn's in dataframe lab and pt matched.")
+        message("SENSECHECKED : mrn's in dataframe lab and pt matched.")
 }else {
-                message("mrn in dataframes lab and pt are not matched.")
+                message("ACTION REQUIRED :mrn in dataframes lab and pt are not matched.")
         }
 #now we gonna change df lab to all correct col classes.
 lab$axa <- as.double(lab$axa)
@@ -172,7 +175,6 @@ lab$apttr <- as.double(lab$apttr)
 
 #will work in dates only as individual second / hour difference on the day of ecmo run 
 #wont matter.
-
 labdur <- lab %>% 
         group_by(mrn) %>% 
         mutate(dtmd = as.Date(dtm)) %>% 
@@ -181,123 +183,155 @@ labdur <- lab %>%
                 dn = max (dtmd), 
                 labd = max(dtmd)-min(dtmd)
                 )
-##VERBOSE
-ptdur <- pt %>%
-        select(mrn,datecannulated,dateDEcannulated) %>%
-        mutate(dcn = as.Date(datecannulated),dDEcn=as.Date(dateDEcannulated))%>% 
-        group_by(mrn) %>% 
-        select(mrn,dcn,dDEcn)%>% 
-        mutate(ptdur = dDEcn - dcn)
-
-checkdf <- full_join(ptdur,labdur, by = "mrn")
-
-tdiff <- checkdf$ptdur - checkdf$labd
+#labdur is a data frame where you can find out when blood results begin to available and last blood results recorded.
+#this is enriched with further info on run times, cohort,etc.
+checkdf <- full_join(
+            labdur,
+            pt %>% select(mrn,ecmorunt,datecannulated,dateDEcannulated,cohort),
+            by = "mrn"
+)
+tdiff <- checkdf$ecmorunt - checkdf$labd
 #this showed that patient duration is shorter than lab duration.
 # could it be that lab counts the date admission to date discharge from icu ?
 # but pt dur shouldnt be longer than lab duration (which suggests missing data in lab)
-sum(checkdf$ptdur - checkdf$labd > 0)
-checkdf[(checkdf$ptdur - checkdf$labd >0 ),]
+sum(checkdf$ecmorunt - checkdf$labd > 0)
+checkdf[(checkdf$ecmorunt - checkdf$labd >0 ),]
 #looking at this data frame looks like there is only one or two discrepancy for most cases.
-#except 6381359H (missing data 3 days on blood),6855512Y(missing data 2/3 days pre),
+#except 6381359H (missing data 3 days on blood but towards the end so shouldnt be a proble,
+#),6855512Y(missing data 2/3 days pre),
+rm(tdiff)
 
-#lets check the admission date - discharge date and compare with lab data. 
-
-ptdur2 <- pt %>%
-        select(mrn,admissiondate,dischargedate) %>%
-        mutate(admn = as.Date(admissiondate),dcd=as.Date(dischargedate))%>% 
-        group_by(mrn) %>% 
-        select(mrn,admn,dcd)%>% 
-        mutate(ptadmndur = dcd - admn)
-
-checkdf2 <- full_join(ptdur2,labdur,by = "mrn")
-checkdf2$ptadmndur - checkdf2$labd
-# looks abit better
-checkdf2[(checkdf2$ptadmndur - checkdf2$labd < 0),]
-
-#should really use ecmo run time as gold standard. 
-
+#WE should really use ecmo run time as gold standard. 
 #now we will look at NA's within those ranges. 
-#lets 
-ptdur$datedecanplus1 <- ptdur$dDEcn + 1
-ptdur$datedecanplus1 <- as.POSIXct(ptdur$datedecanplus1, tz = "GMT")
-#to c onvert to UTC in mid seconds as 
-#lets be generous and give a 1 days after decannulation and 1 day before decannulation. 
-ptdur$dprecan <-ptdur$dcn - 1
-ptdur$dprecan <- as.POSIXct(ptdur$dprecan, tz = "GMT")
+#lets make new columns where we give a tolerance of +1 or -1 day of ecmo duration.
+checkdf$dateDEplus1 <-checkdf$dateDEcannulated + 1
+checkdf$dateDEplus1 <- as.POSIXct(checkdf$dateDEplus1, tz = "GMT")
+
+checkdf$dateprecan <- checkdf$datecannulated - 1
+checkdf$dateprecan <- as.POSIXct(checkdf$dateprecan, tz = "GMT")
 
 labecmodur <- full_join(
         lab,
-        ptdur %>% select(mrn,dcn,dprecan,datedecanplus1),
+        checkdf %>% select(mrn,dateprecan,dateDEplus1,ecmorunt,cohort),
         by = "mrn"
 )
 
 clab <- labecmodur %>% 
         group_by (mrn) %>% 
-        filter (dtm >= dcn & dtm <datedecanplus1)
-
-#subset date into ecmo runs only.
+        filter (dtm >= dateprecan & dtm <dateDEplus1) %>% 
+        ungroup()
+#clab is a dataframe where blood values are subsettd by ecmo duration +1 day pre ecmo and 1 day post ecmo.
 #then we will find out how much NA's there are.
+#this reduces to 9280 entries from 12309 entries
 
 #lets make sense of this NA value by appending cohort information.
 
-clab <- full_join(
-        clab,
-        pt %>% 
-                mutate(ecmorunt = dateDEcannulated - datecannulated) %>%
-                select(mrn,cohort,ecmorunt),
-        by="mrn")
 
 clabna<- clab %>% 
         select(mrn,axa,apttr,cohort,dtm,ecmorunt)%>%
         group_by(mrn) %>%
-        mutate(
+        summarize(
                 no_lab = n(),
                 na_axa = sum(is.na(axa)),
                 na_axa_perc = ((sum(is.na(axa)))/n()) * 100,
                 na_apttr = sum(is.na(apttr)),
                 na_apttr_perc = ((sum(is.na(apttr)))/n()) * 100,
+                erunt = min(ecmorunt)
         ) 
-
-clabna <- clabna %>% 
-        select(
-                mrn,
-                cohort,
-                ecmorunt,
-                no_lab,
-                na_axa,
-                na_axa_perc,
-                na_apttr,
-                na_apttr_perc
+#this is a dataframe where we explore NA values for both apttr and axa in clean lab values.
+#this data frames make summary of number of lab values for each patient, number of missing AXA and number of missing APTTR
+clabna <- full_join(
+        clabna,
+        pt %>% select(mrn,cohort,datecannulated),
+        by = "mrn"
         )
 
-clabna <- unique(clabna)
-#let's explore maximum , median, mean, and minimum NA's per axa apttr in each pt.
-#let's adjust for ecmorunt
+c2 <- clabna %>% 
+          group_by(mrn) %>% 
+          summarize(
+            missingaxa = (no_lab - na_axa)/as.numeric(erunt),
+            missingapttr = (no_lab - na_apttr)/as.numeric(erunt)
+                 )
 
+clabna <- full_join(
+  clabna,
+  c2 %>% select(mrn,missingaxa,missingapttr),
+  by = "mrn"
+)
+rm(c2)
+message("Clean lab df to explore NA calues : clabna is ready.")
+#let's explore maximum , median, mean, and minimum NA's per axa apttr in each pt.
 
 # we need to adjust missing data per ecmo run times.
 
-#lab with ecmo run times 
+# histogram of ecmoruntimes showed a median run time of 13 days.
+#histogram of number of lab results showed a median of 34 days.
+# thus dividing median by median results = 34/13 = 2.6 blood draws per day.
+#so if there is a missing data but it is still less than 2.6 blood draws per day than its ok.
 
+#note 1st Nov 2019 is where we switch.
 
-##actually what we need is a data frame with column names 
-##in_ mrn
-##in_ cohort
-##in_ ecmorunt
-##in_ bloodtestrunt
-##in_no of na in axa
-##in_ no of na in apttr
-##in_ propn 
+#manual inpection  of the data verified missing data for APTTR is acceptable for flu cohort.
+# manual insepction oft he data for AXA
 
+#NOTE although axa is demarcated from 1st november - 5th november cannulation is still using apttr
+
+clabna2 <- clabna[,c("mrn","no_lab","na_axa","erunt","cohort","datecannulated","missingaxa","na_apttr")]
+clabna2 <- clabna2 %>% filter(missingaxa < 1 & cohort != "Flu")
+#needs decision on which arm to consider these.
+#d <- c("6849178A",
+#       "6851184E",
+#       "5277619S","6852899A","6855137S",
+#       "6857152G","6860416Y","6935380E","6950251Z","6956232H","6968816C","5277619S")
+#d %in% clabna2$mrn 
+#all true here 
+# some consultants prefer apttr
 
 ##d use make_difftime , unit = "das"
 #lets make a dataframe that has day of blood tests as ecmo run days.
 
-clab$dcn <- as.POSIXct(clab$dcn,tz = "GMT")
-clab$min_on_e <- round(clab$dtm - clab$dcn)
-clab$day_on_e <- round(difftime(clab$dtm,clab$dcn , units = "days"))
+#now lets make a column where we label in and out of range for apttr and axa, bearing in mind PE patients.
+pt %>% filter(pe == "yes") %>% select(mrn)
+#this code showed that patients with PE have MRN 6513466R, and 6584394E.
+clabpe <- clab %>% filter(mrn == "6513466R"| mrn == "6584394E")
+clabpe <- clabpe %>%
+          group_by(mrn) %>%
+          mutate ( axarange = case_when(
+              axa <0.6 ~ "below",
+              axa >= 0.6 & axa <= 1.0 ~ "in",
+              axa > 1.0 ~ "above"),
+              apttrrange = case_when(
+                apttr <2.0 ~ "below",
+                apttr >= 2.0 & apttr <= 2.5 ~ "in",
+                apttr > 2.5 ~ "above"
+              )
+            )%>%
+          ungroup()
+          
 
-message("Df 2 is cleaned and ready as `clab`")
+clabnpe <- clab %>% filter(!mrn %in% c("6513466R","6584394E"))
+clabnpe <- clabnpe %>%
+  group_by(mrn) %>%
+  mutate ( axarange = case_when(
+    axa <0.6 ~ "below",
+    axa >= 0.6 & axa <= 1.0 ~ "in",
+    axa > 1.0 ~ "above"),
+    apttrrange = case_when(
+      apttr <2.0 ~ "below",
+      apttr >= 2.0 & apttr <= 2.5 ~ "in",
+      apttr > 2.5 ~ "above"
+    )
+  )%>%
+  ungroup()
+
+#make 2 dataframes clabnpe and clabpe to treat and make sure correct range for PE and non PE 
+#pts
+
+clab <- rbind(clabnpe,clabpe)
+
+rm(clabpe,clabnpe,checkdf,labdur,labecmodur)
+
+message("Df 2 is cleaned and ready as `clab` for cleaned lab data and 'clabna' for exploring NA")
 
 # CLEANING DF 3 of 4 ------
 
@@ -321,18 +355,51 @@ colnames(hep) <- c(
 
 #this code showed the missing hep prescriptions.
 
-# (compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = T)$result == TRUE ) { 
-#      message("mrn's in dataframe lab and pt matched.")
-#lse {
-#      message("mrn in dataframes lab and pt are not matched.")
+if (compare(unique(pt$mrn),unique(hep$mrn),ignoreOrder = T)$result == TRUE ) { 
+      message("mrn's in dataframe hep and pt matched.") 
+}else {
+      message("REQUIRED ACTION : mrn in dataframes lab and pt are NOT matched.")
+  }
 #
 #
 
+missing_hep <- setdiff(unique(pt$mrn),unique(hep$mrn))
 hep$t_form <- as.numeric(hep$t_form)
 hep$s_label <- as.factor(hep$s_label)
 hep$unit <- as.factor(hep$unit)
 
+#Likewise we will subset heparin prescriptions with ecmoruntimes.
+#unlike blood tests prescriptions should be more or less the same as cannulation and decan.
+hep <- full_join(
+  hep,
+  pt %>% select(mrn,cohort,datecannulated,dateDEcannulated,ecmorunt),
+  by = "mrn"
+)
 
+#now subset into clean dataframe.
+chep <- hep %>% 
+        group_by(mrn) %>%
+        filter(chart_t >= datecannulated & chart_t <= dateDEcannulated) %>%
+        ungroup()
+
+#let's explore if there are implicit missing data by comparing with ecmoruntimes.
+
+nahep <- chep %>%
+          group_by(mrn) %>% 
+          summarise(
+            chart_tone = min(chart_t),
+            chart_tlast = max(chart_t),
+            chardur = ((chart_tlast - chart_tone)/86400)
+          ) %>% 
+        ungroup() 
+
+nahep <- left_join(
+  nahep,
+  pt %>% select(mrn,cohort,datecannulated,dateDEcannulated,ecmorunt),
+  by = "mrn"
+)
+
+#okay cool so we can use rle and length to get the number of drug prescription changes.
 # CLEANING DF 4 of 4 -----
 
 #change col names into appropriate forms
@@ -355,3 +422,11 @@ bl$t_form <- as.factor(bl$t_form)
 bl$v_form <- as.factor(bl$v_form)
 
 message ("all df cleaned")
+message(
+  "Df's 
+  pt : clean and engineered.
+  lab : raw
+  clab :clean and engineered.
+  clabna :clean lab values in NA
+  hep : cleane and engineered"
+)

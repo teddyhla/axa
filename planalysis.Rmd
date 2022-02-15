@@ -75,6 +75,7 @@ library(ggplot2)
 library(cowplot)
 library(survminer)
 library(survival)
+library(plotly)
 ```
 
 # Source the cleaned files
@@ -210,6 +211,9 @@ p3 <- plot_grid(p1,p2)
 
 ```
 
+```{r}
+ggplotly(p1)
+```
 
 # Survival 
 ```{r }

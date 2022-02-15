@@ -27,6 +27,7 @@ output:
 ```{r}
 library(knitr)
 library(ggplot2)
+library(plotly)
 source("datatidy.R")
 ```
 
@@ -78,9 +79,10 @@ n = 201 (Flu : 80, COVID
 Wave 1 : 59, COVID Wave 2 : 62)
 ```{r plot1, echo=FALSE,message = FALSE,warning = FALSE, out.width = "500px",fig.retina=2}
 
-ggplot(pt, aes(x=admissiondate,color = cohort))+
+p <- ggplot(pt, aes(x=admissiondate,color = cohort))+
                geom_bar(binwidth = 86400)
 
+ggplotly(p)
 ```
 
 ---

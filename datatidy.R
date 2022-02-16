@@ -159,7 +159,7 @@ pt$mrn[pt$mrn == "6606299s"] <- "6606299S"
 #sensecheck : compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = TRUE)
 #we are now satisfied that lab mrn and pt mrn are the same.
 if (compare(unique(pt$mrn),unique(lab$mrn),ignoreOrder = T)$result == TRUE ) { 
-        message("SENSECHECKED : mrn's in dataframe lab and pt matched.")
+        message("03_SENSECHECKED : mrn's in dataframe lab and pt matched.")
 }else {
                 message("ACTION REQUIRED :mrn in dataframes lab and pt are not matched.")
         }
@@ -259,7 +259,9 @@ clabna <- full_join(
   by = "mrn"
 )
 rm(c2)
-message("Clean lab df to explore NA calues : clabna is ready.")
+
+
+message("04_Clean lab df to explore NA calues : clabna is ready.")
 #let's explore maximum , median, mean, and minimum NA's per axa apttr in each pt.
 
 # we need to adjust missing data per ecmo run times.
@@ -331,7 +333,7 @@ clab <- rbind(clabnpe,clabpe)
 
 rm(clabpe,clabnpe,checkdf,labdur,labecmodur)
 
-message("Df 2 is cleaned and ready as `clab` for cleaned lab data and 'clabna' for exploring NA")
+message("05_Df 2 is cleaned and ready as `clab` for cleaned lab data and 'clabna' for exploring NA")
 
 # CLEANING DF 3 of 4 ------
 
@@ -356,9 +358,9 @@ colnames(hep) <- c(
 #this code showed the missing hep prescriptions.
 
 if (compare(unique(pt$mrn),unique(hep$mrn),ignoreOrder = T)$result == TRUE ) { 
-      message("mrn's in dataframe hep and pt matched.") 
+      message("05_mrn's in dataframe hep and pt matched.") 
 }else {
-      message("REQUIRED ACTION : mrn in dataframes lab and pt are NOT matched.")
+      message("05_REQUIRED ACTION : mrn in dataframes hep and pt are NOT matched.")
   }
 #
 #
@@ -457,7 +459,8 @@ nabl <- left_join(
 # 6956374C chart duration >> ecmoruntime
 # 6971769E missing 4 
 
-message ("all df cleaned")
+message ("06_all df cleaned")
+
 message(
   "Df's 
   pt : clean and engineered.

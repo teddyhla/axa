@@ -421,6 +421,42 @@ bl$sd_label <- as.factor(bl$sd_label)
 bl$t_form <- as.factor(bl$t_form)
 bl$v_form <- as.factor(bl$v_form)
 
+missing_bl <- setdiff(unique(pt$mrn),unique(bl$mrn))
+length(missing_bl) 
+#this showed that 138 patient data is missing, 
+
+#Like before we will enrich it with some further information by appending
+
+bl <- full_join(
+  bl,
+  pt %>% select(mrn,cohort,datecannulated,dateDEcannulated,ecmorunt),
+  by = "mrn"
+)
+
+#now we will explore the explicit missing data.
+
+
+nabl <- bl %>%
+  group_by(mrn) %>% 
+  summarise(
+    chart_tone = min(chart_t),
+    chart_tlast = max(chart_t),
+    chardur = ((chart_tlast - chart_tone)/86400)
+  ) %>% 
+  ungroup() 
+
+nabl <- left_join(
+  nabl,
+  pt %>% select(mrn,cohort,datecannulated,dateDEcannulated,ecmorunt),
+  by = "mrn"
+)
+
+#this showed that only 63 
+#however visual inspection of this 63 showed
+# 6929427Q 8.25 to 24 char duration vs ecmoruntime
+# 6956374C chart duration >> ecmoruntime
+# 6971769E missing 4 
+
 message ("all df cleaned")
 message(
   "Df's 

@@ -4,8 +4,10 @@ author: "teddyhla"
 date: "25/01/2022"
 output: 
   html_document:
+    number_sections : TRUE
     toc : true
     toc_float : true
+    theme : flatly
 
 ---
 
@@ -16,14 +18,14 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warnings = F)
 ```
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet');
 body {
-font-family: 'Roboto', sans-serif;
+font-family: 'Fira Sans', sans-serif;
 }
 </style>
 
 
-# INTRODUCTION
+# Introduction
 
 - Any extra-corporeal therapy requires some form of anticoagulation to reduce thrombotic complications. 
 - Anticoagulation in critically unwell patients is challenging with rapid changes in physiology, biochemistry and disease progress.
@@ -34,15 +36,20 @@ font-family: 'Roboto', sans-serif;
 - Anti Xa assay - is thus a more attractive option as is not susceptible to factor deficiencies except anti-thrombin deficiency.
 - Whilst anti Xa assay is recommended for monitoring by American College of Chest Physicians, College of American Pathologists, there is no definitive study showing the superiority of anti-Xa. 
 
-# OBJECTIVES
+
+# Objectives
 
 - Does the use of anti-Xa monitoring results in 'better' outcomes?
 - Definition of 'better' :
-| Better efficacy - results in improved time in therapeutic range?
-| Better patient outcomes - results in safer (i.e., less complications) in patients?
-| Better provider outcomes - less monitoring frequency and drug dosage changes, potential for time-saving, cost, safety?
 
-# AMBITION
+> Better efficacy - results in improved time in therapeutic range?
+
+> Better patient outcomes - results in safer (i.e., less complications) in patients?
+
+> Better provider outcomes - less monitoring frequency and drug dosage changes, potential for time-saving, cost, safety?
+
+
+# Ambition
 
 - monitor all critically unwell patients with Anti-Xa ?
 
@@ -50,27 +57,37 @@ font-family: 'Roboto', sans-serif;
 
 - identification of variables associated with complications / worse outcomes? 
 
-# PILOT STUDY : Dose the use of Anti-Xa monitoring in VV-ECMO patients improve outcomes?
+
+# Pilot: Dose the use of Anti-Xa monitoring in VV-ECMO patients improve outcomes?
 
 - Explicit Inclusion criteria : all patients on VV-ECMO for viral respiratory failure from 01-01-2015 to 01-03-2021.
 
-| Implicit Assumptions : all adults, predominant single organ failure of similar viral aetiology. 
+> Implicit Assumptions : all adults, predominant single organ failure of similar viral aetiology. 
+
+> Traditional Exclusion critiera : severe liver diseases, haematological malignancy implicitly excluded. 
+
+> Note : Pregnant patients in our cohort.
 
 - Timeframe : 1st November 2019 GSTT ECMO service switches to anti-Xa monitoring. 
 
 - Methodology : Retrospective cohort study of all eligible patients, electronic health records interrogation to yield
+
 1. patient's on ECMO run time 
 2. Measured aPTTR and AXA levels whilst patients on ECMO
 3. Anticoagulant prescriptions whilst on ECMO
 4. Complications whilst on ECMO 
 
-# SOURCE OF DATA
+
+# Source of Data
 
 ## Cohorts 
 
 Three cohorts of severe respiratory failure patients are identified :- 
+
 - wave 1 of covid - 19, defined as between 01-03-2020 to 31-08-2020 inclusive.
+
 - wave 2 of covid - 19, defined as between 01-09-2020 to 01-03-2021 inclusive.
+
 - historical flu, defined as 01-01-2015 and 31-12-2019 inclusive. 
 
 ## Questions regarding data.
@@ -137,7 +154,7 @@ Weight is also extracted to calculate units/hr/hr
 - Thrombotic complications **NOT** available.
 
 
-# DATA ANALYSIS
+# Data Analysis
 
 ## Initialising 
 ### Load dependencies
@@ -156,6 +173,11 @@ library(kableExtra)
 source("datatidy.R")
 ```
 
+
+### Methods of Statistical Analysis
+
+### Type of Reagent and Assay used
+
 ## Description of Patient Population 
 
 ### Gross Statistics 
@@ -172,7 +194,7 @@ pt %>%
           min_ecmorunt = min(ecmorunt)
                   ) %>%
         kbl() %>% 
-        kable_styling()
+        kable_material_dark()
         
 ```
 
@@ -242,6 +264,8 @@ t1$risk.table
 ```
 
 
+
+
 so units need deciding ? units vs. units/hr vs units/kg/hr
 so kg needs deciding as "NA" vs "TRUE
 
@@ -249,6 +273,143 @@ so kg needs deciding as "NA" vs "TRUE
 may be that it is not NA but if you generate a time stamp for each time blood is monitored, then those with less frequent will have more NAs?
 
 
+## Anticoagulation Profiles
+
+- NOTE : No gold standard monitoring profiles.
+
+- PROPOSED SOLUTIONS 
+
+- Time to first therapeutic range
+- Time in therapeutic range (TTR)
+
+### Note on TTR 
+
+- No gold standard measure.
+- Studied extensively on warfarin/ DOAC in AF 
+- Several methods
+
+| Method       | **Core**      | Rosendaal            | Traditional            | Cross-sectional                       |
+|--------------|---------------|----------------------|------------------------|---------------------------------------|
+| Numerator    | Time in Range | No of days in range  | No of in-range visits  | No of patients in range on last visit |
+| Denominator  | Total Time    | Total Monitored Days | Total no of **visits** | Total no of **patients**              |
+ 
+
+- Cross sectional method is not applicable to our population. 
+- Traditional method assumes INR is static and binary (in or out of range).
+- Rosendaal method(1993) assumes INR as dynamic but a **linear** progression between visits.
+- Most studies do not mention method for calculating TTR.
+
+### Exploration 
+
+- NOTE :Calculations adjusted for patients with PE (n = 2 , but have different threshold.)
+```{r exploration_anticoagulation}
+clab <- clab %>% 
+  group_by(mrn) %>% 
+  mutate(ecmo_day = round(difftime(dtm,datecannulated,units = "days")),ecmo_min = dtm - datecannulated ) %>%
+  ungroup()
+
+clab$ecmo_day <- as.factor(clab$ecmo_day)
+
+
+```
+
+```{r range_axa_apttr}
+ylim1 <- boxplot.stats(clab$axa)$stats[c(1,5)]
+ylim2 <- boxplot.stats(clab$apttr)$stats[c(1,5)]
+
+p7<-ggplot(data = clab, aes(x = ecmo_day, y = axa)) +
+    geom_boxplot(outlier.shape = NA)+
+    geom_hline(yintercept = c(0.3,0.7),colour = "blue")+
+    coord_cartesian(ylim = ylim1 *1.05)+
+    theme(axis.text.x = element_text(angle = 45))+
+    labs(title= "Anti Xa ranges for each ECMO run day",
+         x = "Day on Ecmo",y ="anti-Xa levels",
+         subtitle = "Normal Range 0.3 to 0.7, VTE Range 0.6 to 1.0")
+
+p8<- ggplot(data = clab, aes(x = ecmo_day, y = apttr)) +
+        geom_boxplot(outlier.shape = NA)+
+        geom_hline(yintercept = c(1.5,2.0),colour = "blue")+
+        coord_cartesian(ylim = ylim2 *1.05)+
+        theme(axis.text.x = element_text(angle = 45))+
+        labs(title= "APTTR ranges for each ECMO run day",
+         x = "Day on Ecmo",y ="APTTR valuess",
+          subtitle = "Normal Range 1.5 to 2.0, VTE Range 2.0 to 2.5")
+
+p9 <- plot_grid(p7,p8)
+p9
+```
+
+
+```{r exploring_by_cohort}
+
+p10 <- p7 +facet_wrap(~cohort)
+p11 <- p8 + facet_wrap(~cohort)
+p12 <- plot_grid(p10,p11)
+p12
+```
+
+cp[match("in",cp$axarange),]
+
+```{r duplicated_dtm_within_each_mrn}
+
+#for each patient, we explore if there are duplicated time stamps.
+
+#clab %>% group_by(mrn,dtm) %>% filter(duplicated(dtm))
+
+```
+
+6584394E
+2019-01-21 03:30:00
+has 2 lab values on same time stamps.
+
+5743542Q
+2015-01-02 11:53:00 has 4 different values of apttr.
+There is 43 patients.
+
+### Let's try and find first time axa is in range.
+
+```{r exploring_axa_never_in_range}
+#note AXA is started to use in 1st Nov 2019.
+cin <- clab %>% filter(axarange == "in" & cohort != "Flu") %>% group_by(mrn)%>%ungroup()
+cin2 <- clab %>% filter(mrn %in% setdiff(pt$mrn,unique(cin$mrn)))
+cin2 <- cin2[cin2$cohort != "Flu",]
+#this shows that 14 patients in wave 1 and wave 2 COVID cohorts never were used to monitor AXA. OR IF they did, they never reach the range.
+
+#may be we need to consider tolerances.
+```
+
+```{r create_timettr}
+
+dfaxa <- clab %>% filter(axarange == "in") %>% group_by(mrn) %>% slice_min(dtm) %>% ungroup()
+dfapt <-clab %>% filter(apttrrange == "in") %>% group_by(mrn) %>% slice_min(dtm) %>% ungroup()
+```
+
+
+```{r}
+#lets' check the code works
+#j<- c("1103375H","4946122T","4946122T")
+#craxa %>% filter (mrn %in% j) %>% View()
+
+dfaxa$faxa <- dfaxa$dtm -dfaxa$datecannulated
+dfapt$fapt <- dfapt$dtm - dfapt$datecannulated
+
+dfaxa$faxa <- as.numeric(dfaxa$faxa)
+dfapt$fapt <- as.numeric(dfapt$fapt)
+```
+
+103375H
+2020-04-01 08:12:00
+# Future Steps
+
+- Is thrombotic complications routinely assesed and documented? - If so this will be useful for analysis.
+- Is complications as per ELSO ? 
+- Missing data in prescriptions and complications needs to be cross-checked 
+- Obtain range to 31-Dec-2021 to include further data on covid?
+- Further variables on patient(e.g., ethnicity, gender, kidney dysfunction, concurrent medications such as aspirin, clorpidorel, past medical history, SOFA score)
+- Recommend a certain method in ECMO. i.e., the method that has least complications.
+- Bland-Altman plot to stamp out bias in underlying measurement methods.
+- Try at Brompton data?
+- Change in circuits ? e.g., Heparin bonded circuits or MAHAMA/NO-doped circuits.
 
 
 ambition

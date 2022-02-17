@@ -212,7 +212,7 @@ checkdf$dateprecan <- as.POSIXct(checkdf$dateprecan, tz = "GMT")
 
 labecmodur <- full_join(
         lab,
-        checkdf %>% select(mrn,dateprecan,dateDEplus1,ecmorunt,cohort),
+        checkdf %>% select(mrn,dateprecan,dateDEplus1,ecmorunt,cohort,datecannulated,dateDEcannulated),
         by = "mrn"
 )
 

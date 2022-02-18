@@ -4,6 +4,7 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 library(compare)
+library(tidylog)
 
 # READING DATA -----
 ## ## will read data from source excel file .xlsx into 4 different data frames
@@ -366,6 +367,7 @@ if (compare(unique(pt$mrn),unique(hep$mrn),ignoreOrder = T)$result == TRUE ) {
 #
 
 missing_hep <- setdiff(unique(pt$mrn),unique(hep$mrn))
+#these patients have missing heparin prescriptions.
 hep$t_form <- as.numeric(hep$t_form)
 hep$s_label <- as.factor(hep$s_label)
 hep$unit <- as.factor(hep$unit)
@@ -463,9 +465,13 @@ message ("06_all df cleaned")
 
 message(
   "Df's 
-  pt : clean and engineered.
-  lab : raw
-  clab :clean and engineered.
-  clabna :clean lab values in NA
-  hep : cleane and engineered"
+  pt : clean and engineered and include patient main detail.s
+  lab : raw lab values. 
+  clab :clean and engineered lab values. 
+  clabna :clean lab values in NA to explore explicit missing data. 
+  hep : cleaned and engineered
+  missing_bl : missing complications explicit.
+  missing_hep : missing heparin prescription explicit.
+  "
 )
+

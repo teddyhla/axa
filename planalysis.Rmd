@@ -18,9 +18,9 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warnings = F)
 ```
 
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet');
+@import url('https://fonts.googleapis.com/css2?family=Assistants&display=swap" rel="stylesheet');
 body {
-font-family: 'Fira Sans', sans-serif;
+font-family: 'Assistant', sans-serif;
 }
 </style>
 
@@ -46,7 +46,7 @@ font-family: 'Fira Sans', sans-serif;
 
 > Better patient outcomes - results in safer (i.e., less complications) in patients?
 
-> Better provider outcomes - less monitoring frequency and drug dosage changes, potential for time-saving, cost, safety?
+> Better provider outcomes - less monitoring frequency and drug dosage changes, potential for time-saving, cost(circuit), safety?
 
 
 # Ambition
@@ -166,6 +166,7 @@ library(survminer)
 library(survival)
 library(plotly)
 library(kableExtra)
+library(tidylog)
 ```
 
 ### Source the cleaned files
@@ -205,8 +206,10 @@ pt %>%
 p2 <- ggplot(data = pt, aes(x = as.Date(admissiondate),colour = cohort)) +
       geom_bar()+
       scale_x_date(date_breaks = "6 months",date_minor_breaks = "3 months",date_labels = "%b %Y")+
+      theme_minimal()+
       theme(axis.text.x = element_text(angle = 45,hjust = 1 ))+
-      labs (x = "Time", title = "ECMO admissions across time")
+      labs (x = "Time", title = "ECMO admissions across study period", y = "Admissions per day")
+     
 
 p2
 ```
@@ -218,6 +221,7 @@ p2
 p1 <- ggplot(data = pt, aes(x=as.numeric(ecmorunt), colour = cohort)) +
    geom_freqpoly(binwidth = 5 ) +
    scale_x_continuous(breaks = seq(0,90,by=10))+
+   theme_minimal()+
    labs (x = "ECMO run time / days", y = "Patients", title = "Frequency of ECMO run times per cohorts")
 
 ggplotly(p1)
@@ -226,14 +230,21 @@ ggplotly(p1)
 ### Dose age and cohort effect ECMO survival? 
 ```{r Age distribution across cohorts}
 
-p4 <- ggpubr::ggboxplot(pt,x = "cohort",y = "age",fill ="cohort")
-p4 + stat_compare_means()+ labs(title = "Age distribution across cohorts")
+p4 <- ggplot(pt, aes(x = cohort, y= age, fill = cohort)) + 
+        geom_boxplot() +
+        geom_jitter(alpha = 0.4,width = 0.2, aes(colour = cohort))+
+        geom_hline(linetype = 2 , yintercept = 46) +
+        labs(title = "Age distribution across cohorts",subtitle = "Median age 46, Kruskal-Wallis p 0.2",y= "Age / years")+
+        theme_minimal()
+
+p4
 ```
 
 ```{r cohort_outcomes}
 p5 <- ggplot(data = pt, aes(x = cohort, fill = survivedecmo))+
     geom_bar(position = "stack") + 
-    labs(x = "Cohorts", y = "Patients",title = "Patients who survived ECMO per cohort", subtitle = "No statistical difference")
+    theme_minimal()+
+    labs(x = "Cohorts", y = "Number of Patients",title = "Patients who survived ECMO per cohort", subtitle = "No statistical difference")
 
 p5 
 ```
@@ -252,7 +263,7 @@ p6 <- ggsurvplot(
         risk.table.height = 0.3,
         surv.median.line = "hv") + labs (title = "Time on ECMO to outcome",x = "ECMO run time / days",y = "% on ECMO")
 
-p6
+p6 
 ```
 
 ### Risk Table for ECMO Run Times
@@ -263,24 +274,14 @@ t1$risk.table
 
 ```
 
-
-
-
-so units need deciding ? units vs. units/hr vs units/kg/hr
-so kg needs deciding as "NA" vs "TRUE
-
-
-may be that it is not NA but if you generate a time stamp for each time blood is monitored, then those with less frequent will have more NAs?
-
-
 ## Anticoagulation Profiles
 
-- NOTE : No gold standard monitoring profiles.
+- **No** gold standard monitoring profiles.
 
-- PROPOSED SOLUTIONS 
+> PROPOSED SOLUTIONS 
 
-- Time to first therapeutic range
-- Time in therapeutic range (TTR)
+> - Time to first therapeutic range
+> - Time in therapeutic range (TTR)
 
 ### Note on TTR 
 
@@ -288,10 +289,10 @@ may be that it is not NA but if you generate a time stamp for each time blood is
 - Studied extensively on warfarin/ DOAC in AF 
 - Several methods
 
-| Method       | **Core**      | Rosendaal            | Traditional            | Cross-sectional                       |
+| Method       | *Principle*     | Rosendaal            | Traditional            | Cross-sectional                       |
 |--------------|---------------|----------------------|------------------------|---------------------------------------|
-| Numerator    | Time in Range | No of days in range  | No of in-range visits  | No of patients in range on last visit |
-| Denominator  | Total Time    | Total Monitored Days | Total no of **visits** | Total no of **patients**              |
+| Numerator    | *Time in Range* | No of days in range  | No of in-range visits  | No of patients in range on last visit |
+| Denominator  | *Total Time*    | Total Monitored Days | Total no of **visits** | Total no of **patients**              |
  
 
 - Cross sectional method is not applicable to our population. 
@@ -301,7 +302,7 @@ may be that it is not NA but if you generate a time stamp for each time blood is
 
 ### Exploration 
 
-- NOTE :Calculations adjusted for patients with PE (n = 2 , but have different threshold.)
+- NOTE :Calculations adjusted for patients with PE (n = 2 , who have different threshold.)
 ```{r exploration_anticoagulation}
 clab <- clab %>% 
   group_by(mrn) %>% 
@@ -309,7 +310,6 @@ clab <- clab %>%
   ungroup()
 
 clab$ecmo_day <- as.factor(clab$ecmo_day)
-
 
 ```
 
@@ -322,6 +322,7 @@ p7<-ggplot(data = clab, aes(x = ecmo_day, y = axa)) +
     geom_hline(yintercept = c(0.3,0.7),colour = "blue")+
     coord_cartesian(ylim = ylim1 *1.05)+
     theme(axis.text.x = element_text(angle = 45))+
+    theme_minimal()+
     labs(title= "Anti Xa ranges for each ECMO run day",
          x = "Day on Ecmo",y ="anti-Xa levels",
          subtitle = "Normal Range 0.3 to 0.7, VTE Range 0.6 to 1.0")
@@ -331,6 +332,7 @@ p8<- ggplot(data = clab, aes(x = ecmo_day, y = apttr)) +
         geom_hline(yintercept = c(1.5,2.0),colour = "blue")+
         coord_cartesian(ylim = ylim2 *1.05)+
         theme(axis.text.x = element_text(angle = 45))+
+        theme_minimal()+
         labs(title= "APTTR ranges for each ECMO run day",
          x = "Day on Ecmo",y ="APTTR valuess",
           subtitle = "Normal Range 1.5 to 2.0, VTE Range 2.0 to 2.5")
@@ -348,7 +350,6 @@ p12 <- plot_grid(p10,p11)
 p12
 ```
 
-cp[match("in",cp$axarange),]
 
 ```{r duplicated_dtm_within_each_mrn}
 
@@ -359,6 +360,7 @@ cp[match("in",cp$axarange),]
 ```
 
 6584394E
+
 2019-01-21 03:30:00
 has 2 lab values on same time stamps.
 
@@ -366,22 +368,31 @@ has 2 lab values on same time stamps.
 2015-01-02 11:53:00 has 4 different values of apttr.
 There is 43 patients.
 
+### Group assignment
+
+- First problem is that group assignment 
+- anti Xa monitoring is officially commenced on 1st November 2019.
+- So assigning patient's 
+
 ### Let's try and find first time axa is in range.
+
+
 
 ```{r exploring_axa_never_in_range}
 #note AXA is started to use in 1st Nov 2019.
 cin <- clab %>% filter(axarange == "in" & cohort != "Flu") %>% group_by(mrn)%>%ungroup()
+
 cin2 <- clab %>% filter(mrn %in% setdiff(pt$mrn,unique(cin$mrn)))
 cin2 <- cin2[cin2$cohort != "Flu",]
-#this shows that 14 patients in wave 1 and wave 2 COVID cohorts never were used to monitor AXA. OR IF they did, they never reach the range.
+#this shows that 14 patients in wave 1 and wave 2 COVID cohorts never were used to monitor AXA. OR IF they did, they never reach the range. cin2 is a df showing this
 
 #may be we need to consider tolerances.
 ```
 
 ```{r create_timettr}
 
-dfaxa <- clab %>% filter(axarange == "in") %>% group_by(mrn) %>% slice_min(dtm) %>% ungroup()
-dfapt <-clab %>% filter(apttrrange == "in") %>% group_by(mrn) %>% slice_min(dtm) %>% ungroup()
+dfaxa <- clab %>% filter(axarange == "in" & datecannulated > as.Date("2019-12-01")) %>% group_by(mrn) %>% slice_min(dtm) %>% ungroup()
+dfapt <-clab %>% filter(apttrrange == "in" & datecannulated < as.Date("2019-12-01")) %>% group_by(mrn) %>% slice_min(dtm) %>% ungroup()
 ```
 
 
@@ -395,10 +406,69 @@ dfapt$fapt <- dfapt$dtm - dfapt$datecannulated
 
 dfaxa$faxa <- as.numeric(dfaxa$faxa)
 dfapt$fapt <- as.numeric(dfapt$fapt)
+
+wilcox.test(dfaxa$faxa,dfapt$fapt)
+
+#but note that patient's 6 patients are not really have axa monitoring. 
+
 ```
+
+```{r now}
+cplab <-clab
+cplab$group <- ifelse(cplab$datecannulated < as.Date("2019-12-01"),"apt","axa")
+cplab$group <- as.factor(cplab$group)
+#this is becuase people dont actually start using it until 2019-12-01
+#however there are other cases also in wave 1 and 2 who did not receive axa monitoring.
+#so any patients who have 70% or more missing from axa assigned as apttr
+reassign_group_70p <- c("6950251Z","6956232H","6968816C","6935380E","6851184E","6950169G","6857152G","6855137S")
+#this was achieved by viewing clabna.
+
+#cplab <- cplab %>% filter(mrn %in% reassign_group_70p)
+cplab[cplab$mrn %in% reassign_group_70p,]$group <- "apt"
+```
+
+
+```{r now lets use df cplab to calculate first in range values.}
+dfm2 <- cplab %>% 
+    filter((group == "axa" & axarange == "in")|(group == "apt" & apttrrange == "in")) %>% 
+    group_by(mrn) %>% 
+    slice_min(dtm)%>% 
+    ungroup()
+
+gh <- setdiff(pt$mrn,dfm2$mrn)
+#why is this 34 patients not counted in dfm2 ?
+#out of this group, most of them dont have axarange (is either below) and most of their apttrange is above or below.
+#however this group have in range in aptr though they are in axa group.
+z <- c("6853799C","6802209G","6858425U","6858634F")
+#seems like these patients never got in range for AXA.
+
+#now further lookign at it. dfm2 has a duplicated patient with a duplicated time stamp.
+#thus lets remove the one where apttrrange is NA.
+dfm2 <- dfm2[!((dfm2$mrn == "6941358K") & (is.na(dfm2$apttrrange))),]
+```
+
+```{r calc_ttinr}
+#now let us calculate time to first in range.
+#given how all of this would be first time in range
+
+dfm2$fin <- dfm2$dtm - dfm2$datecannulated
+dfm2$fin <- as.numeric(dfm2$fin)
+
+#why is this much worse!
+```
+
+
+
+- Missing anti Xa results 
+- Here again implicit and explicit.
+- implicit missingness is where you dont measure it so it is not counted in your data. But in reality, it is missing.
+-
 
 103375H
 2020-04-01 08:12:00
+
+NB: we will use RLE and length to get drug prescription changes.
+
 # Future Steps
 
 - Is thrombotic complications routinely assesed and documented? - If so this will be useful for analysis.
@@ -410,6 +480,17 @@ dfapt$fapt <- as.numeric(dfapt$fapt)
 - Bland-Altman plot to stamp out bias in underlying measurement methods.
 - Try at Brompton data?
 - Change in circuits ? e.g., Heparin bonded circuits or MAHAMA/NO-doped circuits.
+- frequency of ecmo circuit changes?
+- platlet count, haemoglobin,CRP, LFT 
+
+
+
+
+so units need deciding ? units vs. units/hr vs units/kg/hr
+so kg needs deciding as "NA" vs "TRUE
+
+
+may be that it is not NA but if you generate a time stamp for each time blood is monitored, then those with less frequent will have more NAs?
 
 
 ambition

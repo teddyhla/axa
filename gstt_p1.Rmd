@@ -1,9 +1,9 @@
 ---
-title: "Anti Xa monitoring in ECMO "
-subtitle: "⚔<br/>Journal Club"
+title: "Anti Xa monitoring in ECMO: a preliminary analysis "
+subtitle: "⚔<br/>GSTT Journal Club"
 author: "Teddy Tun Win HLA <br/> Senior Clinical Fellow in Intensive Care Medicine"
 institute: "University College London Hospital "
-date: "2022/02/01 (updated: `r Sys.Date()`)"
+date: "2022/02/09 (updated: `r Sys.Date()`)"
 output: 
   xaringan::moon_reader:
     self_contained : true
@@ -23,16 +23,22 @@ output:
 - Further Steps
 - Discussion
 <br>
+<br>
+- **DISCLAIMER** - My work is in progress and is incomplete. 
+--
 
-```{r}
+```{r initialising, include=FALSE}
 library(knitr)
 library(ggplot2)
 library(plotly)
+library(tidyverse)
+library(survminer)
+library(survival)
+library(kableExtra)
+library(emo)
 source("datatidy.R")
 ```
-
 --
-
 
 <br>
 
@@ -42,7 +48,7 @@ source("datatidy.R")
 
 - Extra corporeal therapies - > anticoagulation. 
 - GSTT - a large volume severe respiratory failure centre providing predominant VV-ECMO service. 
-- Bleeding and thrombotic complications during ECMO are NOT uncommon
+- Bleeding and thrombotic complications during ECMO are NOT uncommon. 
 - __Multiple options__ : Activated Clotting Time (ACT), Activated Partial Thromboplastic time (aPTT),anti-factor Xa (Anti-Xa),prothrombin time and internationalised normal ratio (PT/INR)
 --
 <br>
@@ -57,40 +63,390 @@ source("datatidy.R")
 [1] Paeds ecmo aXa
 [link](https://pubmed.ncbi.nlm.nih.gov/24335992/)
 ]
---
+
 
 ---
 # Is anti-Xa monitoring better?
 
+- Definition of 'better' 
+
+> Better efficacy -- results in improved time in therapeutic range?
+
+--
+
+> Better patient outcomes -- safer/less complications ? 
+
+--
+
+
+> Better provider outcomes -- less monitoring/circuit change/dose change?
+
+---
+# Evaluation of anti-Xa monitoring: a pilot study
 ### Methodology
 - single centre retrospective cohort review with electronic health records interrogation
-- ?Ethics
+- ?Ethics (service evaluation +/-)
+
+--
+
 ### Opportunities
 - Large volume centre
-- COVID viral pneumonia and previous flu pandemic : viral aetiology
-### Clinical Outcomes
+- COVID viral pneumonia(wave1&2) and previous flu pandemic : viral aetiology
+- Timeframe : 01-01-2015 to 01-03-2021
+
+--
+
+### Clinical and Non-Clinical Outcomes
 - Time to first therapeutic range, Time in therapeutic range
 - Bleeding and Thrombotic Complications (e.g., Time to 1st complication)
-### Non Clinical Outcomes
 - Frequency of prescription change (reduced workload on clinical team)
+
 ---
-# Early Findings
-n = 201 (Flu : 80, COVID
-Wave 1 : 59, COVID Wave 2 : 62)
-```{r plot1, echo=FALSE,message = FALSE,warning = FALSE, out.width = "500px",fig.retina=2}
+# Note on Data
 
-p <- ggplot(pt, aes(x=admissiondate,color = cohort))+
-               geom_bar(binwidth = 86400)
+Q1. Are there other anticoag used?
 
-ggplotly(p)
+> A1. No (only heparin)
+
+
+Q2. Ecmo run time used as gold standard?
+
+> A2. Yes
+
+
+Q3. No repeat ecmo runs?
+
+> A3. Yes
+
+Q4. Peak ecmo cannulations - 3 in 24 hours?
+
+> A4. Yes covid. 
+
+
+Q5. Data source?
+
+> A5. EHR heparin prescription, anti-Xa and APTTR results, complications.
+
+---
+# Heparin Prescription and Protocol
+
+Heparin administered in 4 different formats 
+- Heparin units/hour
+- Heparin ECMO Xa infusion units/kg/hour
+- Heparin IV Injection units
+- Heparin RRT Inf 2000 iu units
+- Heparin systemic inf 2000 units units/hour
+
+--
+
+-Thrombotic complications NOT available / included in this analysis.
+
+-Bleeding complications extracted from EHR. 
+
+---
+# Description of Patient Population 
+
+- Sensecheck 
+
+```{r demographics table, echo=FALSE,message = FALSE}
+pt %>% 
+        select(cohort,survivedecmo,ecmorunt) %>%
+        group_by(cohort) %>% 
+        summarise(
+          no_pts = n(),
+          deaths_ecmo = sum(survivedecmo == "no"),
+          crude_mortality_rate = round(deaths_ecmo/no_pts,digits = 2),
+          mean_ecmot = round(mean(ecmorunt),digits = 2),
+          median_ecmot = median(ecmorunt),
+          min_ecmot = min(ecmorunt)
+                  ) %>%
+        kbl(format= "html",full_width = F) %>% 
+          kable_styling()
+        
 ```
 
 ---
-# Missing Data
+# Admission Frequency of ECMO patients
+
+```{r admission_f_plot, echo = FALSE, dpi = 300, fig.width = 6, fig.height = 4}
+
+p2 <- ggplot(data = pt, aes(x = as.Date(admissiondate),colour = cohort)) +
+      geom_bar()+
+      scale_x_date(date_breaks = "6 months",date_minor_breaks = "3 months",date_labels = "%b %Y")+
+      theme_minimal()+
+      theme(axis.text.x = element_text(angle = 45,hjust = 1 ))+
+      labs (x = "Time", title = "ECMO admissions across study period", y = "Admissions per day")
+     
+
+p2
+```
+
 ---
-# Next Steps
+# Age Distribution and Cohort Outcomes
+
+.pull-left[
+
+```{r age,echo=F,dpi=300,fig.width=3,fig.height=3}
+p4 <- ggplot(pt, aes(x = cohort, y= age, fill = cohort)) + 
+        geom_boxplot() +
+        geom_jitter(alpha = 0.4,width = 0.2, aes(colour = cohort))+
+        geom_hline(linetype = 2 , yintercept = 46) +
+        labs(title = "Age distribution across cohorts",subtitle = "Median age 46, Kruskal-Wallis p 0.2",y= "Age / years")+
+        theme_minimal()
+
+p4
+
+```
+
+]
+
+--
+
+.pull-right[
+
+```{r cohort,echo=F,dpi=300,fig.width=3,fig.height=3}
+p5 <- ggplot(data = pt, aes(x = cohort, fill = survivedecmo))+
+    geom_bar(position = "stack") + 
+    theme_minimal()+
+    labs(x = "cohort", y = "Number of Patients",title = "Patients who survived ECMO per cohort", subtitle = "No statistical difference")
+
+p5
+```
+
+
+]
+
+Age : median age is very similar across cohorts.
+
+Mortality : wave 2 is higher but not statistically sig.
+
 ---
-# Discussion
+# Frequency of ECMO Run Times per cohorts
+
+```{r echo = FALSE, dpi = 300}
+p1 <- ggplot(data = pt, aes(x=as.numeric(ecmorunt), colour = cohort)) +
+   geom_freqpoly(binwidth = 5 ) +
+   scale_x_continuous(breaks = seq(0,90,by=10))+
+   theme_minimal()+
+   labs (x = "ECMO run time / days", y = "Patients", title = "Frequency of ECMO run times per cohorts")
+
+ggplotly(p1)
+```
+
+
+---
+# Time on ECMO to outcome
+
+```{r echo = FALSE, dpi = 300, fig.width = 6, fig.height = 4}
+ps <- survfit (Surv(ecmorunt,survivedecmo == "no")~cohort, data = pt)
+
+p6 <- ggsurvplot(
+        ps,
+        pval = TRUE,
+        risk.table = F, 
+        risk.table.col = "cohort",
+        risk.table.height = 0.3,
+        surv.median.line = "hv") + labs (title = "Time on ECMO to outcome",x = "ECMO run time / days",y = "% on ECMO")
+
+p6 
+
+```
+
+---
+# Ecmo run time risk table
+
+```{r echo= F, dpi = 300, fig.width= 6, fig.height=4}
+
+t1 <- ggsurvtable(ps,color = "cohort", data = pt,title = "% on ECMO over time in days")
+t1$risk.table
+
+```
+
+---
+# Anticoagulation
+
+- **NO GOLD** standard monitoring profile.
+
+
+- Several solutions
+
+
+> Time to first therapeutic range
+
+> Time in therapeutic range (TTR)
+
+
+- Most of the information from warfarin / dOAC monitoring.
+---
+
+# Time in therapeutic range defintions
+
+
+| Method       | *Principle*     | Rosendaal            | Traditional            | Cross-sectional                       |
+|--------------|---------------|----------------------|------------------------|---------------------------------------|
+| Numerator    | *Time in Range* | No of days in range  | No of in-range visits  | No of patients in range on last visit |
+| Denominator  | *Total Time*    | Total Monitored Days | Total no of **visits** | Total no of **patients**              |
+ 
+
+- Cross sectional method is not applicable to our population. 
+
+- Traditional method assumes INR is static and binary (in or out of range).
+
+
+- Rosendaal method(1993) assumes INR as dynamic but a **linear** progression between visits.
+- Most studies do not mention method for calculating TTR.
+
+
+---
+# Exploring anticoagulation ranges
+
+- raw data visualisation.
+```{r include=FALSE}
+clab <- clab %>% 
+  group_by(mrn) %>% 
+  mutate(ecmo_day = round(difftime(dtm,datecannulated,units = "days")),ecmo_min = dtm - datecannulated ) %>%
+  ungroup()
+
+clab$ecmo_day <- as.factor(clab$ecmo_day)
+
+ylim1 <- boxplot.stats(clab$axa)$stats[c(1,5)]
+ylim2 <- boxplot.stats(clab$apttr)$stats[c(1,5)]
+
+```
+
+
+.pull-left[
+
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
+p7<-ggplot(data = clab, aes(x = ecmo_day, y = axa)) +
+    geom_boxplot(outlier.shape = NA)+
+    geom_hline(yintercept = c(0.3,0.7),colour = "blue")+
+    coord_cartesian(ylim = ylim1 *1.05)+
+    theme(axis.text.x = element_text(angle = 45))+
+    theme_minimal()+
+    labs(title= "Anti Xa ranges for each ECMO run day",
+         x = "Day on Ecmo",y ="anti-Xa levels",
+         subtitle = "Normal Range 0.3 to 0.7, VTE Range 0.6 to 1.0")
+
+p7
+```
+]
+
+--
+
+.pull-right[
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
+p8<- ggplot(data = clab, aes(x = ecmo_day, y = apttr)) +
+        geom_boxplot(outlier.shape = NA)+
+        geom_hline(yintercept = c(1.5,2.0),colour = "blue")+
+        coord_cartesian(ylim = ylim2 *1.05)+
+        theme(axis.text.x = element_text(angle = 45))+
+        theme_minimal()+
+        labs(title= "APTTR ranges for each ECMO run day",
+         x = "Day on Ecmo",y ="APTTR valuess",
+          subtitle = "Normal Range 1.5 to 2.0, VTE Range 2.0 to 2.5")
+
+p8
+```
+
+]
+
+- **some** encouraging skill that axa patient are in better range.
+
+--- 
+# Exploring by cohorts
+
+.pull-left[
+```{r dpi= 300,fig.width=3,fig.height=3, warning=F,message=F}
+p10 <- p7 +facet_wrap(~cohort)
+p10
+```
+]
+
+.pull-right[
+```{r dpi= 300,fig.width=3,fig.height=3, warning=F,message=F}
+p11 <- p8 + facet_wrap(~cohort)
+p11
+```
+
+]
+
+- **signal** seems preserved. 
+---
+# Time to first therapeutic range
+
+- group assignment problem?
+
+- 1st of November 2019 : **before** apttr monitoring and **after** axa monitoring.
+
+- However, most patients have both apttr and axa sent.
+
+- Likely early trial pre 1/Nov/2019.
+
+- Even after 1st Nov 2019, axa monitoring may not be set (?)
+
+- Some clinical team prefer apttr (?)
+
+- large value of missing AXA value after 1/Nov/2019
+---
+# Missingess
+
+- ** B I G ** topic in EHR analysis.
+
+- Implicit vs. Explicit missing data.
+
+- Explicit : declared as 'NONE' or 'NA' in the database.
+
+- Implicit : simply not present. 
+
+.pull-left[
+![](img/ex.png)
+]
+
+.pull-right [
+![](img/im.png)
+]
+
+- Water?
+- NO water, thus - an empty cup.
+
+---
+# Next Steps- 1/2 
+
+- Complete my analysis.`r emo::ji("smile")`
+
+- Missing data needs cross-checking and perhaps re-extracting. e.g., 2 blood values with same time stamp.
+
+- Need further information on an existing patient popn 
+> thrombotic complications, complete haemorrhagic complications, 
+
+- Proposal to expand patient popn to e.g., 31st Dec 2021
+
+- Further variables on patient such as ethnicity / gender / kidney function / other Rx such as aspirin / Past medical history
+- SOFA score / Hb/ platelet count/ units of bloods transfused/ circuit change data.
+
+- Historical circuit stock e.g., MAHAM/NO doped circuits?
+
+- Bland-Altman approach to interrogate bias in assay measurements.
+
+---
+
+# Next Steps - 2/2 
+
+---
+# Ambition and Discussion
+
+- Trial at other centre - e.g., Brompton ? 
+
+- Expand to ecmo popn OR general ICU popn
+
+- Inference of variables associated with outcomes
+
+- Prediction of 'optimal' dosing (e.g., via app )
+
+- 
 ---
 # Feedback
+
+- I am most grateful for your time and feedback.
 ---

@@ -299,6 +299,7 @@ t1$risk.table
 - Traditional method assumes INR is static and binary (in or out of range).
 - Rosendaal method(1993) assumes INR as dynamic but a **linear** progression between visits.
 - Most studies do not mention method for calculating TTR.
+- would trial a rolling average model.
 
 ### Exploration 
 
@@ -376,6 +377,9 @@ There is 43 patients.
 
 ### Let's try and find first time axa is in range.
 
+# histogram of ecmoruntimes showed a median run time of 13 days.
+#histogram of number of lab results showed a median of 34 days.
+# thus dividing median by median results = 34/13 = 2.6 blood draws per day.
 
 
 ```{r exploring_axa_never_in_range}

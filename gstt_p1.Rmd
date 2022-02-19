@@ -58,6 +58,7 @@ source("datatidy.R")
 - factor VIII, fibrinogen, lupus anticoagulant, acute phase reactants affect apTT
 - Research challenging : due to low volume.
 - small signal aXa may be a superior correlate - paediatric ecmo<sup>1</sup> 
+- theoretical : intra-test variability reduced. 
 
 .footnote[
 [1] Paeds ecmo aXa
@@ -70,16 +71,16 @@ source("datatidy.R")
 
 - Definition of 'better' 
 
-> Better efficacy -- results in improved time in therapeutic range?
+> Better **efficacy** -- results in improved time in therapeutic range?
 
 --
 
-> Better patient outcomes -- safer/less complications ? 
+> Better **patient** outcomes -- safer/less complications ? 
 
 --
 
 
-> Better provider outcomes -- less monitoring/circuit change/dose change?
+> Better **provider** outcomes -- less monitoring/circuit change/dose change?
 
 ---
 # Evaluation of anti-Xa monitoring: a pilot study
@@ -301,6 +302,7 @@ t1$risk.table
 # Exploring anticoagulation ranges
 
 - raw data visualisation.
+
 ```{r include=FALSE}
 clab <- clab %>% 
   group_by(mrn) %>% 
@@ -316,7 +318,6 @@ ylim2 <- boxplot.stats(clab$apttr)$stats[c(1,5)]
 
 
 .pull-left[
-
 ```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
 p7<-ggplot(data = clab, aes(x = ecmo_day, y = axa)) +
     geom_boxplot(outlier.shape = NA)+
@@ -351,20 +352,20 @@ p8
 
 ]
 
-- **some** encouraging skill that axa patient are in better range.
+- **some** encouraging signal that axa patient are in better range.
 
 --- 
 # Exploring by cohorts
 
 .pull-left[
-```{r dpi= 300,fig.width=3,fig.height=3, warning=F,message=F}
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
 p10 <- p7 +facet_wrap(~cohort)
 p10
 ```
 ]
 
 .pull-right[
-```{r dpi= 300,fig.width=3,fig.height=3, warning=F,message=F}
+```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
 p11 <- p8 + facet_wrap(~cohort)
 p11
 ```
@@ -381,15 +382,17 @@ p11
 
 - However, most patients have both apttr and axa sent.
 
-- Likely early trial pre 1/Nov/2019.
+> Likely early trial of anti Xa pre 1/Nov/2019.
 
 - Even after 1st Nov 2019, axa monitoring may not be set (?)
 
 - Some clinical team prefer apttr (?)
 
-- large value of missing AXA value after 1/Nov/2019
+> large value of missing AXA value after 1/Nov/2019
+
+
 ---
-# Missingess
+# Missingness
 
 - ** B I G ** topic in EHR analysis.
 
@@ -403,12 +406,18 @@ p11
 ![](img/ex.png)
 ]
 
+
+
 .pull-right [
 ![](img/im.png)
 ]
 
 - Water?
 - NO water, thus - an empty cup.
+
+|   | No of patients | Blood results | Heparin Prescription | Complications |
+|---|----------------|---------------|----------------------|---------------|
+| n | 201            | 201           | 185                  | 63            |
 
 ---
 # Next Steps- 1/2 
@@ -446,7 +455,11 @@ p11
 
 - 
 ---
-# Feedback
+# Acknowledgements and Feedback
+
+- Many thanks to Dr Andy Retter and Dr Barney Sanderson for data extraction and guidance.
 
 - I am most grateful for your time and feedback.
+
+- THANK YOU
 ---

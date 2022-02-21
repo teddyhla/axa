@@ -602,6 +602,48 @@ nabl <- left_join(
 
 message ("06_all df cleaned")
 
+cttraxa <- clab %>% 
+  select(mrn,axarange,g2,cohort) %>% 
+  filter(g2 == "axa")%>%  
+  group_by(mrn) %>% 
+  count(axarange) %>% 
+  ungroup()
+
+cttraxa <- left_join (cttraxa, clabna %>% select(mrn,erunt,no_lab),by = "mrn")
+
+cttraxa <- cttraxa %>% 
+  filter(axarange == "in") %>%
+  group_by(mrn) %>% 
+  mutate(tradttr = n/no_lab) %>%
+  ungroup()
+
+
+cttrapt <- clab %>% 
+  select(mrn,apttrrange,g2,cohort) %>% 
+  filter(g2 == "apt")%>%  
+  group_by(mrn) %>% 
+  count(apttrrange) %>% 
+  ungroup()
+
+cttrapt <- left_join (cttrapt, clabna %>% select(mrn,erunt,no_lab),by = "mrn")
+
+cttrapt <- cttrapt %>% 
+  filter(apttrrange == "in") %>%
+  group_by(mrn) %>% 
+  mutate(tradttr = n/no_lab) %>%
+  ungroup()
+
+
+cttraxa$g <- "axa"
+cttrapt$g <- "apt"
+
+cttr <- rbind (
+  cttraxa %>% select(mrn,g,tradttr),
+  cttrapt %>% select(mrn,g,tradttr)
+)
+
+cttr$g <- as.factor(cttr$g)
+
 message(
   "Df's 
   pt : clean and engineered and include patient main detail.s

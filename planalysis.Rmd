@@ -473,6 +473,116 @@ dfm2$fin <- as.numeric(dfm2$fin)
 
 NB: we will use RLE and length to get drug prescription changes.
 
+# Time to first anticoagulation analysis
+
+let's make a survival object for time to first (tfirst), event outcome as (yes = achieving in range)
+
+```{r}
+sptf <- survfit (Surv(tfirst,event == "yes")~g2, data = dfg2p)
+
+p13 <- ggsurvplot(
+        sptf,
+        pval = TRUE,
+        fun = "event",
+        risk.table = F, 
+        risk.table.col = "g2",
+        risk.table.height = 0.3,
+        surv.median.line = "hv") + 
+        labs (title = "Time to First Therapeutic Range", ylab = "% in Therapeutic Range",xlab = "Time/hours")
+
+p13
+```
+
+
+
+# Time in therapeutic range.
+
+#First Using traditional approach.
+```{r testcode}
+clab %>% filter (mrn %in% c("5743542Q","5764499G")) %>% group_by(mrn,axarange,apttrrange) %>% summarise(rt = min(ecmorunt), daysinr = n())
+```
+
+let's use g2 as is a more sophisticated definition. 
+```{r}
+cttraxa <- clab %>% 
+          select(mrn,axarange,g2,cohort) %>% 
+          filter(g2 == "axa")%>%  
+          group_by(mrn) %>% 
+          count(axarange) %>% 
+          ungroup()
+
+cttraxa <- left_join (cttraxa, clabna %>% select(mrn,erunt,no_lab),by = "mrn")
+
+cttraxa <- cttraxa %>% 
+            filter(axarange == "in") %>%
+            group_by(mrn) %>% 
+            mutate(tradttr = n/no_lab) %>%
+            ungroup()
+```
+
+By using defintion 2 for grouping , the group breakdowns apt 81 and axa 120.
+out of this 120 in axa, only 106 ever achieve in range. 
+out of this 81 in apt, only 61 achieve in range. 
+
+Comparing this, there is some signal 
+
+let's do the same for apttr. 
+```{r}
+
+cttrapt <- clab %>% 
+          select(mrn,apttrrange,g2,cohort) %>% 
+          filter(g2 == "apt")%>%  
+          group_by(mrn) %>% 
+          count(apttrrange) %>% 
+          ungroup()
+
+cttrapt <- left_join (cttrapt, clabna %>% select(mrn,erunt,no_lab),by = "mrn")
+
+cttrapt <- cttrapt %>% 
+            filter(apttrrange == "in") %>%
+            group_by(mrn) %>% 
+            mutate(tradttr = n/no_lab) %>%
+            ungroup()
+
+```
+
+#intsect(cttraxa$mrn,cttrapt$mrn)
+showed 0. so no overlap. 
+
+```{r}
+cttraxa$g <- "axa"
+cttrapt$g <- "apt"
+
+cttr <- rbind (
+        cttraxa %>% select(mrn,g,tradttr),
+        cttrapt %>% select(mrn,g,tradttr)
+)
+
+cttr$g <- as.factor(cttr$g)
+```
+
+```{r}
+p14 <- ggplot(data = cttr, aes(x = g,y = tradttr,colour = g)) +
+      geom_boxplot()+
+      theme_minimal()+
+      labs (x = "Monitoring Group", 
+            title = "Time in Therapeutic Range Traditional Method", 
+            y = "No in range tests/Total no of tests", 
+            subtitle = "106/120 achieved in range in AXA vs. 61/82 in APT. 
+            Wilcox.test p-value = 0.006
+            Assumptions = effects same over time")
+     
+
+p14
+```
+
+
+# Analysis questions
+
+- does TTR varies over time? are we getting better or worse?
+- does mortality risk varies over time? 
+- does time on ecmo varies over time?
+
 # Future Steps
 
 - Is thrombotic complications routinely assesed and documented? - If so this will be useful for analysis.

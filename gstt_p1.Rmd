@@ -304,7 +304,7 @@ t1$risk.table
 # Visualisation per cohort
 <img src = "p12.png" align = "middle" size = "400px" />
 ---
-# Time to first therapeutic range
+# Time to First therapeutic Range (TFR) : Issues
 
 - group assignment problem?
 
@@ -320,6 +320,55 @@ t1$risk.table
 
 > large value of missing AXA value after 1/Nov/2019
 
+> **DECISION** : Used a pragmatic approach.
+
+---
+# TFR : Finding
+```{r echo = FALSE, dpi = 300, fig.width = 6, fig.height = 4}
+sptf <- survfit (Surv(tfirst,event == "yes")~g2, data = dfg2p)
+
+p13 <- ggsurvplot(
+        sptf,
+        pval = TRUE,
+        fun = "event",
+        risk.table = F, 
+        risk.table.col = "g2",
+        risk.table.height = 0.3,
+        surv.median.line = "hv") + 
+        labs (title = "Time to First Therapeutic Range", ylab = "% in Therapeutic Range",xlab = "Time/hours")
+
+p13
+
+```
+
+--- 
+# Time in therapeutic range 
+
+- Using traditional method (no of in range ~~visits~~ tests / total no of ~~visits~~ tests)
+
+<img src = "p14.png" align = "center" \>
+
+---
+# Time in Therapeutic Range 
+
+
+
+```{r echo=FALSE, fig.height=4, fig.width=6, dpi=300}
+
+p14 <- ggplot(data = cttr, aes(x = g,y = tradttr,colour = g)) +
+      geom_boxplot()+
+      theme_minimal()+
+      labs (x = "Monitoring Group", 
+            title = "Time in Therapeutic Range Traditional Method", 
+            y = "No in range tests/Total no of tests", 
+            subtitle = "106/120 achieved in range in AXA vs. 61/82 in APT. 
+            Wilcox.test p-value = 0.006
+            Assumptions = effects same over time")
+     
+
+p14
+
+```
 
 ---
 # Missingness 1/2
@@ -414,8 +463,8 @@ Truth : Patient X predominantly monitored on apttr but have occassional AXA chec
 ---
 # Acknowledgements and Feedback
 
-- Many thanks to Dr Andy Retter and Dr Barney Sanderson for data extraction and guidance.
+- Many thanks to Dr Andrew Retter and Dr Barnaby Sanderson for data extraction and guidance.
 
 - I am most grateful for your time and feedback.
 
-- THANK YOU
+- Comments ?

@@ -418,7 +418,7 @@ dfg1m <- unique(dfg1m)
 
 
 dfg1 <- dfg1[!((dfg1$mrn == "6941358K")& (is.na(dfg1$apttrrange))),]
-dfg1 <- dfg1[!((dfg1$mrn == "6956232H")& (dfg1$axa < 0.9)),]
+dfg1 <-unique(dfg1)
 
 #That is resolved ! :) 
 
@@ -473,6 +473,7 @@ dfg2m$tfirst <- as.numeric(dfg2m$ecmorunt)
 dfg2p <- rbind(dfg2p,dfg2m)
 dfg2p$event <- as.factor(dfg2p$event)
 
+rm(dfg1m,dfg2m)
 # CLEANING DF 3 of 4 ------
 
 #rename the colnames appropriately.

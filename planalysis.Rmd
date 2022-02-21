@@ -224,7 +224,7 @@ p1 <- ggplot(data = pt, aes(x=as.numeric(ecmorunt), colour = cohort)) +
    theme_minimal()+
    labs (x = "ECMO run time / days", y = "Patients", title = "Frequency of ECMO run times per cohorts")
 
-ggplotly(p1)
+p1
 ```
 
 ### Dose age and cohort effect ECMO survival? 
@@ -497,6 +497,9 @@ so kg needs deciding as "NA" vs "TRUE
 may be that it is not NA but if you generate a time stamp for each time blood is monitored, then those with less frequent will have more NAs?
 
 
+6956232H
+
+6956232H
 ambition
 
 chep %>% group_by(mrn) %>% summarise(changes = length(rle(t_form)$lengths))%>% arrange(changes)%>%View()

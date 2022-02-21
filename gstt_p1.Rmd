@@ -224,14 +224,14 @@ Mortality : wave 2 is higher but not statistically sig.
 ---
 # Frequency of ECMO Run Times per cohorts
 
-```{r echo = FALSE, dpi = 300}
+```{r echo = FALSE, dpi = 300,fig.width = 6, fig.height = 3.5 }
 p1 <- ggplot(data = pt, aes(x=as.numeric(ecmorunt), colour = cohort)) +
    geom_freqpoly(binwidth = 5 ) +
    scale_x_continuous(breaks = seq(0,90,by=10))+
    theme_minimal()+
    labs (x = "ECMO run time / days", y = "Patients", title = "Frequency of ECMO run times per cohorts")
 
-ggplotly(p1)
+p1
 ```
 
 
@@ -297,82 +297,12 @@ t1$risk.table
 - Rosendaal method(1993) assumes INR as dynamic but a **linear** progression between visits.
 - Most studies do not mention method for calculating TTR.
 
-
 ---
-# Exploring anticoagulation ranges
-
-- raw data visualisation.
-
-```{r include=FALSE}
-clab <- clab %>% 
-  group_by(mrn) %>% 
-  mutate(ecmo_day = round(difftime(dtm,datecannulated,units = "days")),ecmo_min = dtm - datecannulated ) %>%
-  ungroup()
-
-clab$ecmo_day <- as.factor(clab$ecmo_day)
-
-ylim1 <- boxplot.stats(clab$axa)$stats[c(1,5)]
-ylim2 <- boxplot.stats(clab$apttr)$stats[c(1,5)]
-
-```
-
-
-.pull-left[
-```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
-p7<-ggplot(data = clab, aes(x = ecmo_day, y = axa)) +
-    geom_boxplot(outlier.shape = NA)+
-    geom_hline(yintercept = c(0.3,0.7),colour = "blue")+
-    coord_cartesian(ylim = ylim1 *1.05)+
-    theme(axis.text.x = element_text(angle = 45))+
-    theme_minimal()+
-    labs(title= "Anti Xa ranges for each ECMO run day",
-         x = "Day on Ecmo",y ="anti-Xa levels",
-         subtitle = "Normal Range 0.3 to 0.7, VTE Range 0.6 to 1.0")
-
-p7
-```
-]
-
---
-
-.pull-right[
-```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
-p8<- ggplot(data = clab, aes(x = ecmo_day, y = apttr)) +
-        geom_boxplot(outlier.shape = NA)+
-        geom_hline(yintercept = c(1.5,2.0),colour = "blue")+
-        coord_cartesian(ylim = ylim2 *1.05)+
-        theme(axis.text.x = element_text(angle = 45))+
-        theme_minimal()+
-        labs(title= "APTTR ranges for each ECMO run day",
-         x = "Day on Ecmo",y ="APTTR valuess",
-          subtitle = "Normal Range 1.5 to 2.0, VTE Range 2.0 to 2.5")
-
-p8
-```
-
-]
-
-- **some** encouraging signal that axa patient are in better range.
-
---- 
-# Exploring by cohorts
-
-.pull-left[
-```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
-p10 <- p7 +facet_wrap(~cohort)
-p10
-```
-]
-
-.pull-right[
-```{r fig.height=3, fig.width=3, message=FALSE, warning=FALSE, dpi=300, include=FALSE}
-p11 <- p8 + facet_wrap(~cohort)
-p11
-```
-
-]
-
-- **signal** seems preserved. 
+# Raw data visualisation
+<img src = "p9.png" align = "middle" size="280px" />
+---
+# Visualisation per cohort
+<img src = "p12.png" align = "middle" size = "400px" />
 ---
 # Time to first therapeutic range
 
@@ -392,68 +322,95 @@ p11
 
 
 ---
-# Missingness
+# Missingness 1/2
 
 - ** B I G ** topic in EHR analysis.
 
 - Implicit vs. Explicit missing data.
 
 - Explicit : declared as 'NONE' or 'NA' in the database.
-
 - Implicit : simply not present. 
 
-.pull-left[
-![](img/ex.png)
-]
+<img src= "img/ex.png" width = "25%" align = "right"/>
+
+<img src = "img/im.png" width = "25%" align = "left" />
 
 
+ Water?
 
-.pull-right [
-![](img/im.png)
-]
-
-- Water?
-- NO water, thus - an empty cup.
+<br>
+<br>
 
 |   | No of patients | Blood results | Heparin Prescription | Complications |
 |---|----------------|---------------|----------------------|---------------|
 | n | 201            | 201           | 185                  | 63            |
 
 ---
-# Next Steps- 1/2 
+# Missingness 2/2 
+
+Truth  1: Patient X, 3 days on VV-ECMO, 3 anti-Xa checks, 6 APTTR checks 
+
+Dataframe
+
+| Patient | Timestamp    | anti Xa value | apttr value |
+|---------|--------------|---------------|-------------|
+| X       | day 1 AM     | 0.5           | 1.5         |
+| X       | day 1 PM     | NA            | 1.7         |
+| X       | day 2 AM     | 0.6           | 1.4         |
+| X       | ... day 3 PM | NA            | 1.5         |
+
+vs. 
+
+Truth : Patient X predominantly monitored on apttr but have occassional AXA checks
+
+---
+# Next Steps WITH current data- 1/2 
 
 - Complete my analysis.`r emo::ji("smile")`
 
 - Missing data needs cross-checking and perhaps re-extracting. e.g., 2 blood values with same time stamp.
 
+- Need input from clinician (i.e., you) on what is appropriate. 
+
 - Need further information on an existing patient popn 
-> thrombotic complications, complete haemorrhagic complications, 
 
-- Proposal to expand patient popn to e.g., 31st Dec 2021
+> e.g., thrombotic complications, complete haemorrhagic complications, 
 
-- Further variables on patient such as ethnicity / gender / kidney function / other Rx such as aspirin / Past medical history
-- SOFA score / Hb/ platelet count/ units of bloods transfused/ circuit change data.
-
-- Historical circuit stock e.g., MAHAM/NO doped circuits?
-
-- Bland-Altman approach to interrogate bias in assay measurements.
+- Other approaches (e.g., Bland-Altman) to interrogate bias in assay measurements.
 
 ---
 
-# Next Steps - 2/2 
+# Next Steps WITH MORE data - 2/2 
+
+- Further variables on patient information : 
+    - ethnicity / gender / renal function / other Rx e.g., aspirin / Past medical history
+    - SOFA score at admission / Hb/ plts
+    - no of red cells / platelets transfused 
+
+- Circuit information?
+    - Historical circuit stock e.g., MAHAM/NO doped circuits?
+    - circuit change frequencies
+
+- Proposal to expand patient popn to e.g., 31st Dec 2021
 
 ---
 # Ambition and Discussion
 
-- Trial at other centre - e.g., Brompton ? 
 
 - Expand to ecmo popn OR general ICU popn
+> Risk : minimal as easily scaleable, potentially messier data with more heterogeneous popn.
+> Benefits : larger volume. 
 
 - Inference of variables associated with outcomes
+> Risks vs. benefits as per above. 
 
 - Prediction of 'optimal' dosing (e.g., via app )
+> Risks : prediction / validation / app development pipeline
 
-- 
+- Validation with other centre data - e.g., Brompton ? 
+> Risks : access to data
+> Benefits : potentially multi-centre data.
+
 ---
 # Acknowledgements and Feedback
 
@@ -462,4 +419,3 @@ p11
 - I am most grateful for your time and feedback.
 
 - THANK YOU
----

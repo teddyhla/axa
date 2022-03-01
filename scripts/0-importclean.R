@@ -2,7 +2,7 @@
 
 # 0.  INITIALISING ------
 ## load necessary packages
-pkgs <- c("tidyverse","readxl","lubridate","compare","tidylog")
+pkgs <- c("tidyverse","readxl","lubridate","compare")
 lapply(pkgs,require,character.only = TRUE)
 
 # 1. READING DATA -----

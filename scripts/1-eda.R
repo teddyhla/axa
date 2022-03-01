@@ -4,17 +4,17 @@
 
 ## 0. Source the original script.-----
 
-source("/scripts/0-importclean.R")
+source("scripts/0-importclean.R")
 
 message ("0 - necessary packages loaded.")
 
 message ("1 - source script run and loaded.")
 
 
-## 3.2. Creating a dataframe to explore duration of lab values ----
+## 1.1. Creating a dataframe 'checkdf' to explore duration of lab values ----
 
 ###We need to explore NA and their impact on data. Whether there is a pattern?
-### The data range of each patient should corespond to ecmo run times.
+### The data range of each patient should correspond to ecmo run times.
 ### In the absence, we will use ecmo run time as gold standard.
 ### We will use day instead of individual second/ hour difference for clinical impact. 
 
@@ -46,7 +46,7 @@ checkdf[(checkdf$ecmorunt - checkdf$labd >0 ),]
 #),6855512Y(missing data 2/3 days pre),
 rm(tdiff,labdur)
 
-## 3.3 Creation of columns which have tolerance of 1 +/- of ecmo run times to subset lab values. ----
+## 1.2.  Creation of clean lab values 'clab' s which have tolerance of 1 +/- of ecmo run times ----
 
 #now we will look at NA's within those ranges. 
 #lets make new columns where we give a tolerance of +1 or -1 day of ecmo duration.
@@ -66,12 +66,14 @@ clab <- labecmodur %>%
         group_by (mrn) %>% 
         filter (dtm >= dateprecan & dtm <dateDEplus1) %>% 
         ungroup()
-#clab is a dataframe where blood values are subsettd by ecmo duration +1 day pre ecmo and 1 day post ecmo.
+#clab is a dataframe where blood values are subsetted by ecmo duration +1 day pre ecmo and 1 day post ecmo.
 #then we will find out how much NA's there are.
 #this reduces to 9280 entries from 12309 entries
 
 #lets make sense of this NA value by appending cohort information.
-## 3.4. Exploring missing data NA values within this range. ----
+## 1.3.a. Creating 'clabna' dataframe to explore missingness ----
+
+#visdat::vis_dat(clab) #showed that the missingness of AXA and APTTR are not random.
 
 clabna<- clab %>% 
         select(mrn,axa,apttr,cohort,dtm,ecmorunt)%>%
@@ -107,7 +109,7 @@ clabna <- full_join(
 rm(c2,labecmodur)
 
 
-message("04_Clean lab df to explore NA calues : clabna is ready.")
+message("04_ lab cleaned to create 'clab' and 'clabna'.")
 #let's explore maximum , median, mean, and minimum NA's per axa apttr in each pt.
 
 # we need to adjust missing data per ecmo run times.
@@ -116,14 +118,15 @@ message("04_Clean lab df to explore NA calues : clabna is ready.")
 #histogram of number of lab results showed a median of 34 days.
 # thus dividing median by median results = 34/13 = 2.6 blood draws per day.
 #so if there is a missing data but it is still less than 2.6 blood draws per day than its ok.
+# this may not be correct as axa monitoring may require less blood draws.
 
 #note 1st Nov 2019 is where we switch.
 
 #manual inspection  of the data verified missing data for APTTR is acceptable for flu cohort.
-# manual inspection oft he data for AXA
+# manual inspection of the data for AXA
 
 #NOTE although axa is demarcated from 1st november - 5th november cannulation is still using apttr
-### 3.4.a clabna2 df is now genrated which showed patients in axa monitoring group but really uses apttr.-----
+### 1.3.b. Creating 'clabna2' which showed patients in axa monitoring group but really uses apttr.-----
 
 clabna2 <- clabna[,c("mrn","no_lab","na_axa","erunt","cohort","datecannulated","missingaxa","na_apttr")]
 clabna2 <- clabna2 %>% filter(missingaxa < 1 & cohort != "Flu")
@@ -133,12 +136,12 @@ clabna2 <- clabna2 %>% filter(missingaxa < 1 & cohort != "Flu")
 #       "5277619S","6852899A","6855137S",
 #       "6857152G","6860416Y","6935380E","6950251Z","6956232H","6968816C","5277619S")
 #d %in% clabna2$mrn 
+
 #all true here 
-# some consultants prefer apttr
+# some consultants prefer apttr?
 
 
-
-## 3.5. Creation of column where axa / apttr are in/out of range ----
+## 1.4. Appending 'clab' with columns - axarange and apttrrange for whether axa apttr by range status ----
 #now lets make a column where we label in and out of range for apttr and axa, bearing in mind PE patients.
 pt %>% filter(pe == "yes") %>% select(mrn)
 #this code showed that patients with PE have MRN 6513466R, and 6584394E.
@@ -182,7 +185,7 @@ rm(clabpe,clabnpe,checkdf,labdur,labecmodur)
 
 
 
-## 3.6. Creating a day on ecmo column  ----
+## 1.5. Appending 'clab' with day on ecmo 'ecmo_day' column  ----
 
 #let's create a day on ecmo column to append to each row.
 
@@ -194,15 +197,15 @@ clab <- clab %>%
 clab$ecmo_day <- as.factor(clab$ecmo_day)
 
 
-## 3.7. Creating a column assigning monitoring groups ----
+## 1.6. Appending 'clab' with column 'g' to designate monitoring group -----
+
 #lets think about assigning group.
 
 # Several ways of assigning groups 
 
 
 
-
-### 3.7.a. Using a simple defintion ----
+### 1.6.a. Using a simple definition ----
 
 #axa monitoring was established on 1 Nov 2019. Thus any date before should be apttr and those after would be axa. 
 
@@ -212,7 +215,7 @@ clab$g1 <- as.factor(clab$g1)
 #clab %>% count(g1,mrn) %>% summary() 
 # this showed that there is 72 people apt and 129 in axa groups.
 
-### 3.7.b. Using a different defintion -----
+### 1.6.b. Using a sophisticated definition -----
 
 #to do this we need to review the clabna df.
 
@@ -236,7 +239,9 @@ clab$g2 <- as.factor(clab$g2)
 # now there is 81 in apt group and 120 in axa group. 
 
 
-## 3.8.a. Now let's count the first time axa/apt get in range using g1 definitions. ----
+## 1.7.a. Creating a new df 'dfg1p' that measure time to first in range for monitoring group 'g1' ----
+
+# Now let's count the first time axa/apt get in range using g1 definitions.
 dfg1 <- clab %>%
         select(mrn,dtm,ecmorunt,cohort,datecannulated,axarange,apttrrange,ecmo_day,g1)%>% 
         filter((g1 == "axa" & axarange == "in")|(g1 == "apt" & apttrrange == "in")) %>% 
@@ -259,14 +264,16 @@ dfg1m <- unique(dfg1m)
 dfg1 <- dfg1[!((dfg1$mrn == "6941358K")& (is.na(dfg1$apttrrange))),]
 dfg1 <-unique(dfg1)
 
+#dfg1m is 35, dfg1 is 166 = sum is 201.
+
 #That is resolved ! :) 
 
 #let's calculate the time to first in range.
 dfg1$tfirst <- dfg1$dtm - dfg1$datecannulated
 dfg1$tfirst <- as.numeric(dfg1$tfirst)
-#now let's assign 'event as yes' becuase they all achieved 'event.
+#now let's assign 'event as yes' because they all achieved 'event.
 
-#tfirst for dfg1m should be ecmorunt and event shoudl be no as they NEVER achieve it.
+#tfirst for dfg1m should be ecmorunt and event should be no as they NEVER achieve it.
 #let's create a sepearte df. 
 #dfg1p for processed. 
 
@@ -279,9 +286,9 @@ dfg1m$tfirst <- as.numeric(dfg1m$ecmorunt)
 
 dfg1p <- rbind(dfg1p,dfg1m)
 dfg1p$event <- as.factor(dfg1p$event)
-dfg1p <- unique(dfg1p)
 
-### 3.8.b. let's use a g2 definiton for same treatmnet -----
+
+### 1.7.b. Creating a new df 'dfg2p' that measures ttfr for monitoring group 'g2' -----
 
 dfg2 <- clab %>%
         select(mrn,dtm,ecmorunt,cohort,datecannulated,axarange,apttrrange,ecmo_day,g2)%>% 
@@ -289,7 +296,6 @@ dfg2 <- clab %>%
         group_by(mrn) %>%
         slice_min(dtm)%>% 
         ungroup()  
-
 
 dfg2m <- setdiff(pt$mrn,dfg2$mrn)  
 dfg2m <- clab %>% select(mrn,g2,ecmorunt,cohort,datecannulated) %>% filter(mrn %in% dfg2m)
@@ -300,6 +306,7 @@ sum(duplicated(dfg2$mrn))
 # this showed that 6941358K is the duplicated.
 dfg2 <- dfg2[!((dfg2$mrn == "6941358K")& (is.na(dfg2$apttrrange))),]
 
+#calculating tfirst
 dfg2$tfirst <- dfg2$dtm - dfg2$datecannulated
 dfg2$tfirst <- as.numeric(dfg2$tfirst)
 
@@ -312,10 +319,9 @@ dfg2m$tfirst <- as.numeric(dfg2m$ecmorunt)
 dfg2p <- rbind(dfg2p,dfg2m)
 dfg2p$event <- as.factor(dfg2p$event)
 
-rm(dfg1m,dfg2m)
 
+# 2.0. Creating a new clean 'chep' df -
 
-# 3.2. Explorign heparin missingness 
 #Likewise we will subset heparin prescriptions with ecmoruntimes.
 #unlike blood tests prescriptions should be more or less the same as cannulation and decan.
 hep <- full_join(
@@ -329,6 +335,13 @@ chep <- hep %>%
         group_by(mrn) %>%
         filter(chart_t >= datecannulated & chart_t <= dateDEcannulated) %>%
         ungroup()
+
+
+# neeed to explore duplicated data.
+sum(duplicated(chep)) 
+#showed that there is 21 duplicated in chep.
+
+#there is a vast diff between chep and hep. why?
 
 #let's explore if there are implicit missing data by comparing with ecmoruntimes.
 
@@ -376,6 +389,8 @@ nabl <- left_join(
 # 6971769E missing 4 
 
 message ("06_all df cleaned")
+
+# cttr is for cumulative time in therapeutic range data engineering.
 
 cttraxa <- clab %>% 
         select(mrn,axarange,g2,cohort) %>% 

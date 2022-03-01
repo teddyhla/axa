@@ -24,6 +24,14 @@ font-family: 'Assistant', sans-serif;
 }
 </style>
 
+# TO-DO
+- explore missingess and label  'missingess at random' vs'missingess not at random' vs. missingess at completely random'.
+- explore no of lab draws 
+- explore those who dont reach targets and mortality
+- explore icu survivability vs. ecmo survivability i.e., are patients dying on ecmo contributing to icu mortality or is it in post ecmo phase
+- explore time to in range vs. time to mortality
+- explore rosenfeld method and need definition for method.
+- are the patients who never got into range those who are never anticoagulated? 
 
 # Introduction
 
@@ -171,7 +179,7 @@ library(tidylog)
 
 ### Source the cleaned files
 ```{r loading_source, message=TRUE,warning=FALSE}
-source("datatidy.R")
+source("scripts/0-importclean.R")
 ```
 
 

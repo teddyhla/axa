@@ -1,0 +1,46 @@
+---
+title: "Which anticoagulation monitoring is 'better' in ecmo?"
+author: "teddyhla"
+date: "r Sys.date()"
+output: 
+  html_document:
+    number_sections : TRUE
+    toc : true
+    toc_float : true
+    theme : cosmo
+---
+
+```{r}
+#source code
+```
+
+
+Decisions for main s1 df. 
+- past medical history is generally negative except for 
+1. biopsy proven cirrhosis - 1 patient 
+2. severe respiratory disease - 1 patient 
+3. hiv - 2 patients
+4. long term steroid usage- 3 patients
+5. metastatic disease  - 1 patient 
+6. congenital immunodeficiency - 2 patient
+
+- second venous access for ecmo are negative, thus this column is removed. 
+
+- there are no i.e., 0 arterial returns. ie. all VV ecmo's
+Thus only these columns are kept.
+
+
+Decisions for s5 df 
+- aspirin - only 2 pts
+- clopidogrel - only 1 patient
+- warfarin, rivaroxaba,apixaban,  - 0 patients
+- ibuporfen liquid - only 2 patients 
+- diclofenac inj / diclofenac supp - 0 
+- hydrocort tab - 0 
+- ca_sando only few 
+- txa _tab is only 1 patient
+txa  _ top is 0 patient 
+
+
+
+

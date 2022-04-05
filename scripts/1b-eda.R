@@ -253,15 +253,23 @@ pt_without_hydrocortinfus <- setdiff(ptid,unique(s6$id))
         
 s6$hyrocort_inf_mghr <- as.double(s6$hydrocort_inf_mghr)
 
-
+message("Cleaning s6 is complete. ")
 #### Clearning s7----
 colnames(s7) <- c("id","chart_t","txa_inf_mghr")
 pt_without_txainfus <- setdiff(ptid,unique(s7$id))
 s7$txa_inf_mghr <- as.double(s7$txa_inf_mghr)
 
+message("Cleaning s7 is complete. ")
+
 #### Cleaning s8----
 colnames(s8) <- c("id","short_label","t_form","unit","chart_t")
 pt_without_bldproducts <- setdiff(ptid,unique(s8$id))
+
+message("Cleaning s8 is complete. ")
+
+#### Renaming dataframes to something sensible -----
+
+message("master cleaning is complete.")
 
 
 

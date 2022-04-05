@@ -11,6 +11,11 @@ message ("0 - necessary packages loaded.")
 message ("1 - source script run and loaded.")
 
 
+###Step 1 are designed to clean and engineer lab values df. 
+###1.3.a. is exploring missingness
+### 1.4 to 1.5. is data engineering to append some other additional information.
+### 1.6. to 1.7 is assigning group and calculating time to first therapeutic range 'tfirst' in hours .
+
 ## 1.1. Creating a dataframe 'checkdf' to explore duration of lab values ----
 
 ###We need to explore NA and their impact on data. Whether there is a pattern?
@@ -320,8 +325,15 @@ dfg2p <- rbind(dfg2p,dfg2m)
 dfg2p$event <- as.factor(dfg2p$event)
 
 
-# 2.0. Creating a new clean 'chep' df -
 
+## Now Step 2 - we are going to address heparin prescriptions in hep df.
+#Note that all the heparin prescription absences take into account stopped prescriptions.
+# there is a meaning behind missing data.
+
+# 2.0. Creating a new clean 'chep' df -----
+
+
+# 2.1. First assigning a groups g1 and g2 as per previous ----
 #Likewise we will subset heparin prescriptions with ecmoruntimes.
 #unlike blood tests prescriptions should be more or less the same as cannulation and decan.
 hep <- full_join(
@@ -329,6 +341,19 @@ hep <- full_join(
         pt %>% select(mrn,cohort,datecannulated,dateDEcannulated,ecmorunt),
         by = "mrn"
 )
+#we should also append g1 and g2 to hep
+
+hep$g1 <- ifelse(hep$datecannulated < as.Date("2019-11-01"),"apt","axa")
+hep$g1 <- as.factor(hep$g1)
+#simpler group g1 assignment
+
+## g2 assignment
+
+hep$g2 <- ifelse(hep$datecannulated < as.Date ("2019-11-06"),"apt","axa")
+# using reassign1 vector from earlier. 
+
+hep[hep$mrn %in% reassign1,]$g2 <- "apt"
+hep$g2 <- as.factor(hep$g2)
 
 #now subset into clean dataframe.
 chep <- hep %>% 
@@ -336,6 +361,34 @@ chep <- hep %>%
         filter(chart_t >= datecannulated & chart_t <= dateDEcannulated) %>%
         ungroup()
 
+
+### 2.2. Adding patients who never received heparin ---- 
+#lets add patients who never receive hepearin.
+nh <- setdiff(unique(pt$mrn),unique(chep$mrn))
+heparinever <- sprintf("never",1:16)
+
+nh_df <- data.frame(nh,heparinever)
+names(nh_df) <- c("mrn","heparinever")
+#nh %in% chep is all false so it checked out.
+
+chep$heparinever <- "yes"
+chep <- full_join(
+        chep,
+        nh_df,
+        by = "mrn"
+        
+)
+
+chep$heparinever <- paste(chep$heparinever.x,chep$heparinever.y)
+#paste the two columns
+#then delete the .x and .y's
+
+chep <- chep %>% select(-c(heparinever.x,heparinever.y))
+
+chep$heparinever <- as.factor(chep$heparinever)
+levels(chep$heparinever) <- c("never","yes")
+
+#this way all patients who never received heparin are appended.
 
 # neeed to explore duplicated data.
 sum(duplicated(chep)) 
@@ -362,10 +415,25 @@ nahep <- left_join(
 
 #okay cool so we can use rle and length to get the number of drug prescription changes.
 
-
+#### 3.0. exploring complications from 'bl' df. ----
 
 #now we will explore the explicit missing data.
 
+### 3.1. we should try and add some group info to bl. ----
+
+bl$g1 <- ifelse(bl$datecannulated < as.Date("2019-11-01"),"apt","axa")
+bl$g1 <- as.factor(bl$g1)
+##treatment for g1
+
+
+bl$g2 <- ifelse(bl$datecannulated < as.Date ("2019-11-06"),"apt","axa")
+# using reassign1 vector from earlier. 
+
+bl[bl$mrn %in% reassign1,]$g2 <- "apt"
+bl$g2 <- as.factor(bl$g2)
+
+
+### 3.2. exploring NA values.----
 
 nabl <- bl %>%
         group_by(mrn) %>% 
@@ -389,49 +457,3 @@ nabl <- left_join(
 # 6971769E missing 4 
 
 message ("06_all df cleaned")
-
-# cttr is for cumulative time in therapeutic range data engineering.
-
-cttraxa <- clab %>% 
-        select(mrn,axarange,g2,cohort) %>% 
-        filter(g2 == "axa")%>%  
-        group_by(mrn) %>% 
-        count(axarange) %>% 
-        ungroup()
-
-cttraxa <- left_join (cttraxa, clabna %>% select(mrn,erunt,no_lab),by = "mrn")
-
-cttraxa <- cttraxa %>% 
-        filter(axarange == "in") %>%
-        group_by(mrn) %>% 
-        mutate(tradttr = n/no_lab) %>%
-        ungroup()
-
-
-cttrapt <- clab %>% 
-        select(mrn,apttrrange,g2,cohort) %>% 
-        filter(g2 == "apt")%>%  
-        group_by(mrn) %>% 
-        count(apttrrange) %>% 
-        ungroup()
-
-cttrapt <- left_join (cttrapt, clabna %>% select(mrn,erunt,no_lab),by = "mrn")
-
-cttrapt <- cttrapt %>% 
-        filter(apttrrange == "in") %>%
-        group_by(mrn) %>% 
-        mutate(tradttr = n/no_lab) %>%
-        ungroup()
-
-
-cttraxa$g <- "axa"
-cttrapt$g <- "apt"
-
-cttr <- rbind (
-        cttraxa %>% select(mrn,g,tradttr),
-        cttrapt %>% select(mrn,g,tradttr)
-)
-
-cttr$g <- as.factor(cttr$g)
-
-# all 

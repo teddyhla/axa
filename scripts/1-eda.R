@@ -49,7 +49,7 @@ checkdf[(checkdf$ecmorunt - checkdf$labd >0 ),]
 
 #except 6381359H (missing data 3 days on blood but towards the end so shouldnt be a proble,
 #),6855512Y(missing data 2/3 days pre),
-rm(tdiff,labdur)
+rm(tdiff)
 
 ## 1.2.  Creation of clean lab values 'clab' s which have tolerance of 1 +/- of ecmo run times ----
 
@@ -111,7 +111,7 @@ clabna <- full_join(
         c2 %>% select(mrn,missingaxa,missingapttr),
         by = "mrn"
 )
-rm(c2,labecmodur)
+rm(c2)
 
 
 message("04_ lab cleaned to create 'clab' and 'clabna'.")
@@ -131,7 +131,7 @@ message("04_ lab cleaned to create 'clab' and 'clabna'.")
 # manual inspection of the data for AXA
 
 #NOTE although axa is demarcated from 1st november - 5th november cannulation is still using apttr
-### 1.3.b. Creating 'clabna2' which showed patients in axa monitoring group but really uses apttr.-----
+#### 1.3.b. Creating 'clabna2' which showed patients in axa monitoring group but really uses apttr.-----
 
 clabna2 <- clabna[,c("mrn","no_lab","na_axa","erunt","cohort","datecannulated","missingaxa","na_apttr")]
 clabna2 <- clabna2 %>% filter(missingaxa < 1 & cohort != "Flu")
@@ -329,7 +329,7 @@ dfg2p$event <- as.factor(dfg2p$event)
 ## Now Step 2 - we are going to address heparin prescriptions in hep df.
 #Note that all the heparin prescription absences take into account stopped prescriptions.
 # there is a meaning behind missing data.
-
+message("dfg1p and dfg2p as per different group definitions ready. ")
 # 2.0. Creating a new clean 'chep' df -----
 
 
@@ -413,6 +413,8 @@ nahep <- left_join(
         by = "mrn"
 )
 
+message("hep ready in chep, nahep and nh_df")
+
 #okay cool so we can use rle and length to get the number of drug prescription changes.
 
 #### 3.0. exploring complications from 'bl' df. ----
@@ -455,5 +457,15 @@ nabl <- left_join(
 # 6929427Q 8.25 to 24 char duration vs ecmoruntime
 # 6956374C chart duration >> ecmoruntime
 # 6971769E missing 4 
+
+message("ONE BEFORE LAST : bl is ready")
+
+dfs <- data.frame(dfnames = c("bl","nabl","nh_df","chep","nahep"),
+        explanation = c("bleeding complications with monitoring group1 and 2 attached",
+                "bl with missing values NOTE g1 and g2 not attached ",
+                "pts who never have heparin",
+                "clean heparin df",
+                "nahep is NA vals in hep df"
+                ))
 
 message ("06_all df cleaned")

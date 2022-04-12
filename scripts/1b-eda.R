@@ -1,5 +1,5 @@
 #### 1. LOAD DATA -----
-
+library(tidyverse)
 ###import new dataset
 s0 <- readRDS("data/axa_anonymised_data_20220402.rds")
 
@@ -145,7 +145,7 @@ s1$pmh <- as.factor(s1$pmh)
 # sum(duplicated(s1$id)) 
 #now let's check the numerical variables
 #actually all the numerical variables look fairly clean.
-
+ptid <- unique(s1$id)
 s1 <- subset(
         s1, 
         select= - c(
@@ -155,11 +155,14 @@ s1 <- subset(
 rm(fts1)
 message("Cleaning s1 is complete.")
 
+df_m <- s1 
+rm(s1)
+message ("s1 is now df_m")
 ##### 3.1 Cleaning s2-----
 colnames(s2) <- c(
         "id","chart_t","short_label","terse_form","unit","kg"
 )
-ptid <- unique(s1$id)
+
 #correct col names
 # now let's check all the patient are in this heparin prescrition
 
@@ -173,6 +176,10 @@ s2$terse_form <- as.double(s2$terse_form)
 s2$unit <- as.factor(s2$unit)
 
 message("Cleaning s2 is complete.")
+df_h <- s2
+rm(s2)
+
+message("Dataframe s2 is now df_h")
 
 ###### 4.1. Cleaning s3-----
 
@@ -188,6 +195,9 @@ s3$axa <- as.double(s3$axa)
 s3$apttr <- as.double(s3$apttr)
 
 message("Cleaning s3 is complete.")
+df_coag <- s3
+rm(s3)
+message("s3 is now df_coag")
 
 #####-5.1. Cleaning s4 ------
 
@@ -214,6 +224,10 @@ nums4 <- nums4[3:20]
 s4[nums4] <- lapply(s4[nums4],as.double)
 
 message("Cleaning s4 is complete.")
+
+df_bl <- s4
+rm(s4)
+message("s4 is now df_bl")
 
 ###### ----- Cleaning s5 ----
 
@@ -243,6 +257,11 @@ nums5 <- nums5[3:32]
 s5[nums5] <- lapply(s5[nums5],as.double)
 
 #need to drop columns that has 0  or all NA.
+message("Cleaning s5 is complete.")
+
+df_rx <- s5
+rm(s5)
+message("s5 is now df_rx")
 
 ##### Cleaning s6------
 
@@ -251,25 +270,44 @@ colnames(s6) <- c("id","chart_t","hydrocort_inf_mghr")
 pt_without_hydrocortinfus <- setdiff(ptid,unique(s6$id))
 #only 44 patients have hydrocortisone infusion
         
-s6$hyrocort_inf_mghr <- as.double(s6$hydrocort_inf_mghr)
+s6$hydrocort_inf_mghr <- as.double(s6$hydrocort_inf_mghr)
 
 message("Cleaning s6 is complete. ")
+df_hydrocort <- s6
+rm(s6)
+message("s_6 is now df_hydrocort")
+
 #### Clearning s7----
 colnames(s7) <- c("id","chart_t","txa_inf_mghr")
 pt_without_txainfus <- setdiff(ptid,unique(s7$id))
 s7$txa_inf_mghr <- as.double(s7$txa_inf_mghr)
 
 message("Cleaning s7 is complete. ")
+df_txa <- s7
+rm(s7)
+message("s7 is now df_txa")
 
 #### Cleaning s8----
 colnames(s8) <- c("id","short_label","t_form","unit","chart_t")
 pt_without_bldproducts <- setdiff(ptid,unique(s8$id))
 
-message("Cleaning s8 is complete. ")
+s8$short_label <- as.factor(s8$short_label)
+levels(s8$short_label) <- c(
+        "cryo", "cryo","cryo","cryo_2_pools","ffp","plt","prbcs"
+)
+s8$t_form <- as.double(s8$t_form)
+#this needs checking as data looks a bit confusing. 75 units is it major hemorrhage
+#?
+s8$unit <- as.factor(s8$unit)
+levels(s8$unit) <- c("unit")
 
+message("Cleaning s8 is complete. ")
+df_prd <- s8
+rm(s8)
+message("s8 is now df_prd ")
 #### Renaming dataframes to something sensible -----
 
-message("master cleaning is complete.")
+message("master cleaning is complete and dataframes ready." )
 
 
 

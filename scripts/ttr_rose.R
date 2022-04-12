@@ -1,4 +1,4 @@
-
+library(tidyverse)
 #### Custom function for calculation of TTR ----
 ttrs<- function (x,y, lower = 1.9999 , upper = 3.00001,na.rm = TRUE){
         #formula for ttr calculation using linear interpol
@@ -88,6 +88,4 @@ testna <- data.frame (
         v2 = c(1.5,2.0,NA,2.5,NA)
 )
        
-#Here the code seem to have broken - e.g., v1= NA and 1.5 = NA works, 
-#but 3.0 and 2.5 shouldnt result in NULL vlaue.
-# whereas 3.1 and 2.4 result in 0.857. so 3.0 and 2.5 shouldn't have a NULL value.
+#it works with NA

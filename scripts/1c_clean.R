@@ -1,7 +1,8 @@
 #### 1. LOAD DATA -----
 library(tidyverse)
 ###import new dataset
-s0 <- readRDS("data/axa_anonymised_data_20220402.rds")
+s0 <- readRDS("data/axa_NONanonymised_data_20220506.rds")
+
 
 #turned out s0 primary data source is a nested list of 8 lists.
 #
@@ -9,18 +10,20 @@ s0 <- readRDS("data/axa_anonymised_data_20220402.rds")
 s1 <- dplyr::as_tibble(s0[1][1])
 #patient list
 s2 <- dplyr::as_tibble(s0[2][1])
-#heparin administration
+#id_lookups
 s3 <- dplyr::as_tibble(s0[3][1])
-#coag lab result
+#heparin administration
 s4 <- dplyr::as_tibble(s0[4][1])
-#other lab result
+#coag results
 s5 <- dplyr::as_tibble(s0[5][1])
-#other meds
+#other labs
 s6 <- dplyr::as_tibble(s0[6][1])
-#hydrocortisone infusion
+#other meds
 s7 <- dplyr::as_tibble(s0[7][1])
-#tranexemic acid
+#hydrocortisone
 s8 <- dplyr::as_tibble(s0[8][1])
+#txa
+s9 <- dplyr::as_tibble(s0[9][1])
 #blood products
 
 
@@ -32,6 +35,7 @@ s5 <- lapply(s5,data.frame,stringsAsFactors = FALSE)
 s6 <- lapply(s6,data.frame,stringsAsFactors = FALSE)
 s7 <- lapply(s7,data.frame,stringsAsFactors = FALSE)
 s8 <- lapply(s8,data.frame,stringsAsFactors = FALSE)
+s9 <- lapply(s9,data.frame,stringsAsFactors = FALSE)
 #apply as df 
 
 s1 <- plyr::rbind.fill(s1)
@@ -42,31 +46,107 @@ s5 <- plyr::rbind.fill(s5)
 s6 <- plyr::rbind.fill(s6)
 s7 <- plyr::rbind.fill(s7)
 s8 <- plyr::rbind.fill(s8)
+s9 <- plyr::rbind.fill(s9)
 #use rbind fill 
+
+##########SECRETS
+s2 <- dplyr::left_join(s2,
+                       s1 %>% select(mrn, name),
+                       by = "mrn")
+
+# cleaning ----------------------------------------------------------------
 
 
 ###### 2.0. DATA CLEAN and VERIFY ####
 names(s1) <- tolower(names(s1))
 #convert to lower case col names
+s1 <- select(s1,-(name))
 
-fts1 <- c("cohort","diagnosis_category","mode","venous_access_1","venous_return","arterial_return","survived_ecmo","survived_icu","ethnic","sex",
-          "biopsy_proven_cirrhosis","portal_hypertension","hepatic_encephalopathy","very_severe_cardiovascular_disease",
-          "severe_respiratory_disease","home_ventilation","chronic_renal_replacement_therapy","hiv_aids",
-          "steroid_treatment","radiotherapy","chemotherapy","metastatic_disease","acute_myelogenous_lymphocytic_leukaemia_or_multiple_myeloma",
-          "chronic_myelogenous_lymphocytic_leukaemia","lymphoma","congenital_immunohumoral_or_cellular_immune_deficiency_state")
+fts1 <-
+        c(
+                "cohort",
+                "diagnosis",
+                "diagnosis_category",
+                "mode",
+                "venous_access_1",
+                "venous_access_2",
+                "venous_return",
+                "arterial_return",
+                "survived_ecmo",
+                "survived_icu",
+                "ethnic",
+                "sex",
+                "biopsy_proven_cirrhosis",
+                "portal_hypertension",
+                "hepatic_encephalopathy",
+                "very_severe_cardiovascular_disease",
+                "severe_respiratory_disease",
+                "home_ventilation",
+                "chronic_renal_replacement_therapy",
+                "hiv_aids",
+                "steroid_treatment",
+                "radiotherapy",
+                "chemotherapy",
+                "metastatic_disease",
+                "acute_myelogenous_lymphocytic_leukaemia_or_multiple_myeloma",
+                "chronic_myelogenous_lymphocytic_leukaemia",
+                "lymphoma",
+                "congenital_immunohumoral_or_cellular_immune_deficiency_state"
+        )
 
 s1[fts1]<- lapply(s1[fts1],factor)
 #convert to factors for factor classes.
 
 #names are too long so lets make it shorter 
 colnames(s1) <- c(
-        "id","cohort","admission_date","age","dx_cat",#for diagnosis_category,
-        "mode","va_1","va_2","v_return","art_return",#for venous access 1 and 2,arterial return 
-        "surv_ecmo","surv_icu","date_icu_discharge","ecmo_start","ecmo_finish","date_can","date_de_can",#for survived ecmo/icu/date cannulated and decannulate
-        "acute_phys_score","age_score","chron_health_score","apache","ethnic","sex","hcm","wkg",#for acute physiology score,agescore,chronic health score,apache2score
-        "cirrhosis","portal_htn","hepatic_enceph","s_cvd","s_respd", #for biopsy proven cirrhosis, portal hypertension,hepatic encephalopathy, severe cardiovasc dis, severe resp dis
-        "dom_vent","chron_rrt","hiv","steroids_hx","rt","chemo","mets", ##for home ventilation,chronic renal replacement,hiv_aids,history of steroid treatment,radiotherapy,chemotherapy,"metastatic disease"
-        "aml_mm","cml","lymphoma","cong_immuno_def"## aml or multiple myeloma, cml , lymphoma, congenital immunodeficiency state 
+        "cohort",
+        "admission_date",
+        "mrn",
+        "age",
+        "dx",
+        "dx_cat",
+        #for diagnosis_category,
+        "mode",
+        "v_1",
+        "v_2",
+        "v_return",
+        "art_return",
+        #for venous access 1 and 2,arterial return
+        "surv_ecmo",
+        "surv_icu",
+        "date_icu_discharge",
+        "ecmo_start",
+        "ecmo_finish",
+        "date_can",
+        "date_de_can",
+        #for survived ecmo/icu/date cannulated and decannulate
+        "acute_phys_score",
+        "age_score",
+        "chron_health_score",
+        "apache",
+        "ethnic",
+        "sex",
+        "hcm",
+        "wkg",
+        #for acute physiology score,agescore,chronic health score,apache2score
+        "cirrhosis",
+        "portal_htn",
+        "hepatic_enceph",
+        "s_cvd",
+        "s_respd",
+        #for biopsy proven cirrhosis, portal hypertension,hepatic encephalopathy, severe cardiovasc dis, severe resp dis
+        "dom_vent",
+        "chron_rrt",
+        "hiv",
+        "steroids_hx",
+        "rt",
+        "chemo",
+        "mets",
+        ##for home ventilation,chronic renal replacement,hiv_aids,history of steroid treatment,radiotherapy,chemotherapy,"metastatic disease"
+        "aml_mm",
+        "cml",
+        "lymphoma",
+        "cong_immuno_def"## aml or multiple myeloma, cml , lymphoma, congenital immunodeficiency state
 )
 
 #### 2.1. Factor reassignment----
@@ -75,7 +155,7 @@ levels(s1$mode) <- c("vv","vv")
 #reassign as there are cap vv and VV 
 
 #reassign cannula  va_1 column
-levels(s1$va_1) <- c(
+levels(s1$v_1) <- c(
         "21fr_lfv",
         "21fr_rfv",
         "25fr_lfv",
@@ -120,13 +200,26 @@ levels(s1$surv_icu) <- c("no","no","yes","yes")
 
 s1 <- subset(
         s1,
-        select= -c(va_2,portal_htn,hepatic_enceph,s_cvd,dom_vent,
-                   chron_rrt,rt,chemo,aml_mm,cml,lymphoma)
+        select = -c(
+                v_2,
+                art_return,
+                portal_htn,
+                hepatic_enceph,
+                s_cvd,
+                dom_vent,
+                chron_rrt,
+                rt,
+                chemo,
+                aml_mm,
+                cml,
+                lymphoma
         )
-#remove all the needless columns
+)
+#remove all the empty columns
 
 s1 <- s1 %>% mutate(pmh = case_when(
         cirrhosis == "1" ~ "cirrhosis",
+        s_respd == "1" ~ "s_respd",
         hiv == "H" ~ "hiv",
         steroids_hx == "1" ~ "steroids_hx",
         mets == "1"  ~ "mets+s_respd",
@@ -135,9 +228,106 @@ s1 <- s1 %>% mutate(pmh = case_when(
 
 s1$pmh <- as.factor(s1$pmh)
 #these are confirmed and clarified
-
+s1 <- subset(
+        s1,
+        select = - c(cirrhosis,s_respd,hiv,steroids_hx,mets,cong_immuno_def)
+)
 #CODE FOR CHECK
 # s1 %>% select(id,pmh) %>% filter(!is.na(pmh)) %>% View()
+s1$dxcont <- s1$dx
+levels(s1$dxcont) <- c(
+        "flu", # ? flu 
+        "flu_b + aspergillus", # ?aspergillus and flu a 
+        "non cov viral pneumonitis + cap", # cap and viral pneumonitis 
+        "non cov viral pneumonitis + bilat pe", #right basal cap and flu and bilat pe
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis + pe",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis + hlh",
+        "covid pneumonitis + cap",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis + preg",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis + post part",
+        "covid pneumonitis + ischemic leg",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis + post part",
+        "covid pneumonitis + pe",
+        "covid pneumonitis",
+        "covid pneumonitis + pe",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis",
+        "covid pneumonitis + cap",
+        "covid pneumonitis + cap",
+        "covid pneumonitis",
+        "covid pneumonitis + preg",
+        "covid pneumonitis + preg",
+        "covid pneumonitis",
+        "flu",
+        "flu_a",
+        "flu_a + cap",
+        "flu_a + h1n1",
+        "flu_a",
+        "flu_b",
+        "flu_b + cap",
+        "flu_b",
+        "flu_b + cap",
+        "flu_b + cap",
+        "flu_b + cap",
+        "h1n1",
+        "h1n1 + cap",
+        "h1n1 + cap",
+        "h1n1 + cap",
+        "h1n1 + cap",
+        "h1n1 + cap",
+        "h1n1 + cap",
+        "h1n1 + cap",
+        "flu_a",
+        "h1n1",
+        "flu_b",
+        "flu_b + cap",
+        "flu_b + cap",
+        "flu_b + cap",
+        "flu_b + cap",
+        "flu_b + cap",
+        "flu_b + cap",
+        "flu_b + cap + pe",
+        "parainfluenza",
+        "parainfluenza + measles",
+        "pcp + cmv",
+        "viral pneumonitis",
+        "rsv",
+        "flu_a + cap",
+        "cap",
+        "flu_a",
+        "flu_b"
+ )
+
+## make a new column for patients with pe 
+
+s1$pe <-
+        ifelse(
+                s1$dxcont %in% c(
+                        "flu_b + cap + pe",
+                        "covid pneumonitis + pe",
+                        "non cov viral pneumonitis + bilat pe"
+                ),
+                "yes",
+                "no"
+        )
+
+s1$pe <-as.factor(s1$pe)
 
 #### 2.2. Num vars check ----
 
@@ -145,13 +335,9 @@ s1$pmh <- as.factor(s1$pmh)
 # sum(duplicated(s1$id)) 
 #now let's check the numerical variables
 #actually all the numerical variables look fairly clean.
-ptid <- unique(s1$id)
-s1 <- subset(
-        s1, 
-        select= - c(
-        art_return,cirrhosis,s_respd,hiv,steroids_hx,mets,cong_immuno_def
-))
 
+#cleaniing daignosis. 
+ptid <- unique(s1$id)
 rm(fts1)
 message("Cleaning s1 is complete.")
 
@@ -269,7 +455,7 @@ colnames(s6) <- c("id","chart_t","hydrocort_inf_mghr")
 
 pt_without_hydrocortinfus <- setdiff(ptid,unique(s6$id))
 #only 44 patients have hydrocortisone infusion
-        
+
 s6$hydrocort_inf_mghr <- as.double(s6$hydrocort_inf_mghr)
 
 message("Cleaning s6 is complete. ")

@@ -148,3 +148,7 @@ df_prd[df_prd$chart_t > df_prd$ecmo_finish,]
 #checked df_txa - there is no before or after.
 message("df_bl is more or less clean and has no values before or ater ecmo, df_coag showed there are soeme vaues before ecmo, and there are some values after ecmo as it seems to be icu discharge was used. df_h showed vals are within ecmo run times. df_hydrocort is the same. df_prd have products before ecmo and also receive products after ecmo. df_rx and df_txa are the same as in clean in between ecmo runtimes")
 
+
+# cleaning rx ----------------------------------------------------------
+
+

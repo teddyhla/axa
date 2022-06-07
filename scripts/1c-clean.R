@@ -54,10 +54,9 @@ s2 <- dplyr::left_join(s2,
                        s1 %>% select(mrn, name),
                        by = "mrn")
 
-# cleaning ----------------------------------------------------------------
 
 
-###### 2.0. DATA CLEAN and VERIFY ####
+###### 2.0. DATA CLEAN and VERIFY ####---------------------------
 names(s1) <- tolower(names(s1))
 #convert to lower case col names
 s1 <- select(s1,-(name))
@@ -150,7 +149,7 @@ colnames(s1) <- c(
         "cong_immuno_def"## aml or multiple myeloma, cml , lymphoma, congenital immunodeficiency state
 )
 
-#### 2.1. Factor reassignment----
+#### 2.1. Factor reassignment-------------------------------
 #now lets check all the levels for factor vars are appropriate.
 levels(s1$mode) <- c("vv","vv")
 #reassign as there are cap vv and VV 
@@ -330,7 +329,7 @@ s1$pe <-
 
 s1$pe <-as.factor(s1$pe)
 
-#### 2.2. Num vars check ----
+#### 2.2. Num vars check ------------------------------------
 
 #CODE CHECK sum of duplicated items is 0 . i.e., no duplicates
 # sum(duplicated(s1$id)) 
@@ -344,7 +343,9 @@ message("Cleaning s1 is complete.")
 dfcore <- s1 
 rm(s1)
 message ("s1 is now dfcore")
-##### 3.1 Cleaning s3-----
+
+##### 3.1 Cleaning s3-----------------------------------------
+
 names(s3) <- tolower(names(s3))
 colnames(s3) <- c(
         "mrn","chart_t","short_label","terse_form","unit","kg"
@@ -358,7 +359,7 @@ s3$mrn <- toupper(s3$mrn)
 pt_without_heparin<- setdiff(ptid,unique(s3$mrn))
 #this showed that these patients dont have any heparin prescribed.
 
-##### 3.2. Col classes for s3----
+##### 3.2. Col classes for s3-----------------------------------
 
 s3$short_label <- as.factor(s3$short_label)
 s3$terse_form <- as.double(s3$terse_form)
@@ -370,7 +371,7 @@ rm(s3)
 
 message("Dataframe s3 is now dfhep")
 
-###### 4.1. Cleaning s4-----
+###### 4.1. Cleaning s4---------------------------------
 
 colnames(s4) <- c("mrn","chart_t","axa","apttr")
 #change col names
@@ -389,7 +390,7 @@ dfcoag <- s4
 rm(s4)
 message("s4 is now dfcoag")
 
-#####-5.1. Cleaning s5 ------
+#####-5.1. Cleaning s5 ------------------------------------
 
 s5$mrn <- toupper(s5$mrn)
 
@@ -434,7 +435,7 @@ dfbl <- s5
 rm(s5)
 message("s5 is now dfbl")
 
-###### ----- Cleaning s6 ----
+###### ----- 6.1 Cleaning s6 -------------------------------
 
 s6$mrn <- toupper(s6$mrn)
 
@@ -486,7 +487,7 @@ dfrx <- s6
 rm(s6)
 message("s6 is now dfrx")
 
-##### Cleaning s7------
+##### 7.1 Cleaning s7-----------------------------------------
 
 s7$mrn <- toupper(s7$mrn)
 colnames(s7) <- c("mrn","chart_t","hydrocort_inf_mghr")
@@ -501,7 +502,8 @@ dfhydrocortinf <- s7
 rm(s7)
 message("s7 is now dfhydrocortinf")
 
-#### Clearning s8----
+#### 8.1 Cleaning s8------------------------------------
+
 s8$mrn <- toupper(s8$mrn)
 colnames(s8) <- c("mrn","chart_t","txa_inf_mghr")
 pt_without_txainfus <- setdiff(ptid,unique(s8$mrn))
@@ -512,7 +514,9 @@ dftxa <- s8
 rm(s8)
 message("s8 is now dftxa")
 
-#### Cleaning s9----
+
+#### 9.1 Cleaning s9-------------------------------------
+
 s9$mrn <- toupper(s9$mrn)
 
 colnames(s9) <- c("mrn","chart_t","s_label","t_form","unit")
@@ -530,8 +534,11 @@ message("Cleaning s9 is complete. ")
 dfprd <- s9
 rm(s9)
 message("s9 is now dfprd ")
-#### Renaming dataframes to something sensible -----
 
+#### 10.1 correcting blood products as per Barney -----------
+
+rm(s0)
+rm(s2)
 message("master cleaning is complete and dataframes ready." )
 
 

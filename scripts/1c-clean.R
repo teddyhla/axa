@@ -193,6 +193,34 @@ levels(s1$v_return) <- c(
         "unknown"
 )
 
+s1$ecmoconfig <- paste(s1$v_1,s1$v_return)
+s1$ecmoconfig <- as.factor(s1$ecmoconfig)
+levels(s1$ecmoconfig) <- c(
+        "fem-fem",
+        "fem-fem",
+        "fem-ij",
+        "fem-ij",
+        "fem-fem",#5
+        "fem-ij",
+        "fem-fem",#7
+        "fem-fem",
+        "fem-ij",
+        "fem-fem",#10
+        "fem-fem",
+        "fem-unknown",
+        "fem-fem",#13
+        "fem-ij",
+        "fem-ij",#15
+        "fem-ij",#16
+        "fem-unknown",#17
+        "fem-ij",#18
+        "fem-unknown",#19
+        "dual-ij",#20
+        "fem-fem",#21
+        "fem-unknown",#22
+        "fem-ij"#23
+)
+
 levels(s1$surv_ecmo) <- c("no","no","yes","yes")
 levels(s1$surv_icu) <- c("no","no","yes","yes")
 #clean up levels for surv ecmo and surv icu columsn
@@ -217,14 +245,26 @@ s1 <- subset(
 )
 #remove all the empty columns
 
+s1[s1$mrn == "2553305Z","mets"] <- "metoz"
+
+
 s1 <- s1 %>% mutate(pmh = case_when(
         cirrhosis == "1" ~ "cirrhosis",
         s_respd == "1" ~ "s_respd",
         hiv == "H" ~ "hiv",
         steroids_hx == "1" ~ "steroids_hx",
-        mets == "1"  ~ "mets+s_respd",
-        cong_immuno_def =="1" ~ "cong_immunodef"
+        mets == "metoz"  ~ "MODTEDS",
+        cong_immuno_def =="1" ~ "cong_immunodef",
+        TRUE ~ "nilpmh"
 ))
+
+# for some reason the code is broken here in above case when for 'mets'. 
+#this is due to patient having both s_respd and mets
+
+#s1 %>% filter(!is.na(cirrhosis) | !is.na(s_respd) | !is.na(hiv) | !is.na(steroids_hx) |!is.na(cong_immuno_def)) %>% View()
+#this above code showed that all other patients dont have concurrent pmh
+s1[s1$mrn == "2553305Z","pmh"] <- "s_respd + mets"
+
 
 s1$pmh <- as.factor(s1$pmh)
 #these are confirmed and clarified

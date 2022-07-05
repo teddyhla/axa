@@ -547,12 +547,7 @@ df$cir_change <- as.factor(df$cir_change)
 #,haematologial  (combination of thrombus, dic, haemolysis)
 #combinatinon
 
-#NOW WE SHALL APPEND mrn' to df outcome.
 
-key$mrn <- key$patient_hospital_no 
-key$id <- key$unique_id
-df <- left_join (df, key %>% select(mrn,id), by = "id")
-rm(key)
 
 ## as per discussion with A RETTER, will summarise into 
 ## non arterial thrombus, arterial thrombus, multiple 
@@ -802,9 +797,71 @@ levels(df$fourthxc_reason) <- "mech"
 
 #need to make a total bleeding event, total clotting event, total all events, 
 
+#NEED TO EXTENSIVELY CLEAN THE TIMES  using the computer pulled time. 
+#using sound ground truths like interval CT cant have happened after ecmo is finished.
 
+df$f1 <- df$admn_ct_results
+df$f2 <- df$int_ct_results
+df$f3 <- df$total_events_not_imaged
 
+levels(df$f1) <- c("2","1","1","0")
+levels(df$f2) <- c("2","1","0","1")
+levels(df$f3) <- c("4","1","2","3")
+
+df$tot <- paste(df$f1,df$f2,df$f3)
+df$tot <- as.factor(df$tot)
+
+levels(df$tot) <- c(
+        "1",
+        "2",
+        "0",
+        "2",#4 
+        "3",
+        "5",
+        "1",#7
+        "3",
+        "2",
+        "1",#10
+        "2",
+        "0",
+        "2",#13
+        "3",#14
+        "4",#15
+        "1",#16
+        "3",
+        "4",
+        "5",#19
+        "2",#20
+        "3",
+        "2",
+        "3",
+        "1",
+        "2",#25
+        "4",
+        "3",
+        "2",
+        "0",
+        "2",
+        "1",
+        "0"#32
+)
+
+df$tot <- factor(df$tot,levels=c("0","1","2","3","4","5"))
+
+df <- df %>% select(-c(f1,f2,f3))
+
+#df id141 and id 151 are incorrectly named 
+
+df[df$id == "is_141","id"] <- as.character("id_141")
+df[df$id == "ID_151","id"] <- as.character("id_151")
 #best would be to combine reason + other and then re-level.
+
+#NOW WE SHALL APPEND mrn' to df outcome.
+
+key$mrn <- key$patient_hospital_no 
+key$id <- key$unique_id
+df <- left_join (df, key %>% select(mrn,id), by = "id")
+rm(key)
 
 # CHECK FINAL DF against df0 ----------------------------------------------
 

@@ -1,0 +1,678 @@
+---
+title: "prelim_analysis"
+author: "teddyhla"
+date: "10/05/2022"
+output: html_document
+---
+# Initialisation 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r sources}
+source("scripts/3-outcomes.R")
+source("scripts/1c-clean.R")
+```
+
+```{r wrangle_core}
+#duration on ecmo in hours
+dfcore$ecmoh <- round(difftime(dfcore$ecmo_finish,dfcore$ecmo_start),1)
+
+#duration on ecmo in days
+
+dfcore$ecmod <- round(difftime(dfcore$ecmo_finish,dfcore$ecmo_start,units = "days"))
+
+#assigning group 
+dfcore$group <- ifelse(dfcore$date_can < as.Date("2019-12-01"),"gapt","gaxa")
+dfcore$group <- as.factor(dfcore$group)
+```
+
+# Available Data
+
+- 254 patients received veno-venous extracorporeal membrane oxygenation (VV-ECMO) at Guy's and St Thomas' Hospital NHS Trust (GSTT).
+- Admission to GSTT : 2nd January 2015 to 31st January 2022.
+
+## Inclusion Criteria
+
+- all VV ECMO patients on viral aetiology
+
+## Exclusion Criteria
+
+# Variables available
+
+## Cross-sectional
+
+1.  Age - integer
+2.  Admission date - date
+3.  Cohort - factors; covid wave 1,2,3 and historical pneumonia
+4.  diagnosis category - factor ; viral pneumonia
+5.  mode of ecmo - factor ; vv
+6.  ecmo cannula configuration - factors; access and return
+7.  survival on ecmo - binary factor ; yes/no
+8.  survival from icu - binary factor ; yes/no
+9.  date of icu discharge
+10. ecmo start and finish dates
+11. date of ecmo cannulation and date of ecmo de-cannulation
+12. acute physiology score
+13. age score
+14. chronic health score
+15. apache score
+16. ethnicity
+17. gender
+18. height
+19. weight
+20. past medical history - factors; cirrhosis, congential immunodeficiency, hiv, steroids history and metastatic
+
+## Longitudinal
+
+Data available for time and values
+
+21. complete blood count parameters (haemoglobin,platelets,neutrophils)
+
+22. coagulation parameters (fibrinogen,)
+
+23. inflammatory parameters (ldh,ferritin,creatinine kinase,crp, procaclitonin)
+
+24. synthetic liver function (bilirubin,albumin,creatinine)
+
+25. renal function tests (gfr,creatinine)
+
+26. electrolytes(calcium, corrected_calcium)
+
+27. acid_base parameters( bicarbonate, ph,lactate )
+
+28. anti factor Xa levels (axa)
+
+29. activated partial thromboplasmin time ratio (apptr)
+
+30. heparin prescription - factors
+
+31. heparin dosage - weight adjusted
+
+32. hydrocortisone infusions
+
+33. blood product transfusions (cryoprecipitate, ffp, platelet, packed red cells)
+
+34. other drugs (aspirin,aspirin suppository,clopidogrel,warfarin, rivaroxaban,apixaan, dalteparin subcutnaeous, ibuprofen liquid, ibuprofen tablet, diclofenac, dexamethasone, prednisolone, hydrocortisone, methylprednisolone, calciu, tranexemic acid,tranexemic acid infusions )
+
+35. admission CT findings
+
+36. interval CT findings
+
+37. additional complications haemorrhagic / thrombotic
+
+38. decannulation ultrasound findings
+
+39. ecmo circuit change and reasons
+
+# Analysis
+
+- joint models
+- cox Proportional Hazards model
+- Poisson regression              
+
+# Challenges
+
+## Different Targets 
+### PE :  arterial thrombus?
+
+patients with PE will have a separate target other anticoagulants - e.g., ischemic leg need to check 6 patients on PE
+
+questiosn for silvana 2639533Z - covid pneumonitis with ischemic leg - is treated as PE. i.e., arterial thrombus
+
+### Heparin Prescriptions 
+
+[1] "Heparin" "Heparin ECMO Xa IV INFUSION"\
+[3] "Heparin IV Injection" "Heparin RRT INF 20000 iu"\
+[5] "Heparin SYSTEMIC INF 20000Units"
+
+making sense of these prescriptions
+
+                        Heparin     Heparin ECMO Xa IV INFUSION            Heparin IV Injection 
+                             41                           57889                              39 
+       Heparin RRT INF 20000 iu Heparin SYSTEMIC INF 20000Units 
+                             17                           33617 
+
+
+
+### heparin free
+
+17 patients
+
+# Findings
+## Ecmo configuration
+
+-  there is no 2nd access.
+-  there is no arterial return
+
+## Group assignment
+
+1st November 2019 is when AXA monitoring is actively initiated. But people dont formally start using until 2019-12-01
+
+## Descriptive Statistics 
+### Group Comparison
+
+```{r group_comparison_table}
+dfcore %>% 
+    group_by(group) %>% 
+    summarise(
+        medage = median(age),
+        iqrage = IQR(age),
+        counts = n(),
+        surv_ecmoy = sum(surv_ecmo == "yes"),
+        surv_ecmon = sum(surv_ecmo == "no"),
+        runtd = median(ecmod),
+        iqrtd = IQR(ecmod),
+        medapache = median(apache),
+        iqrapach = IQR(apache),
+        medweight = median(wkg),
+        iqrweight = IQR(wkg),
+        sexm = sum(sex == "M")
+        
+    )
+
+```
+### Stats for above group comparison
+```{r stats_comp_group}
+xs1 <- chisq.test(dfcore$age,dfcore$group)
+xs2 <- chisq.test(dfcore$sex,dfcore$group)
+wc1 <- wilcox.test(apache ~ group, data =dfcore)
+wc2 <- wilcox.test(wkg ~ group, data =dfcore)
+xs3 <- chisq.test(dfcore$surv_ecmo,dfcore$group)
+```
+
+```{r plotforgroupage}
+ggplot(data =dfcore, aes(x=group,y=ecmod)) + geom_boxplot()
+
+```
+
+that kind of made sense
+
+```{r}
+dfbl <- left_join (
+    dfbl,
+    dfcore %>% select(mrn,ecmo_start,ecmo_finish,group),
+    by = "mrn"
+)
+
+dfbl$thours <- difftime(dfbl$chart_t,dfbl$ecmo_start,units = "hours")
+dfbl$tdays <- round(difftime(dfbl$chart_t,dfbl$ecmo_start,units = "days"))
+
+
+dfhb <- dfbl %>% select(mrn,group,hb,thours,tdays)
+dfhb <- na.omit(dfhb)
+```
+
+'
+
+```{r}
+
+
+dfhb2 <- dfhb %>% 
+    group_by(mrn,tdays) %>% 
+    mutate(
+        maxhb = max(hb,na.rm = TRUE),
+        minhb =min(hb,na.rm=TRUE),
+        meanhb=mean(hb,na.rm=TRUE)) %>%
+    ungroup()
+```
+
+```{r}
+#dfhb2 %>% group_by(group,mrn) %>% mutate(perc = hbhi/ecmod) %>% ungroup () %>% #distinct(mrn,.keep_all = TRUE)
+#you want something like this.
+```
+
+```{r}
+#dtf %>% 
+#    group_by(group) %>% 
+#    group_map(~summary(.x))
+    
+```
+
+```{r}
+dfprd <- left_join(
+    dfprd,
+    dfcore %>% select(mrn,ecmo_start,ecmo_finish,group,ecmod),
+    by = "mrn"
+)
+
+tfpp <- dfprd %>% 
+    group_by(mrn) %>% 
+    summarise(
+        prbcpp = sum(s_label == "prbcs"),
+        cryopp = sum(s_label == "cryo"),
+        ffppp = sum(s_label == "ffp"),
+        pltpp = sum(s_label == "plt")
+    )
+
+tfpp <- left_join(
+    tfpp,
+    dfcore %>% select(mrn,ecmod,group),
+    by = "mrn"
+)
+
+tfpp$ecmod <- as.numeric(tfpp$ecmod)
+```
+
+```{r}
+tfpp$redpd <- (tfpp$prbcpp / tfpp$ecmod)*1000
+tfpp$crpd <- (tfpp$cryopp / tfpp$ecmod)*1000
+tfpp$fpd <- (tfpp$ffppp / tfpp$ecmod)*1000
+tfpp$ppd <- (tfpp$pltpp / tfpp$ecmod)*1000
+
+#becuase it gets too small
+
+tfpp %>% group_by(group) %>% group_map(~summary(.x))
+
+```
+
+```{r}
+dfcore %>% filter(mrn %in% pt_without_bldproducts) %>% group_by(group) %>% summarise(n())
+```
+
+let's look at descriptive analysis of outcomes
+
+```{r}
+df <- left_join(
+    df,
+    dfcore %>% select(mrn,group),
+    by = "mrn"
+)
+
+```
+
+```{r}
+po1 <- ggplot(data = df,aes(x=tot,fill = group)) +
+           geom_bar(position = "dodge")+
+           labs(title = "Total No of Complications ", 
+             x = "Total No of Complications", y = "Count")+
+           theme_minimal()
+```
+
+```{r}
+ggsave("products/presentations/gsttp2src/go1.png", po1, dpi = 300)
+```
+
+
+# Things to consider
+1. cant use axa values in the apttr group
+2. drugs
+
+-   no warfarin, no rivaroxabab,no apixaban, diclofena inj or suppr, hydrocort tab, txa top
+
+
+
+# for presentation
+
+## Playing with alluvial plots
+```{r p1 age_distribution}
+p1 <- ggplot(data = dfcore, aes(x = cohort, y = age))+
+        geom_boxplot()+
+        facet_wrap(~surv_ecmo)+
+        theme_minimal() + 
+        labs(title = "Age distribution for each cohort", 
+             x = "cohorts", y = "age/years",
+             subtitle = "surival status on ecmo")+
+        theme(axis.text.x = element_text(angle = 45))
+        
+```
+
+```{r savingp1}
+ggsave("products/presentations/gsttp2src/g1.png", p1, dpi = 300)
+
+```
+
+```{r attempt at alluvial plots }
+#al <- df %>% select(admn_ct,int_ct,decan_uss) %>%
+#        group_by(admn_ct,int_ct,decan_uss) %>%
+#        summarise(freq = n())
+#
+#p2 <- ggplot(data = al, aes(axis1 = admn_ct, axis2= int_ct, axis3 = decan_uss,
+#                            y = freq))+
+#        scale_x_discrete(limits = c("admn_ct","int_ct","decan_uss"))+
+#        xlab("imagings") +
+#        geom_alluvium()+
+#        geom_stratum()+
+#        geom_text(stat = "stratum",aes(label=after_stat(stratum)))+
+#        ggtitle("Patients who received imagings whilist on ecmo")
+#        
+```
+
+For outcomes, alluvial cant handle missing data.
+
+```{r}
+#al2 <- df %>% select(admn_ct_results,int_ct_results,total_events_not_imaged,decan_uss_results#)
+#
+#al2$admn_ct_results <- as.character(al2$admn_ct_results)
+#al2$int_ct_results <- as.character(al2$int_ct_results)
+#al2$total_events_not_imaged <- as.character(al2$total_events_not_imaged)
+#al2$decan_uss_results <- as.character(al2$decan_uss_results)
+#
+#al2[is.na(al2)] <- 0
+#
+#al2$admn_ct_results <- as.factor(al2$admn_ct_results)
+#al2$int_ct_results <- as.factor(al2$int_ct_results)
+#al2$total_events_not_imaged <- as.factor(al2$total_events_not_imaged)
+#al2$decan_uss_results <- as.factor(al2$decan_uss_results)
+#
+#levels(al2$int_ct_results)<- c(
+#        "0",
+#        "both_haem_throm",
+#        "only_haem",
+#        "no_comp",
+#        "no_comp",
+#        "only_haem",
+#        "only_throm",
+#        "only_throm"
+#        )
+```
+
+```{r}
+#al2 <- al2 %>% group_by(admn_ct_results,int_ct_results,total_events_not_imaged,decan_uss_res#ults)%>%
+#        summarise(freq = n())
+```
+
+```{r}
+#p3 <- ggplot(data = al2, #aes(axis1=admn_ct_results,axis2=int_ct_results,axis3=total_events_not_imaged,axis4=decan_uss_results,y=freq))+
+#        scale_x_discrete(limits = #c("admn_ct_results","int_ct_results","other_events","decan_uss_results"))+
+#        geom_alluvium()+
+#        geom_stratum()+
+#        geom_text(stat = "stratum",aes(label = after_stat(stratum)))+
+#        ggtitle("complications whilst on ECMO")
+```
+
+```{r}
+#ggsave("products/presentations/gsttp2src/g3.png",p3,dpi = 300)
+```
+
+
+## Raw distributions and Standardised raw visualisations
+```{r}
+vin <- dfcoag
+vin <- left_join(vin, 
+                 dfcore %>% select(cohort,group,ecmo_start,ecmo_finish,mrn),
+                 by ="mrn")
+
+vin <- vin %>% 
+    group_by(mrn) %>% 
+    filter(chart_t >= ecmo_start & chart_t <= ecmo_finish) %>% ungroup()
+
+vin$ecmod <- round(difftime(vin$chart_t,vin$ecmo_start, units = "days"))
+vin <- vin %>% filter(ecmod >= 0)
+
+#0.5 for mid point of axa , sd axa = 0.280/mean is 0.51 and 1.75 for apttr, calc mean is 1.58, sd is 1.604
+
+#thus manually scaling i.e., minu by midpoint and divide by SD
+vin$axas <- ((vin$axa - 0.5)/0.280)
+vin$apttrs <- ((vin$apttr - 1.75/1.604))
+
+vin$ecmod <- as.factor(vin$ecmod)
+
+#ideally select during the ecmo run's
+
+
+```
+
+```{r}
+ylim1 <- boxplot.stats(vin$axa)$stats[c(1,5)]
+ylim2 <- boxplot.stats(vin$apttr)$stats[c(1,5)]
+
+
+p7<-ggplot(data = vin[vin$group == "gaxa",], aes(x = ecmod, y = axa)) +
+    geom_boxplot(outlier.shape = NA)+
+    geom_hline(yintercept = c(0.3,0.7),colour = "blue")+
+    geom_hline(yintercept = 1.0,colour ="red")+
+    coord_cartesian(ylim = ylim1 *1.05)+
+    scale_x_discrete(breaks = seq(0,80,10))+
+    theme(axis.text.x = element_text(angle = 45))+
+    theme_minimal()+
+    labs(title= "AXA values in AXA group",
+         x = "Days on Ecmo",y ="anti-Xa levels",
+         subtitle = "Normal Range 0.3 to 0.7, VTE Range 0.6 to 1.0")
+
+
+p8<- ggplot(data = vin[vin$group == "gapt",], aes(x = ecmod, y = apttr)) +
+        geom_boxplot(outlier.shape = NA)+
+        geom_hline(yintercept = c(1.5,2.5),colour = "blue")+
+        geom_hline(yintercept = 3.0,colour = "red")+
+        coord_cartesian(ylim = ylim2 *1.05)+
+        scale_x_discrete(breaks = seq(0,80,10))+
+        theme(axis.text.x = element_text(angle = 45))+
+        theme_minimal()+
+        labs(title= "APTTR values in APTT group",
+         x = "Days on Ecmo",y ="APTTR values",
+          subtitle = "Normal Range 1.5 to 2.0, VTE Range 2.0 to 2.5")
+```
+
+```{r}
+p9 <- cowplot::plot_grid(p7,p8)
+```
+
+```{r}
+ylim1 <- boxplot.stats(vin$axas)$stats[c(1,5)]
+ylim2 <- boxplot.stats(vin$apttrs)$stats[c(1,5)]
+
+p10<-ggplot(data = vin[vin$group =="gaxa",], aes(x = ecmod, y = axas)) +
+    geom_boxplot(outlier.shape = NA)+
+    geom_hline(yintercept = c(-1,1),colour = "green")+
+        coord_cartesian(ylim = c(-2,2))+
+    scale_x_discrete(breaks = seq(0,80,10))+
+    theme(axis.text.x = element_text(angle = 45))+
+    theme_minimal()+
+    labs(title= "SCALED AXA values in AXA group",
+         x = "Days on Ecmo",y ="scaled AXA values")
+
+
+p11<- ggplot(data = vin[vin$group == "gapt",], aes(x = ecmod, y = apttrs)) +
+        geom_boxplot(outlier.shape = NA)+
+    geom_hline(yintercept = c(-1,1),colour = "green")+
+        coord_cartesian(ylim = c(-2,2))+
+    scale_x_discrete(breaks = seq(0,80,10))+
+        theme(axis.text.x = element_text(angle = 45))+
+        theme_minimal()+
+        labs(title= "SCALED APTTR values in APTTR group",
+         x = "Days on Ecmo",y ="scaled APTTR values")
+```
+
+```{r}
+p12 <- cowplot::plot_grid(p10,p11)
+```
+
+```{r}
+ggsave("products/presentations/gsttp2src/g4.png",p9,dpi = 300)
+ggsave("products/presentations/gsttp2src/g5.png",p12,dpi = 300)
+```
+
+## are the patients proportionaley distributed into cohorts
+
+```{r}
+
+```
+
+## how many non covid patients are in each cohort? there are none
+
+```{r}
+#df %>% select(cohort,dxcont) %>% group_by(cohort,dxcont) %>% summarise(counts = n())
+```
+
+
+##let's explore time variation of ecmo outcomes and durations
+
+lets append to
+
+```{r}
+df <- left_join(
+    df,
+    dfcore %>% select(mrn,ecmo_start,ecmo_finish,ecmod,ecmoh),
+    by = "mrn"
+)
+```
+
+Basically the collected df ecmo_dtm are not accurate. we will remove them
+
+```{r}
+df <- df %>% select(-c(time_ecmo_DE_can,ecmo_dtm,ecmo_end_dtm))
+
+```
+
+```{r}
+df$admnct_
+```
+
+we should make a big data table age,gender,bmi,past medical history,dx cat, hb, plt,neut, fib, ldh. ferritin, ck, crp, pct, bili, alb, creat lactate,ph
+
+#Lets look at heparin prescriptions
+
+```{r}
+dfhep <- left_join (
+    dfhep,
+    dfcore %>% select(mrn,group,ecmod), by = "mrn"
+)
+```
+
+# Poisson regression for transfusion
+vs. 
+Negative binomial model 
+
+## explore only RBC vs. all products.
+
+## what about fibrinogen?
+
+think about begininig nd end of ecmo run.
+think about other complications e.g., haemorrhagic complications
+
+#deciding which feature to add
+- day on ecmo . hypothesis = we do need to as we transfuse more at the begining.
+
+#lets look at total products for ecmo run 
+
+note median ecmo run time = 14 days
+1st quartile 8 days
+2nd quartile 14 days
+3rd quartile 25.75 days
+4th quartile 100 days
+```{r}
+e2 <- dfprd %>% 
+        group_by(ecmod) %>%
+        summarise(
+                totcryo = sum(s_label == "cryo"),
+                totffp = sum(s_label == "ffp"),
+                totplt = sum(s_label == "plt"),
+                totprbc = sum(s_label == "prbcs")
+        )
+
+e2$ecmod <- as.numeric(e2$ecmod)
+e2 <- e2 %>% mutate(ecmodq = 
+        case_when(
+                ecmod <= 8 ~ "q1",
+                ecmod > 8 & ecmod < 14 ~ "q2",
+                ecmod > 14 & ecmod <25.75 ~ "q3",
+                ecmod > 25.75 & ecmod < 100 ~ "q4"
+        )
+)
+```
+Although this doesnt mean anything for each individual patient.
+
+for each individual patient, what you want is 4 segments ! 
+
+What is an average time between each red cell transfusions
+```{r}
+
+
+e4 <- dfprd %>% 
+        filter(s_label == "prbcs") %>% 
+        group_by(mrn) %>% 
+        arrange(chart_t) %>% 
+        group_by(mrn) %>% 
+        mutate(tdi = difftime(chart_t,lag(chart_t),units = "days"))%>% 
+        ungroup()
+
+e4 %>% group_by(group) %>% summarise(quantile(tdi,na.rm = T))
+#showing most patients receive a transfusion in 24 hour sort of cycle. 
+```
+
+thus we can set 1 day as a unit of 'window'
+tranfusion in this window "yes" "no"
+
+may be we should look at major hemorrhage events
+
+```{r}
+dfprd %>% group_by(mrn,td) %>% summarise(rpd = sum(s_label == "prbcs")) %>% ungroup() %>% group_by(mrn) %>% arrange(desc(rpd),.by_group = TRUE) %>% View()
+```
+
+what count as major hemorrhage. what coutns as massive transfusion 
+
+seems like we have a break through.
+
+let's make a dataframe that has all the days on ecmo including day 0 
+
+so this below code works. 
+now lets append this with total no of products transfused
+```{r}
+dg <- dfcore %>% select(mrn,group,ecmod) %>% mutate(ecmod = as.numeric(ecmod)) %>% group_by(mrn) %>% uncount(weights = ecmod, .id = "ecmod")
+
+#lets make a dataframe of summed blood products
+
+dg1 <- dfprd %>% 
+        select(mrn,group,td,s_label,t_form) %>%
+        mutate(td = as.numeric(td)) %>%
+        group_by(mrn,td) %>% 
+        summarise(
+                totprbc = sum(s_label == "prbcs"),
+                totffp  = sum(s_label == "ffp"),
+                totcryo = sum(s_label == "cryo"),
+                totplt = sum(s_label == "plt"),
+                totall = totprbc + totffp + totcryo + totplt
+        ) %>%
+        ungroup() 
+
+#for th time being lets remove random outiers where 
+dg1 <- dg1[dg1$td > 0 & dg1$td <88,]
+
+```
+needs to clarify with silvana 
+
+lets merge it all together
+
+```{r}
+dg$mid <- paste(dg$mrn,dg$ecmod,sep = "")
+dg1$mid <- paste(dg1$mrn,dg1$td,sep = "")
+
+dg <- left_join (
+        dg,
+        dg1,
+        by = "mid"
+)
+
+dg <- dg %>% 
+        mutate(across(where(is.numeric),~replace_na(.x,0))) %>%
+        select(-c(mrn.y,td,mid))
+
+names(dg)[names(dg) =="mrn.x"]<- "mrn"
+```
+
+after all this total blood units transfused should check out but it is not
+
+following is a code for looking at patients who have NA in the t_form 
+
+#We decided not to have 0th day on ecmo. we will have 1st day and nth day on ecmo.
+
+```{r}
+dfprd[is.na(dfprd$t_form),] %>% group_by(mrn)
+```
+
+how do we analyse  day 1? do we analyse from day 2?
+may be we cant analyse that. 
+
+```{r}
+dfbl <- dfbl %>% 
+        select(- c(ecmo_start,ecmo_finish,thours)) %>% 
+        mutate(tdays = as.numeric(tdays)) %>% 
+        mutate(ecmod = tdays + 1)
+```
+
+
+current methdo of setting dates not so robust for dfbl especially. we need to revise.
+
+on average how many days do the patient got transfused. 

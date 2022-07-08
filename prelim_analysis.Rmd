@@ -4,7 +4,8 @@ author: "teddyhla"
 date: "10/05/2022"
 output: html_document
 ---
-# Initialisation 
+
+# Initialisation
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -30,12 +31,12 @@ dfcore$group <- as.factor(dfcore$group)
 
 # Available Data
 
-- 254 patients received veno-venous extracorporeal membrane oxygenation (VV-ECMO) at Guy's and St Thomas' Hospital NHS Trust (GSTT).
-- Admission to GSTT : 2nd January 2015 to 31st January 2022.
+-   254 patients received veno-venous extracorporeal membrane oxygenation (VV-ECMO) at Guy's and St Thomas' Hospital NHS Trust (GSTT).
+-   Admission to GSTT : 2nd January 2015 to 31st January 2022.
 
 ## Inclusion Criteria
 
-- all VV ECMO patients on viral aetiology
+-   all VV ECMO patients on viral aetiology
 
 ## Exclusion Criteria
 
@@ -108,20 +109,21 @@ Data available for time and values
 
 # Analysis
 
-- joint models
-- cox Proportional Hazards model
-- Poisson regression              
+-   joint models
+-   cox Proportional Hazards model
+-   Poisson regression
 
 # Challenges
 
-## Different Targets 
-### PE :  arterial thrombus?
+## Different Targets
+
+### PE : arterial thrombus?
 
 patients with PE will have a separate target other anticoagulants - e.g., ischemic leg need to check 6 patients on PE
 
 questiosn for silvana 2639533Z - covid pneumonitis with ischemic leg - is treated as PE. i.e., arterial thrombus
 
-### Heparin Prescriptions 
+### Heparin Prescriptions
 
 [1] "Heparin" "Heparin ECMO Xa IV INFUSION"\
 [3] "Heparin IV Injection" "Heparin RRT INF 20000 iu"\
@@ -134,23 +136,23 @@ making sense of these prescriptions
        Heparin RRT INF 20000 iu Heparin SYSTEMIC INF 20000Units 
                              17                           33617 
 
-
-
 ### heparin free
 
 17 patients
 
 # Findings
+
 ## Ecmo configuration
 
--  there is no 2nd access.
--  there is no arterial return
+-   there is no 2nd access.
+-   there is no arterial return
 
 ## Group assignment
 
 1st November 2019 is when AXA monitoring is actively initiated. But people dont formally start using until 2019-12-01
 
-## Descriptive Statistics 
+## Descriptive Statistics
+
 ### Group Comparison
 
 ```{r group_comparison_table}
@@ -173,7 +175,9 @@ dfcore %>%
     )
 
 ```
+
 ### Stats for above group comparison
+
 ```{r stats_comp_group}
 xs1 <- chisq.test(dfcore$age,dfcore$group)
 xs2 <- chisq.test(dfcore$sex,dfcore$group)
@@ -195,6 +199,13 @@ dfbl <- left_join (
     dfcore %>% select(mrn,ecmo_start,ecmo_finish,group),
     by = "mrn"
 )
+
+dfbl$chart_t <- as.Date(dfbl$chart_t,format ="%Y-%m-%d") 
+dfbl$ecmo_start <- as.Date(dfbl$ecmo_start,format = "%Y-%m-%d")
+dfbl$ecmodur <- dfbl$ecmod
+dfbl$decmo <- difftime(dfbl$chart_t,dfbl$ecmo_start,units = "days")
+dfbl$decmo <- as.numeric(dfbl$decmo)
+dfbl$decmo <- dfbl$decmo + 1
 
 dfbl$thours <- difftime(dfbl$chart_t,dfbl$ecmo_start,units = "hours")
 dfbl$tdays <- round(difftime(dfbl$chart_t,dfbl$ecmo_start,units = "days"))
@@ -294,18 +305,17 @@ po1 <- ggplot(data = df,aes(x=tot,fill = group)) +
 ggsave("products/presentations/gsttp2src/go1.png", po1, dpi = 300)
 ```
 
-
 # Things to consider
-1. cant use axa values in the apttr group
-2. drugs
+
+1.  cant use axa values in the apttr group
+2.  drugs
 
 -   no warfarin, no rivaroxabab,no apixaban, diclofena inj or suppr, hydrocort tab, txa top
 
-
-
 # for presentation
 
-## Playing with alluvial plots
+## Playing with alluvial plots(rb
+
 ```{r p1 age_distribution}
 p1 <- ggplot(data = dfcore, aes(x = cohort, y = age))+
         geom_boxplot()+
@@ -386,8 +396,8 @@ For outcomes, alluvial cant handle missing data.
 #ggsave("products/presentations/gsttp2src/g3.png",p3,dpi = 300)
 ```
 
-
 ## Raw distributions and Standardised raw visualisations
+
 ```{r}
 vin <- dfcoag
 vin <- left_join(vin, 
@@ -496,7 +506,6 @@ ggsave("products/presentations/gsttp2src/g5.png",p12,dpi = 300)
 #df %>% select(cohort,dxcont) %>% group_by(cohort,dxcont) %>% summarise(counts = n())
 ```
 
-
 ##let's explore time variation of ecmo outcomes and durations
 
 lets append to
@@ -532,26 +541,21 @@ dfhep <- left_join (
 ```
 
 # Poisson regression for transfusion
-vs. 
-Negative binomial model 
+
+vs. Negative binomial model
 
 ## explore only RBC vs. all products.
 
 ## what about fibrinogen?
 
-think about begininig nd end of ecmo run.
-think about other complications e.g., haemorrhagic complications
+think about begininig nd end of ecmo run. think about other complications e.g., haemorrhagic complications
 
-#deciding which feature to add
-- day on ecmo . hypothesis = we do need to as we transfuse more at the begining.
+#deciding which feature to add - day on ecmo . hypothesis = we do need to as we transfuse more at the begining.
 
-#lets look at total products for ecmo run 
+#lets look at total products for ecmo run
 
-note median ecmo run time = 14 days
-1st quartile 8 days
-2nd quartile 14 days
-3rd quartile 25.75 days
-4th quartile 100 days
+note median ecmo run time = 14 days 1st quartile 8 days 2nd quartile 14 days 3rd quartile 25.75 days 4th quartile 100 days
+
 ```{r}
 e2 <- dfprd %>% 
         group_by(ecmod) %>%
@@ -572,11 +576,13 @@ e2 <- e2 %>% mutate(ecmodq =
         )
 )
 ```
+
 Although this doesnt mean anything for each individual patient.
 
-for each individual patient, what you want is 4 segments ! 
+for each individual patient, what you want is 4 segments !
 
 What is an average time between each red cell transfusions
+
 ```{r}
 
 
@@ -592,8 +598,7 @@ e4 %>% group_by(group) %>% summarise(quantile(tdi,na.rm = T))
 #showing most patients receive a transfusion in 24 hour sort of cycle. 
 ```
 
-thus we can set 1 day as a unit of 'window'
-tranfusion in this window "yes" "no"
+thus we can set 1 day as a unit of 'window' tranfusion in this window "yes" "no"
 
 may be we should look at major hemorrhage events
 
@@ -601,14 +606,14 @@ may be we should look at major hemorrhage events
 dfprd %>% group_by(mrn,td) %>% summarise(rpd = sum(s_label == "prbcs")) %>% ungroup() %>% group_by(mrn) %>% arrange(desc(rpd),.by_group = TRUE) %>% View()
 ```
 
-what count as major hemorrhage. what coutns as massive transfusion 
+what count as major hemorrhage. what coutns as massive transfusion
 
 seems like we have a break through.
 
-let's make a dataframe that has all the days on ecmo including day 0 
+let's make a dataframe that has all the days on ecmo including day 0
 
-so this below code works. 
-now lets append this with total no of products transfused
+so this below code works. now lets append this with total no of products transfused
+
 ```{r}
 dg <- dfcore %>% select(mrn,group,ecmod) %>% mutate(ecmod = as.numeric(ecmod)) %>% group_by(mrn) %>% uncount(weights = ecmod, .id = "ecmod")
 
@@ -631,7 +636,8 @@ dg1 <- dfprd %>%
 dg1 <- dg1[dg1$td > 0 & dg1$td <88,]
 
 ```
-needs to clarify with silvana 
+
+needs to clarify with silvana
 
 lets merge it all together
 
@@ -654,7 +660,7 @@ names(dg)[names(dg) =="mrn.x"]<- "mrn"
 
 after all this total blood units transfused should check out but it is not
 
-following is a code for looking at patients who have NA in the t_form 
+following is a code for looking at patients who have NA in the t_form
 
 #We decided not to have 0th day on ecmo. we will have 1st day and nth day on ecmo.
 
@@ -662,8 +668,7 @@ following is a code for looking at patients who have NA in the t_form
 dfprd[is.na(dfprd$t_form),] %>% group_by(mrn)
 ```
 
-how do we analyse  day 1? do we analyse from day 2?
-may be we cant analyse that. 
+how do we analyse day 1? do we analyse from day 2? may be we cant analyse that.
 
 ```{r}
 dfbl <- dfbl %>% 
@@ -672,7 +677,24 @@ dfbl <- dfbl %>%
         mutate(ecmod = tdays + 1)
 ```
 
-
 current methdo of setting dates not so robust for dfbl especially. we need to revise.
 
-on average how many days do the patient got transfused. 
+on average how many days do the patient got transfused. seems not every day
+
+```{r}
+dtxprd <- dg %>% 
+        group_by(mrn) %>%
+        summarise(
+                maxd = max(ecmod),
+                dtx = sum(totall != 0 )
+        ) %>%
+        mutate(prpn = dtx/maxd)
+```
+
+This code looks at number of days where patients are transfused (dtx) out of their total days(ecmod). The proportion (prpn) of 1 suggest daily transfusion. It suggests that only 6 patients receive daily transfusion All others have less than 0.5 Therefore it makes sense to use a 'day' as a unit.
+
+Therefore we can use 1 day as a main unit
+
+```{r}
+
+```

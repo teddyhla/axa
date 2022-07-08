@@ -16,18 +16,18 @@
 #we will do further testing to declare fitness of this.
 
 # 2.0. SOURCE ------------------------------------------------------------------
-## 2.1.  DATA ---------------------------------------------------------------
+## 2.1. DATA ---------------------------------------------------------------
 source("scripts/3-outcomes.R")
 source("scripts/1c-clean.R")
 #data sourcing 3-outcomes including circuit change information
 #1c-clean which includes clean df on features.
 
-## 2.2.  DEPENDENCIES ----------------------------------------------------
+## 2.2. DEPENDENCIES ----------------------------------------------------
 library(tidyverse)
 library(ggplot2)
 
 
-## 2.3.  CUSTOM FUNCTION wr ---------------------------------------------------
+## 2.3. CUSTOM FUNCTION wr ---------------------------------------------------
 
 wr <- function (x,dfcore) {
         x <- left_join(
@@ -52,7 +52,7 @@ wr <- function (x,dfcore) {
 }
 # 3.0. DATA MANIPULATION -------------------------------------------------------
 
-## 3.1.  DFCORE ------------------------------------------------------------
+## 3.1. DFCORE ------------------------------------------------------------
 
 #wrangle dfcore to append some group and ecmod 
 
@@ -93,15 +93,15 @@ tf$nd <- as.numeric(tf$nd)
 tf$nd <- tf$nd + 1 
 
 
-## 3.3.  DFBL --------------------------------------------------------------
+## 3.3. DFBL --------------------------------------------------------------
 #now we need to wrangle "dfbl" into similar using custom func 
 tbl <- wr(dfbl,dfcore)
-## 3.4.  DFCOAG ------------------------------------------------------------
+## 3.4. DFCOAG ------------------------------------------------------------
 tco <- wr(dfcoag,dfcore)
 ## 3.5. DFHEP ------------------------------------------------------------
 thep <- wr(dfhep,dfcore)
 
-## 3.6.  DF for model ------------------------------------------------------
+## 3.6. DF for model ------------------------------------------------------
 
 #GOAL : to have a format x vs. y for model purposes
 
@@ -122,27 +122,55 @@ dg1 <- tf %>%
 #so now we have a dataframe dg1 that has no of days on ecmo and blood product transfused.
 
 dg1$mid <- paste(dg1$mrn,dg1$nd, sep = "")
+
+#now this checks out! :) hooray.
+
 #we make a unique column for each mrn and each day
 dg <- dfcore %>%
         select(mrn,ecmod) %>%
         mutate(ecmod = as.numeric(ecmod)) %>%
         group_by(mrn) %>%
-        uncount(weights = ecmod, .id = "ecmod")
+        uncount(weights = ecmod, .id = "ecmod") %>% 
+        ungroup()
 #we are now using uncount to get empty rows basically. 
+#this also checks out. 
 
 dg$mid <- paste(dg$mrn,dg$ecmod, sep = "")
 #same as before we now create a unique mid column and can join ! 
 
 dg <- left_join(
-        dg1,
         dg,
+        dg1,
         by = "mid"
 )
+#NOTE ORDER OF THIS LEFT JOIN IS IMPORTANT as it is to generate "NA"
 
-now need to make a zeros and then join blood products. using replace na etcetc
+#now need to make a zeros and then join blood products. using replace na etcetc
 
-# 4.0.  DEMOs -------------------------------------------------------------
-## 4.1.  Products transfused table -----------------------------------------
+dg <- dg %>% 
+        mutate(across(where(is.numeric),~replace_na(.x,0))) %>% 
+        ungroup()
+
+dg <- dg %>% select(-c(mrn.y,mid))
+names(dg)[names(dg)=="mrn.x"] <- "mrn"
+#rechange name column
+rm(dg1)
+#remove this unnecessary df. 
+
+#so "nd" and "ecmod" should check out on dg. 
+#thus, nd - ecmod should be 0 or less than 0 .
+table(dg$nd - dg$ecmod)
+#it checked out ! 
+
+#Lets append some group info
+dg <- left_join(
+        dg,
+        dfcore %>% select(mrn,group),
+        by = "mrn"
+)
+
+# 4.0. DEMOs -------------------------------------------------------------
+## 4.1. Products transfused table -----------------------------------------
 
 #let's demonstrate that there are differences in blood products tx using simple 
 # table - labelled as "pt1", ctotcryo = cumulative total cryo and so on 
@@ -172,11 +200,11 @@ t1 <- tf %>% select(group,s_label) %>% filter(s_label == "prbcs")
 #lets check this t1 and it checked out with findings from pt1
 summary(t1) 
 
-###  Statistical Test ------------------------------------------------
+### Statistical Test ------------------------------------------------
 #note chi sq doesnt like small things 
 test1 <- chisq.test(table(t1$s_label == "prbcs",t1$group))
 
-## 4.2.  ADJUSTED products table -------------------------------------------
+## 4.2. ADJUSTED products table -------------------------------------------
 
 #We need to adjust as numbers and duration on ecmo VASTLY differ in the two group.
 
@@ -229,10 +257,61 @@ sum(pt2$rbcpp[pt2$group == "gapt"])/63
 #it checks out
 
 
-###  Statistical Test  -----------------------------------------------
+### Statistical Test  -----------------------------------------------
 test2 <- wilcox.test(rbcpp ~ group, data = pt2)
 
 
+# 4.3. UNIT "TIME" ---------------------------------------------------------
+
+#Is it justifiable to use "calendar day" as a unit of time?
+pt3 <- dg %>% 
+        group_by(mrn) %>% 
+        summarise(
+                maxd = max(ecmod),
+                dtx = sum(totall != 0)
+        ) %>% 
+        mutate(prpn = dtx/maxd)
+
+quantile(pt3$prpn)
+#this showed that over 75% doesnt receive daily blood products. 
+#thus is okay to use calendar day as a unit of time.
+
+
+# 5.0. MODEL 1 --------------------------------------------------------------
+
+#however Var seems to be greater than Mean in where 0 are counted and not counted
+#likely OVERDISPERSION 
+m1 <- glm(totall ~ group, data =dg, family = poisson(link = "log"))
+m2 <- glm(totall ~ group, data =dg, family = quasipoisson(link = "log"))
+#univariate analysis looks promising.
+
+#lets try a logistic regression to see if it stands.
+dm <- dg
+dm$y <- ifelse(dm$totall == 0 , 0,1)
+
+m3 <- glm (y ~ group, data = dm, family = binomial)
+
+
+#lets also see if this remains true for RBCs 
+
+m4 <- glm(totrbc ~ group, data = dg, family = poisson(link="log"))
+#looking good so far 
+
+#KEY ASSUMPTIONS OF MODELS
+#independence - a bit dififcult
+
+#checking overdispersion
+#residual deviance is great than degrees of freedom then overdispersion exists
+
+# Multivariate regression----
+
+#lets' look at dfcore variables such as ethnic, weight, gender, age, apache
+# lets look at dfbl variables such as hb, min, max, mean, plt min max mean, lactate
+#crp min max mean
+#also as admission variable and also as a delta ! 
+dt <- left_join(dg, dfcore %>% select(mrn,age,ethnic,apache,wkg,sex), by = "mrn")
+m5 <- glm(totall ~ group + age + ethnic + apache + wkg + sex, data =dt, family = poisson(link = "log"))
+# 5.1. RANDOM FOREST ----
 #####
 
 
@@ -241,3 +320,6 @@ test2 <- wilcox.test(rbcpp ~ group, data = pt2)
 
         
         
+
+
+

@@ -388,7 +388,7 @@ message ("s1 is now dfcore")
 
 names(s3) <- tolower(names(s3))
 colnames(s3) <- c(
-        "mrn","chart_t","short_label","terse_form","unit","kg"
+        "mrn","chart_t","s_label","t_form","u","wkg"
 )
 
 s3$mrn <- toupper(s3$mrn)
@@ -401,9 +401,11 @@ pt_without_heparin<- setdiff(ptid,unique(s3$mrn))
 
 ##### 3.2. Col classes for s3-----------------------------------
 
-s3$short_label <- as.factor(s3$short_label)
-s3$terse_form <- as.double(s3$terse_form)
-s3$unit <- as.factor(s3$unit)
+s3$s_label <- as.factor(s3$s_label)
+levels(s3$s_label) <- c("hep","hep_ecmoiv","hep_ivbol","hep_rrt","hep_sysinf")
+s3$t_form <- as.double(s3$t_form)
+s3$u <- as.factor(s3$u)
+levels(s3$u) <- c("units","units/hr","units/kg/hr")
 
 message("Cleaning s3 is complete.")
 dfhep <- s3

@@ -101,6 +101,68 @@ tco <- wr(dfcoag,dfcore)
 ## 3.5. DFHEP ------------------------------------------------------------
 thep <- wr(dfhep,dfcore)
 
+#dfhep seems to have multiple prescriptions
+summary(thep$s_label)
+prop.table(table(thep$s_label))
+#this showed that combination of ecmo Xa IV and heparin together covers 99.7%
+#we will ignore other levels. 
+thep %>% filter(s_label == "hep_ecmoiv" & u != "units/kg/hr")
+#this reutnred 0 so checked out
+thep %>% filter(s_label == "hep_sysinf" & u != "units/hr")
+#this also returned 0 - so it checked out
+
+#looks like all systemic inf has unit as units/hour
+#and looks like ecmo xa all has units/kg/hr 
+
+#So, now let's look at hep_ecmo iv with weights 0.
+thep %>% filter(s_label == "hep_ecmoiv" & wkg <= 0 )
+#this turned empty. so all hep ecmo prescriptions have 'wkg;
+
+#Now let's see if all the wkgs change within the ecmo runs for each patient. 
+
+thep %>% 
+        filter(s_label == "hep_ecmoiv") %>%
+        group_by(mrn,wkg) %>%
+        summarise(freq = n()
+        )
+
+wdif <- thep %>% 
+        filter(s_label == "hep_ecmoiv") %>%
+        group_by(mrn) %>% 
+        summarise(
+                meanwkg = mean(wkg),
+                minwkg = min(wkg),
+                medianwkg = median(wkg),
+                maxwkg = max(wkg)
+        ) %>% 
+        mutate(diff = maxwkg - minwkg) %>% 
+        ungroup() %>% 
+        arrange(desc(diff))
+
+#this showed that some have insane weight changes. e.g., 75, 48, etc
+#let's check this with main "dfcore
+wdif <- left_join(
+        wdif,
+        dfcore %>% select(mrn,wkg),
+        by = "mrn"
+)
+
+#lets see what are the differences with original recoreded weight
+wdiff$neud <- wdif$wkg - wdif$medianwkg
+
+xtabs(~group+s_label,data = thep)
+#this code showed most of hep ecmo iv is in gaxa.
+
+### 3.5.2.  Feature Engineering ---------------------------------------------
+
+thep <- thep %>%
+        group_by(mrn) %>%
+        mutate( tdiff = difftime(chart_t,lag(chart_t),units = "hours")) %>%
+        mutate(tdiffnum = as.numeric(tdiff)) %>%
+        ungroup()
+#this generates time differences between each prescription.
+#perhaps we need mutate if here ! because you only want that for hep ecmo ones 
+
 ## 3.6. DF for model ------------------------------------------------------
 
 #GOAL : to have a format x vs. y for model purposes

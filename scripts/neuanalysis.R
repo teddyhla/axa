@@ -157,12 +157,46 @@ xtabs(~group+s_label,data = thep)
 
 thep <- thep %>%
         group_by(mrn) %>%
+        arrange(chart_t)%>%
         mutate( tdiff = difftime(chart_t,lag(chart_t),units = "hours")) %>%
         mutate(tdiffnum = as.numeric(tdiff)) %>%
         ungroup()
 #this generates time differences between each prescription.
 #perhaps we need mutate if here ! because you only want that for hep ecmo ones 
 
+thep <- thep %>% 
+        group_by(mrn) %>% 
+        mutate(
+                dose = 
+                        case_when(
+                               s_label == "hep_ecmoiv" ~ t_form * wkg,
+                               s_label == "hep_sysinf" ~ t_form
+                        )
+        )
+#now we have a thep with dose.   
+
+thep <- thep %>%
+        group_by(mrn) %>%
+        mutate(tdose = tdiffnum * dose)%>% 
+        ungroup()
+
+dhep <- thep %>% 
+        mutate(ecmod = as.numeric(ecmod))%>% 
+        group_by(mrn)%>%
+        summarise(
+                cumdose = sum(tdose,na.rm = T),
+                
+        )
+   
+dhep <- left_join(
+        dhep,
+        dfcore %>% select(mrn,ecmod,group,wkg),
+        by = "mrn"
+)     
+
+dhep$ecmod <- as.numeric(dhep$ecmod)
+dhep$dosepd <- dhep$cumdose/dhep$ecmod
+dhep$wdosepd <- dhep$dosepd/dhep$wkg
 ## 3.6. DF for model ------------------------------------------------------
 
 #GOAL : to have a format x vs. y for model purposes

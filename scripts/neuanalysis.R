@@ -265,6 +265,14 @@ dg <- left_join(
         by = "mrn"
 )
 
+
+## 3.7.  DF results -----------------------------------------------------
+
+tdf <- left_join(
+        df,
+        dfcore %>% select(mrn,group),by = "mrn"
+)
+
 # 4.0. DEMOs -------------------------------------------------------------
 ## 4.1. Products transfused table -----------------------------------------
 
@@ -357,7 +365,7 @@ sum(pt2$rbcpp[pt2$group == "gapt"])/63
 test2 <- wilcox.test(rbcpp ~ group, data = pt2)
 
 
-# 4.3. UNIT "TIME" ---------------------------------------------------------
+## 4.3. UNIT "TIME" ---------------------------------------------------------
 
 #Is it justifiable to use "calendar day" as a unit of time?
 pt3 <- dg %>% 
@@ -373,7 +381,16 @@ quantile(pt3$prpn)
 #thus is okay to use calendar day as a unit of time.
 
 
+
+
+## 4.4.  COMPLICATIONS  -------------------------------------------------
+
+#lets look at if complications are the same between groups. 
+xtabs(~tot+group , data = df)
+#this code showed that there are 
+
 # 5.0. MODEL 1 --------------------------------------------------------------
+
 
 #however Var seems to be greater than Mean in where 0 are counted and not counted
 #likely OVERDISPERSION 
@@ -384,8 +401,12 @@ m2 <- glm(totall ~ group, data =dg, family = quasipoisson(link = "log"))
 #lets try a logistic regression to see if it stands.
 dm <- dg
 dm$y <- ifelse(dm$totall == 0 , 0,1)
+dm <- left_join(
+        dm,
+        dfcore %>% select(mrn,age,surv_ecmo,wkg,apache),by="mrn"
+)
 
-m3 <- glm (y ~ group, data = dm, family = binomial)
+m3 <- glm (y ~ group + age + surv_ecmo + wkg + apache + group*surv_ecmo, data = dm, family = binomial)
 
 
 #lets also see if this remains true for RBCs 
@@ -407,6 +428,28 @@ m4 <- glm(totrbc ~ group, data = dg, family = poisson(link="log"))
 #also as admission variable and also as a delta ! 
 dt <- left_join(dg, dfcore %>% select(mrn,age,ethnic,apache,wkg,sex), by = "mrn")
 m5 <- glm(totall ~ group + age + ethnic + apache + wkg + sex, data =dt, family = poisson(link = "log"))
+#note ethnic is problematic as too many factor levels.
+m5mod <- glm(totall ~ group + age + apache + wkg + sex + ecmod + ecmod*group, data =dt, family = poisson(link = "log"))
+
+
+#let's look at "rate" 
+dgm <- dg %>% 
+        select(mrn,ecmod,totall,group)%>% 
+        group_by(mrn) %>% 
+        summarise(maxecmod = max(ecmod),sumtx = sum(totall))
+
+dgmt <- left_join(
+        dgm,
+        dfcore %>% select(mrn,age,ethnic,apache,sex,group,wkg),
+        by = "mrn"
+)
+
+dgmt$rate <- log(dgmt$maxecmod)
+
+#trial of univariate "rate" pois regression 
+m6 <- glm(sumtx ~ group + age + offset(rate),family = poisson(link="log"),data = dgmt)
+m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poisson(link="log"),data = dgmt)
+
 # 5.1. RANDOM FOREST ----
 #####
 
@@ -417,5 +460,5 @@ m5 <- glm(totall ~ group + age + ethnic + apache + wkg + sex, data =dt, family =
         
         
 
-
+#model the day on ecmo 
 

@@ -270,7 +270,7 @@ dg <- left_join(
 
 tdf <- left_join(
         df,
-        dfcore %>% select(mrn,group),by = "mrn"
+        dfcore %>% select(mrn,group,ecmod),by = "mrn"
 )
 
 # 4.0. DEMOs -------------------------------------------------------------
@@ -386,9 +386,22 @@ quantile(pt3$prpn)
 ## 4.4.  COMPLICATIONS  -------------------------------------------------
 
 #lets look at if complications are the same between groups. 
-xtabs(~tot+group , data = df)
+br <- tdf %>% 
+        select(mrn,group,tot,tot_circhange,ecmod)%>% 
+        mutate( ecmod = as.numeric(ecmod)) %>% 
+        mutate(tot = as.numeric(tot)) %>%
+        mutate(tot_circhange = as.numeric(tot_circhange)) %>%
+        mutate(across(where(is.numeric),~replace_na(.x,0))) %>% 
+        group_by(mrn)%>%
+        mutate(
+                bter = tot / ecmod,
+                ccr = tot_circhange / ecmod
+        ) %>% 
+        ungroup()
+        
+xtabs(~tot+group , data = tdf)
 #this code showed that there are 
-
+br %>% group_by(group) %>% summarise(mean(bter),median(bter),mean(ccr),median(ccr))
 # 5.0. MODEL 1 --------------------------------------------------------------
 
 
@@ -460,5 +473,5 @@ m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poiss
         
         
 
-#model the day on ecmo 
+#model the day on ecmo - weak interaction 
 

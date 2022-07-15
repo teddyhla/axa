@@ -863,6 +863,80 @@ key$id <- key$unique_id
 df <- left_join (df, key %>% select(mrn,id), by = "id")
 rm(key)
 
+#df2
+
+df2 <- df
+
+df2 <- df2 %>% 
+        select(
+                mrn,
+                admn_ct_results,
+                int_ct_results,
+                comp_1,
+                comp_2, 
+                comp_3,
+                comp_4
+        )
+
+
+
+#df2 <- df2 %>% 
+#        select(
+#                mrn,
+#                admn_ct_results,
+#                int_ct_results,
+#                comp_1_quali,
+#                comp_2_quali, 
+#                comp_3_quali,
+#                comp_4_quali
+#                )
+#
+#df2$all <- paste(
+#        df2$admn_ct_results,
+#        df2$int_ct_results,
+#        df2$comp_1_quali,
+#        df2$comp_2_quali,
+#        df2$comp_3_quali,
+#        df2$comp_4_quali
+#)
+
+
+df2 <- df2 %>% pivot_longer(!mrn, names_to = "complications")
+levels(df2$value)<- c(
+        "both",
+        "haem",
+        "throm",
+        "nil",
+        "haem",
+        "throm"
+)
+
+df3 <- df2 %>% 
+        group_by(mrn)%>%
+        summarise(
+                toth = sum(value == "haem",na.rm = T),
+                totthr = sum(value == "throm",na.rm = T),
+                totboth = sum(value == "both",na.rm = T)
+        )
+
+df4 <- df
+df4 <- df4 %>% 
+        select(admn_ct_hem,int_ct_hem,mrn)
+df4 <- df4 %>% pivot_longer(!mrn, names_to = "haemorrhages")
+
+df4 <- df4 %>% 
+        group_by(mrn)%>%
+        summarise(
+                icb = sum(value == "icb_wo",na.rm = T),
+                icbmidline = sum(value == "icb_WITH_midlineshift",na.rm=T)
+        )
+
+df5 <- df
+
+df5 <- df5 %>% 
+        select(mrn,admn_ct_hem,int_ct_hem)
+
+df5$s <- paste(df5$admn_ct_hem,df5$int_ct_hem)
 # CHECK FINAL DF against df0 ----------------------------------------------
 
 #will generate a csv file for andy and silvana to help merge

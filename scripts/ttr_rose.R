@@ -1,4 +1,4 @@
-library(tidyverse)
+#library(tidyverse)
 #### Custom function for calculation of TTR ----
 ttrs<- function (x,y, lower = 1.9999 , upper = 3.00001,na.rm = TRUE){
         #formula for ttr calculation using linear interpol
@@ -71,21 +71,22 @@ ttrcalc <- Vectorize(ttrs,c("x","y"))
 #this function is working as a scalar function. Vectorize from base R converts it and voila
 
 ### Testing custom function in all possible numerical scenarios ----
-testdf <- data.frame(
-        situation = sprintf("situation-%s",1:9),
-        v1 = c(1,1,1,2.5,2.5,2.5,5,5,5),
-        v2 =c(1,2.5,5,0.9,2.5,5,0.5,2.5,7)
-)
-# this test dataframe would cover all possible scenario's without NA. can it handle it ?
-testdf %>% mutate(ans = ttrcalc(v1,v2))
+#testdf <- data.frame(
+#        situation = sprintf("situation-%s",1:9),
+#        v1 = c(1,1,1,2.5,2.5,2.5,5,5,5),
+#        v2 =c(1,2.5,5,0.9,2.5,5,0.5,2.5,7)
+#)
+## this test dataframe would cover all possible scenario's without NA. can it handle it ?
+#testdf %>% mutate(ans = ttrcalc(v1,v2))
+#testdf$ans <- ttrcalc(testdf$v1,testdf$v2)
 # the output seems correct i.e., it produces right output for all these possible scenarios. 
 
 #####---- Testing custom function in situations with NA ----
 #Now let's try NA values in this custom function.
-testna <- data.frame (
-        situation = sprintf("situation-%s",1:5),
-        v1 = c(NA,1.1,2.0,3.0,5.0),
-        v2 = c(1.5,2.0,NA,2.5,NA)
-)
-       
-#it works with NA
+#testna <- data.frame (
+#        situation = sprintf("situation-%s",1:5),
+#        v1 = c(NA,1.1,2.0,3.0,5.0),
+#        v2 = c(1.5,2.0,NA,2.5,NA)
+#)
+#       
+##it works with NA

@@ -28,6 +28,10 @@ library(ggplot2)
 
 
 ## 2.3. CUSTOM FUNCTION wr ---------------------------------------------------
+source("scripts/ttr_rose.R")
+#custom rosenthaal calculation function
+#this function requires data in the format
+#time interval, value 1, value 2 to work.
 
 wr <- function (x,dfcore) {
         x <- left_join(
@@ -148,7 +152,7 @@ wdif <- left_join(
 )
 
 #lets see what are the differences with original recoreded weight
-wdiff$neud <- wdif$wkg - wdif$medianwkg
+wdif$neud <- wdif$wkg - wdif$medianwkg
 
 xtabs(~group+s_label,data = thep)
 #this code showed most of hep ecmo iv is in gaxa.
@@ -464,6 +468,46 @@ m6 <- glm(sumtx ~ group + age + offset(rate),family = poisson(link="log"),data =
 m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poisson(link="log"),data = dgmt)
 
 # 5.1. RANDOM FOREST ----
+
+
+# 6.0. Quality Markers ----------------------------------------------------
+
+#Quality markers are defined as :-
+# time to first threapeutic range
+# time in therapeutic range but chosen for - time "above"
+# both individually independently and as a feature
+
+# 6.1.  data prep  --------------------------------------------------------
+#to feed into ttrcalc function, we need for each patient,
+#col1 = time interval
+#col2 = v1 , value 1 at begining of time interval
+#col3 = v2 , value 2 at the end of time interval
+#then we need to set custom function parameters of lower and upper
+
+#we have df "tco" which has 
+
+#first we need to subset for ecmo durations
+dim(tco)
+#showed there is 12311 rows for 11 columns.
+#lets subset ---
+
+tco <- tco %>%
+        group_by(mrn) %>%
+        filter(chart_t >= ecmo_start & chart_t <= ecmo_finish)%>%
+        ungroup()
+dim(tco)
+#its the same so sounds legit.
+#tco %>%group_by(mrn) %>% filter(chart_t >= ecmo_finish)
+#tco %>%group_by(mrn) %>% filter(chart_t <= ecmo_start)
+#both turned out 0 so it checked out.
+
+#lets try reshaping with sample df. 
+samp <- tco %>% filter(mrn == "1103375H")
+arrange(samp,chart_t)
+#then we need to "lag"
+
+#steps to do
+# 1. time need to be sorted. so chart_t needs to be desc. 
 #####
 
 

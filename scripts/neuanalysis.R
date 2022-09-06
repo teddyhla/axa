@@ -503,9 +503,27 @@ dim(tco)
 
 #lets try reshaping with sample df. 
 samp <- tco %>% filter(mrn == "1103375H")
-arrange(samp,chart_t)
-#then we need to "lag"
 
+#we need to add ecmo_start and finish time as rows
+
+samp <- samp %>% 
+        add_row(
+                mrn = sample(.$mrn,size =1),
+                chart_t = sample(.$ecmo_start,size=1))%>%
+        add_row(
+                mrn = sample(.$mrn,size =1),
+                chart_t = sample(.$ecmo_finish,size = 1)
+        )%>%
+        arrange(chart_t)
+        
+#then we need to "lag"
+samp <- samp %>% 
+        select(mrn,chart_t,axa,group) %>%
+        mutate(t2=lag(chart_t),a2 = lag(axa)) %>% 
+        select(mrn,chart_t,t2,axa,a2,group)
+
+samp <- samp %>% mutate(ivet = as.numeric(t2 - chart_t))
+samp$ivet <- samp$ivet * -0.0002777778
 #steps to do
 # 1. time need to be sorted. so chart_t needs to be desc. 
 #####

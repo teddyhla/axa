@@ -476,6 +476,10 @@ m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poiss
 # time to first threapeutic range
 # time in therapeutic range but chosen for - time "above"
 # both individually independently and as a feature
+# percent time in TTR as well as proportion in range
+# INR variability using Fihn method 
+# how about scaling and centering as per 
+
 
 # 6.1.  data prep  --------------------------------------------------------
 #to feed into ttrcalc function, we need for each patient,
@@ -524,14 +528,106 @@ samp <- samp %>%
 
 samp <- samp %>% mutate(ivet = as.numeric(t2 - chart_t))
 samp$ivet <- samp$ivet * -0.0002777778
+samp$ttrose <- ttrcalc(lower = 0.2999,upper = 0.7001,x =samp$axa,y =samp$a2)
+
+#TTRrose works
+
+#Lets calculate Fihn's style variability 
+#make a new col
+samp$a = (samp$axa - 0.5)^2
+samp$b = samp$a / samp$ivet
+sum(samp$b,na.rm=TRUE)
+#this looks legit on review but needs to work on rmoving 0's
+
 #steps to do
 # 1. time need to be sorted. so chart_t needs to be desc. 
 #####
 
 
+
+# 6.2. 1.  TTR traditional OR proportion ----------------------------------
+
+#in this approach, we count number of blood tests as denominator and numerator
+#numerator = no of blood tests in range. 
+#using targets of 0.3 to 0.7 for axa
+#using targets of 1.5 to 2.0 for apttr 
+
+#to ensure fair comparison, we should work out the person time in each group.
+dfcore %>% 
+        group_by(group)%>% 
+        summarise(n= n(),persondays = sum(ecmod))
+#this showed the person days
+message("above showed person days")
+
+tco %>% 
+        filter(group == "gapt") %>% 
+        select(apttr)%>%
+        summarise(
+                total_apttr_tests=sum(!is.na(apttr)),
+                total_above_range= sum(apttr>2.0,na.rm=TRUE),
+                total_in_range = sum(apttr>=1.5 & apttr <= 2.0,na.rm=TRUE)
+                )
+#this showeed for APPTTR group , raw or traditional TTR values at aggregate level 
+tco %>% 
+        filter(group == "gaxa") %>% 
+        select(axa)%>%
+        summarise(
+                total_axa_tests=sum(!is.na(axa)),
+                total_above_range= sum(axa>0.7,na.rm=TRUE),
+                total_in_range = sum(axa>=0.3 & axa <= 0.7,na.rm=TRUE)
+        )
+#this showeed for AXA group , raw or traditional TTR values at aggregate level 
+
+
+# 6.2.2. Statistical Tests for traditional TTR ----------------------------
+
+tco %>% 
+        select(mrn,group,axa)%>% 
+        filter(group=="gaxa")%>%
+        drop_na()%>%
+        group_by(mrn)%>%
+        summarise(
+                no_tests_per_pts = n(),
+                no_tests_above_range = sum(axa>0.7,na.rm=TRUE),
+                no_tests_in_range = sum(axa>=0.3 & axa <= 0.7,na.rm=TRUE)
+        ) -> gaxatrad
+
+gaxatrad$g <- 'gaxa'
+gaxatrad$prop <- gaxatrad$no_tests_in_range/gaxatrad$no_tests_per_pts
+
+tco %>% 
+        select(mrn,apttr,group)%>% 
+        filter(group=="gapt")%>%
+        drop_na()%>%
+        group_by(mrn)%>%
+        summarise(
+                no_tests_per_pts = n(),
+                no_tests_above_range = sum(apttr>2.0,na.rm=TRUE),
+                no_tests_in_range = sum(apttr>=1.5 & apttr <= 2.0,na.rm=TRUE)
+        ) -> gapttrad
+
+gapttrad$g <- "gapt"
+gapttrad$prop <- gapttrad$no_tests_in_range/gapttrad$no_tests_per_pts
+
+pl_ttr_trad <- rbind(
+        gaxatrad %>% select(g,prop),
+        gapttrad %>% select(g,prop)
+)
+
+pl_ttr_trad$g <- as.factor(pl_ttr_trad$g)
+
+#undertake Statistical test
+wilcox.test(prop~ g , data = pl_ttr_trad)
+t.test(prop~g,data = pl_ttr_trad)
+
+#ggplot code
+ggplot(data = pl_ttr_trad, aes(x=g,y=prop,group = g)) + geom_boxplot()
+
 #ISSUES
+#- need to review the above some patients have very high and very low TTR 
 
-
+#- need to review why there is a drop off of a few patients on gaxa
+#- need to have a globally set ggplot2 theme
         
         
 

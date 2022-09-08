@@ -65,11 +65,13 @@ wo <- function(x){
         x <- x %>%
                 add_row(
                         mrn = sample(.$mrn,size =1),
-                        chart_t = sample(.$ecmo_start,size=1)
+                        chart_t = sample(.$ecmo_start,size=1),
+                        group = sample(.$group,size=1)
                 ) %>% 
                 add_row(
                         mrn = sample(.$mrn,size = 1),
-                        chart_t = sample(.$ecmo_finish,size=1)
+                        chart_t = sample(.$ecmo_finish,size=1),
+                        group = sample(.$group,size=1)
                 )%>%
                 arrange(chart_t)
         return(x)
@@ -148,11 +150,60 @@ edd <- function (a){
         
         a$ttrn<- as.numeric(a$ttrose)
         a$it <- a$ttrn * a$ivethr
+        sumttr <- sum(a$it,na.rm=TRUE)
         ttrg <- sum(a$it,na.rm = TRUE)/sum(a$ivethr,na.rm = TRUE)
         
-        df <- data.frame(mrn,group,totalhr,tlow,thi,ttrg)
+        df <- data.frame(mrn,group,totalhr,tlow,thi,sumttr,ttrg)
         return(df)
 }
+
+#7th custom function
+#fihn's method
+
+fnm <- function(a){
+        #this is a function to calculate variability using Fihn's method
+        #variability is a summary feature, so we can ignore individual NA's
+        
+        if ("axa" %in% names(a)){
+                z = 0.4
+                a <- a %>% 
+                        select(mrn,axa,group,ivethr) %>%
+                        drop_na(axa) %>%
+                        filter(ivethr>0) %>%
+                        mutate(
+                                temp1 = (axa - 0.4)^2,
+                                temp2 = temp1 / ivethr
+                        )
+                
+        } else {
+                z = 1.75
+                a <- a %>%
+                        select(mrn,apttr,group,ivethr) %>%
+                        drop_na(apttr)%>%
+                        filter(ivethr > 0) %>%
+                        mutate(
+                                temp1 = (apttr - 1.75)^2 ,
+                                temp2 = temp1 / ivethr
+                        )
+                
+        }
+        
+        
+        #a <- a[!is.na(a$y),]
+        #we will filter time interval 0 or NA in values
+      
+        #a$temp1 <- (a$y - z)^2 
+        #a$temp2 <- a$temp1 / ivethr
+        
+        mrn <- sample(a$mrn,size=1)
+        group <- sample(a$group,size =1)
+        sigm <- (sum(a$temp2))/(dim(a)[1])
+        df <- data.frame(mrn,group,sigm)
+        return(df)
+     
+        #
+}
+
 # 3.0. DATA MANIPULATION -------------------------------------------------------
 
 ## 3.1. DFCORE ------------------------------------------------------------
@@ -735,7 +786,7 @@ p1 <- ggplot(data = pl_ttr_trad, aes(x=g,y=prop,color=g)) +
                     
         )
 
-ggsave("products/presentations/sept22_01",plot=p1,device ="png",dpi=320)
+#ggsave("products/presentations/sept22_01",plot=p1,device ="png",dpi=320)
 
 
 # 6.3. TTR Rosendaal ------------------------------------------------------
@@ -773,29 +824,110 @@ tlix <- map(tlix,lwg)
 tlix <- map(tlix,mwt)
 #this should now have interval calculated
 
+# Applying TTR rose custom function ---------------------------------------
+
+
 #now apply custom function ttrrose
-tlix <- map(tlix,rap)
+tlixr <- map(tlix,rap)
 #this seems to work.
 
+tlixr <- map(tlixr,edd)
+#this works in trying to get a summary df
+
+#now lets' convert back to df
+xdf <- plyr::ldply(tlixr,data.frame)
+xdf <- as.tibble(xdf)
 #now lets apply for tlip
+
+
+# applying fihn's  --------------------------------------------------------
+#
+#tsig <- map(tlix,fnm)
+#sgxdf <- plyr::ldply(tsig,data.frame)
+#sgxdf <- as.tibble(sgxdf)
+#
+
+
 
 #as per above
 tlip <-map(tlip,wo)
 tlip <- map(tlip,lwg)
 tlip <- map(tlip,mwt)
-tlip <- map(tlip,rap)
+# applying appt for rose --------------------------------------------------
+
+tlipr <- map(tlip,rap)
+tlipr <- map(tlipr,edd)
 
 #what we really care about is individual patient, 
 
 #cross-check - all the ivethr should add up to the same.
 
+#so now we will convert these list items to dataframe. 
+pdf <- plyr::ldply(tlipr,data.frame)
+pdf<-as.tibble(pdf)
+
+# applying Fihn's --------------------------------------------------
+#
+#tsip <- map(tlip,fnm)
+#sgpdf <- plyr::ldply(tsip,data.frame)
+#sgpdf <- as.tibble(sgpdf)
+#
+dttr  <- rbind(xdf,pdf)
+#dsigm <- rbind(sgxdf,sgpdf)
+#
 #ISSUES
 #- need to review the above some patients have very high and very low TTR 
 
 #- need to review why there is a drop off of a few patients on gaxa
 #- need to have a globally set ggplot2 theme
-        
+
+
+# 6.3.2. Statistical Tests ------------------------------------------------
+
+wilcox.test(ttrg ~ group, data = dttr)        
+t.test(ttrg ~ group, data = dttr)
         
 
-#model the day on ecmo - weak interaction 
+# 6.3.3. Ggplot2 output ---------------------------------------------------
 
+p2 <- ggplot(data = dttr, aes(x=group,y=ttrg,color=group)) + 
+        geom_boxplot()+
+        theme_bw()+
+        labs(
+                x = "Monitoring Groups",
+                y = "% of tests in range",
+                title = "Proportion of blood tests in range using Rosendaal method",
+                subtitle = "Welch Two Sample t- test : p <0.005"
+                
+        )
+
+#ggsave("products/presentations/sept22_01_p2",plot=p2,device ="jpeg",dpi=320)
+
+
+# 6.3.4. calculating t high's ---------------------------------------------
+
+dttr$prophi <- dttr$thi / dttr$totalhr
+
+
+p3 <- ggplot(data = dttr, aes(x=group,y=prophi,color=group)) + 
+        geom_boxplot()+
+        theme_bw()+
+        labs(
+                x = "hi Groups",
+                y = "% of tests in range",
+                title = "Proportion of blood tests in range using Rosendaal method",
+                subtitle = "Welch Two Sample t- test : p <0.005"
+        )
+
+
+# 6.4. Fihn's method variability ------------------------------------------
+
+dtest <- left_join(
+        dfcore %>% select(mrn,age,apache,ethnic,sex,surv_ecmo),
+        dttr %>% select(mrn,group,ttrg),
+        by = "mrn"
+)
+
+dtest <- dtest %>% select(-mrn)
+
+mz <- glm(surv_ecmo ~  ttrg + age + sex + apache, data = dtest,family = binomial(link="logit"))

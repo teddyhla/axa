@@ -33,7 +33,10 @@ source("scripts/ttr_rose.R")
 #this function requires data in the format
 #time interval, value 1, value 2 to work.
 
+#custom function 1. this is basicaly to append ecmo finish and start time in corect
+#formats to each data frames
 wr <- function (x,dfcore) {
+        #func to append ecmo start finish columns to each dataframes
         x <- left_join(
                 x,
                 dfcore %>% select(mrn,ecmo_start,ecmo_finish,group,ecmod),
@@ -53,6 +56,85 @@ wr <- function (x,dfcore) {
         x$nd <- x$nd + 1 
         
         return(x)
+}
+
+#2nd custom function
+#this is basically function add begin and end times in blood tests
+wo <- function(x){
+        #function to add begin and end times in blood tests
+        x <- x %>%
+                add_row(
+                        mrn = sample(.$mrn,size =1),
+                        chart_t = sample(.$ecmo_start,size=1)
+                ) %>% 
+                add_row(
+                        mrn = sample(.$mrn,size = 1),
+                        chart_t = sample(.$ecmo_finish,size=1)
+                )%>%
+                arrange(chart_t)
+        return(x)
+}
+
+#3rd custom function
+#function to essentially lag the blood results and times so can make a interval
+
+
+lwg <- function (x){
+        #function to add lagged values both times and blood,
+        #need to select axa or apt
+        
+        if ("axa" %in% names(x)){
+                x <- x %>%
+                        select(mrn,chart_t,axa,group) %>%
+                        mutate(
+                                t2=lag(chart_t),
+                                v2 = lag(axa)
+                        ) %>%
+                        select(mrn,chart_t,t2,axa,v2,group)
+                return(x)
+        } else {
+                x <- x %>%
+                        select(mrn,chart_t,apttr,group) %>%
+                        mutate(
+                                t2=lag(chart_t),
+                                v2 = lag(apttr)
+                        ) %>%
+                        select(mrn,chart_t,t2,apttr,v2,group)
+                return(x)
+        }
+        
+}
+
+#4th custom function
+#function to calculate time intervals in hours 
+mwt <- function (x){
+        #fuction calculates time intervals in hours
+        x<- x %>% 
+                mutate(ivethr = as.numeric(t2-chart_t))
+        x$ivethr <- x$ivethr * -0.00027777778
+        #this line converts secs to hours
+        return(x)
+}
+
+#5th custom function
+#lets apply the ttr function 
+
+rap <- function (x){
+        #function to apply ttrose function
+        #need to select axa or apt
+        
+        if ("axa" %in% names(x)){
+                l = 0.2999
+                u = 0.7001
+                x$ttrose <- ttrcalc(lower = l,upper = u, x=x$axa,y=x$v2)
+                return(x)
+        } else {
+                l = 1.49999
+                u = 2.00001
+                x$ttrose <- ttrcalc(lower = l, upper = u, x=x$apptr,y=x$v2)
+                return(x)
+        }
+        
 }
 # 3.0. DATA MANIPULATION -------------------------------------------------------
 
@@ -484,7 +566,7 @@ m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poiss
 # 6.1.  data prep  --------------------------------------------------------
 #to feed into ttrcalc function, we need for each patient,
 #col1 = time interval
-#col2 = v1 , value 1 at begining of time interval
+#col2 = v1 , value 1 at beginning of time interval
 #col3 = v2 , value 2 at the end of time interval
 #then we need to set custom function parameters of lower and upper
 
@@ -610,8 +692,8 @@ gapttrad$g <- "gapt"
 gapttrad$prop <- gapttrad$no_tests_in_range/gapttrad$no_tests_per_pts
 
 pl_ttr_trad <- rbind(
-        gaxatrad %>% select(g,prop),
-        gapttrad %>% select(g,prop)
+        gaxatrad %>% select(mrn,g,prop),
+        gapttrad %>% select(mrn,g,prop)
 )
 
 pl_ttr_trad$g <- as.factor(pl_ttr_trad$g)
@@ -620,9 +702,47 @@ pl_ttr_trad$g <- as.factor(pl_ttr_trad$g)
 wilcox.test(prop~ g , data = pl_ttr_trad)
 t.test(prop~g,data = pl_ttr_trad)
 
-#ggplot code
-ggplot(data = pl_ttr_trad, aes(x=g,y=prop,group = g)) + geom_boxplot()
 
+# 6.2.3.  ggplot and save for trad TTR ------------------------------------
+
+
+#ggplot code
+p1 <- ggplot(data = pl_ttr_trad, aes(x=g,y=prop,color=g)) + 
+        geom_boxplot()+
+        theme_bw()+
+        labs(
+              x = "Monitoring Groups",
+              y = "proportion of blood tests  in range",
+              title = "Proportion of blood tests in desired range",
+              subtitle = "Welch Two Sample t- test : p <0.005"
+                    
+        )
+
+ggsave("products/presentations/sept22_01",plot=p1,device ="png",dpi=320)
+
+
+# 6.3. TTR Rosendaal ------------------------------------------------------
+
+
+# 6.3.1. Data prep for TTR rose -------------------------------------------
+
+#the issue now is that data frame can be grouped but cannot do add row function
+#to a grouped data frame, so lets make a list
+
+#first for axa group, dont forget 'arrange by time to work
+tlix <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
+        filter(group=="gaxa")%>%
+        group_by(mrn)%>%
+        arrange(chart_t)%>%
+        group_split()
+
+tlip <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
+        filter(group=="gapt")%>%
+        group_by(mrn)%>%
+        arrange(chart_t)%>%
+        group_split()
 #ISSUES
 #- need to review the above some patients have very high and very low TTR 
 

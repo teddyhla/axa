@@ -136,6 +136,23 @@ rap <- function (a){
         }
         
 }
+
+#6th custom function
+#here the goal is to generate a summary value for each patient.
+edd <- function (a){
+        mrn <- sample(a$mrn,size=1)
+        group <- sample(a$group,size =1)
+        totalhr <- sum(a$ivethr,na.rm=TRUE)
+        tlow <- sum(a[which(a$ttrose == "low"),"ivethr"])
+        thi <- sum(a[which(a$ttrose == "high"),"ivethr"])
+        
+        a$ttrn<- as.numeric(a$ttrose)
+        a$it <- a$ttrn * a$ivethr
+        ttrg <- sum(a$it,na.rm = TRUE)/sum(a$ivethr,na.rm = TRUE)
+        
+        df <- data.frame(mrn,group,totalhr,tlow,thi,ttrg)
+        return(df)
+}
 # 3.0. DATA MANIPULATION -------------------------------------------------------
 
 ## 3.1. DFCORE ------------------------------------------------------------
@@ -767,6 +784,11 @@ tlip <-map(tlip,wo)
 tlip <- map(tlip,lwg)
 tlip <- map(tlip,mwt)
 tlip <- map(tlip,rap)
+
+#what we really care about is individual patient, 
+
+#cross-check - all the ivethr should add up to the same.
+
 #ISSUES
 #- need to review the above some patients have very high and very low TTR 
 

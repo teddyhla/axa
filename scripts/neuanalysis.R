@@ -111,7 +111,7 @@ mwt <- function (x){
         #fuction calculates time intervals in hours
         x<- x %>% 
                 mutate(ivethr = as.numeric(t2-chart_t))
-        x$ivethr <- x$ivethr * -0.00027777778
+        x$ivethr <- x$ivethr * -0.016667
         #this line converts secs to hours
         return(x)
 }
@@ -119,20 +119,20 @@ mwt <- function (x){
 #5th custom function
 #lets apply the ttr function 
 
-rap <- function (x){
+rap <- function (a){
         #function to apply ttrose function
         #need to select axa or apt
         
-        if ("axa" %in% names(x)){
+        if ("axa" %in% names(a)){
                 l = 0.2999
                 u = 0.7001
-                x$ttrose <- ttrcalc(lower = l,upper = u, x=x$axa,y=x$v2)
-                return(x)
+                a$ttrose <- ttrcalc(lower = l,upper = u, x=a$axa,y=a$v2)
+                return(a)
         } else {
                 l = 1.49999
                 u = 2.00001
-                x$ttrose <- ttrcalc(lower = l, upper = u, x=x$apptr,y=x$v2)
-                return(x)
+                a$ttrose <- ttrcalc(lower = l, upper = u, x=a$apttr,y=a$v2)
+                return(a)
         }
         
 }
@@ -743,6 +743,30 @@ tlip <- tco %>%
         group_by(mrn)%>%
         arrange(chart_t)%>%
         group_split()
+
+#tlix and tlip data frames for each patient in each group
+#lets' apply series of custom functions
+
+tlix <- map(tlix,wo)
+#this should now look like there is an added row for start and finish.
+
+tlix <- map(tlix,lwg)
+#this should now have a t2,v2 cols
+
+tlix <- map(tlix,mwt)
+#this should now have interval calculated
+
+#now apply custom function ttrrose
+tlix <- map(tlix,rap)
+#this seems to work.
+
+#now lets apply for tlip
+
+#as per above
+tlip <-map(tlip,wo)
+tlip <- map(tlip,lwg)
+tlip <- map(tlip,mwt)
+tlip <- map(tlip,rap)
 #ISSUES
 #- need to review the above some patients have very high and very low TTR 
 

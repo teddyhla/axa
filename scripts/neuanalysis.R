@@ -931,3 +931,30 @@ dtest <- left_join(
 dtest <- dtest %>% select(-mrn)
 
 mz <- glm(surv_ecmo ~  ttrg + age + sex + apache, data = dtest,family = binomial(link="logit"))
+
+p41 <- ggplot(data = dtest,aes(x=group,y=ttrg,color = surv_ecmo))+
+        geom_boxplot()+
+        geom_jitter(width = 0.15,alpha = 0.45)+ 
+        theme_bw()+
+        labs(
+                x= "Monitoring Groups",
+                y= "Time in therapeutic range(Rosendaal)",
+                title = "ECMO survival as grouped by monitoring group"
+                
+        )
+
+#ggsave("products/presentations/sept22_01_p41",plot=p41,device ="jpeg",dpi=320)
+
+p42 <- ggplot(data=dtest, aes(x=group,y=ttrg,color =surv_ecmo))+
+        geom_boxplot()+
+        geom_jitter(width = 0.15,alpha = 0.45)+
+        facet_wrap(~surv_ecmo)+
+        theme_bw()+
+        labs(
+                x= "Monitoring Groups",
+                y= "Time in therapeutic range(Rosendaal)",
+                title = "ECMO survival as grouped by monitoring group"
+        )
+
+#ggsave("products/presentations/sept22_01_p42",plot=p42,device ="jpeg",dpi=320)
+

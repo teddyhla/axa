@@ -2,18 +2,24 @@
 
 # 1.0. RATIONALE ---------------------------------------------------------------
 
-#Exploring differences in blood product requirements between axa and apttr groups
-#Assumptions 1: blood products given in "units". Thus, units treated as "integers"
+#This file is for feature engineering.
+#tick marked if feature engineered. 
+# [/] - df is a circuit change and complications 
+# [/] - df2 is a tidy long form of complications.
+# [/] - df3 -- df3 is a data frame of count of complications
+# [/] - df4 -- this is data frame of intracranial bleed
+# [/] - df5 - this is data frame of hemorrhagic complications
+# [/] - dfbl --  blood investigation values
+# [/] - tbl -- blood investigations values clean 
+# [ ] - dfcoag -- axa and apttr values
+# [/] - dfcore - main dataframe demographics 
+# [ ] - dfhep -- heparin prescriptions
+# [ ] - dfhydrocortinf 
+# [ ] - dfprd  blood products transfused
+# [/] - tf is a blood products per day on ecmo
+# [ ] - dfrx - other medications
+# [ ] - dftxa - tranexemic acid infusions 
 
-#Assumptions 2: decision for blood products usually made slowly(i.e., time-insensitive) OR
-#rapidly "time-sensitive". 
-#"Time-sensitive" are likely to be major haemorrhage OR mass transfusions 
-#"Time-insensitive" means that decision for transfusion and physical transfusion
-#is enacted much slower. 
-#Therefore "a calendar day" is decided as unit of time.
-#This is due to unnecessary complication of rules for exact 24 hour from blood product
-#and the blood test values before the 24 hour mark or say at 6 hour mark. 
-#we will do further testing to declare fitness of this.
 
 # 2.0. SOURCE ------------------------------------------------------------------
 ## 2.1. DATA ---------------------------------------------------------------
@@ -22,18 +28,18 @@ source("scripts/1c-clean.R")
 #data sourcing 3-outcomes including circuit change information
 #1c-clean which includes clean df on features.
 
-## 2.2. DEPENDENCIES ----------------------------------------------------
+## 2.2. DEPENDENCIES & LIBRARIES -----------------------------------------------
 library(tidyverse)
 library(ggplot2)
 
 
-## 2.3. CUSTOM FUNCTION wr ---------------------------------------------------
+## 2.3. CUSTOM FUNCTIONS  ---------------------------------------------------
 source("scripts/ttr_rose.R")
 #custom rosenthaal calculation function
 #this function requires data in the format
 #time interval, value 1, value 2 to work.
 
-#custom function 1. this is basicaly to append ecmo finish and start time in corect
+#custom function 1. this is basically to append ecmo finish and start time in corect
 #formats to each data frames
 wr <- function (x,dfcore) {
         #func to append ecmo start finish columns to each dataframes
@@ -246,6 +252,7 @@ tf$nd <- as.numeric(tf$nd)
 #makes it numeric to make it easier then lets add 1 to prevent issue of day 0 on ecmo
 tf$nd <- tf$nd + 1 
 
+tf <- tf %>% select(-c(chart_t2,es2))
 
 ## 3.3. DFBL --------------------------------------------------------------
 #now we need to wrangle "dfbl" into similar using custom func 
@@ -969,3 +976,18 @@ dexp <- left_join(
 )
 dexp$tot_circhange <- as.numeric(dexp$tot_circhange)
 dexp[is.na(dexp)] <- 0
+
+
+
+# 7.0.
+
+# 8.0. 
+
+# 9.0. 
+
+# 10.0.
+df <- left_join(
+        df,
+        dfcore %>% select(mrn,group),
+        by = "mrn"
+)

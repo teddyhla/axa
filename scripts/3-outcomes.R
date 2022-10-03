@@ -934,9 +934,59 @@ df4 <- df4 %>%
 df5 <- df
 
 df5 <- df5 %>% 
-        select(mrn,admn_ct_hem,int_ct_hem)
+        select(mrn,admn_ct_hem,int_ct_hem,comp_1,comp_2,comp_3,comp_4)
 
-df5$s <- paste(df5$admn_ct_hem,df5$int_ct_hem)
+df5$s <- paste(
+        df5$admn_ct_hem,
+        df5$int_ct_hem,
+        df5$comp_1,
+        df5$comp_2,
+        df5$comp_3,
+        df5$comp_4, sep = "+")
+
+df5$s2 <- as.factor(df5$s)
+#this is incorrect because this is counting the haemorrhagic component of "both complications" category
+levels(df5$s2) <- c(
+        "o_haem", #[1] icb
+        "o_haem", #[2]
+        "o_haem", #[3]
+        "o_haem", #[4]
+        "both",#[5]
+        "o_haem",#[6]
+        "both",
+        "both",#[8]
+        "o_haem",
+        "both",
+        "both", #[11] multipl
+        "o_haem",#[12]
+        "o_haem",
+        "o_haem",#[14]
+        "both",
+        "both",
+        "o_haem",
+        "o_haem",#[18]
+        "o_haem",#[19]
+        "o_haem",#[20]
+        "o_haem",
+        "both",#[22]
+        "none",
+        "both",
+        "o_throm",
+        "both",#[26]
+        "o_haem",#[27]
+        "o_haem",#[28]
+        "o_haem",
+        "both",#[30]
+        "none",#[31]
+        "o_haem",#[32]
+        "none",#[33]
+        "o_haem",
+        "o_haem",
+        "o_haem"#[36]
+)
+
+#df3 %>% filter ((toth>0 & totthr >0)|(toth == 0 & totthr == 0 & totboth>0))
+
 # CHECK FINAL DF against df0 ----------------------------------------------
 
 #will generate a csv file for andy and silvana to help merge

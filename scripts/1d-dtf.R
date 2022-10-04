@@ -4,21 +4,23 @@
 
 #This file is for feature engineering.
 #tick marked if feature engineered. 
-# [/] - df is a circuit change and complications 
+# [/] - df as -"tdf" is a circuit change and complications 
 # [/] - df2 is a tidy long form of complications.
 # [/] - df3 -- df3 is a data frame of count of complications
 # [/] - df4 -- this is data frame of intracranial bleed
 # [/] - df5 - this is data frame of hemorrhagic complications
 # [/] - dfbl --  blood investigation values
 # [/] - tbl -- blood investigations values clean 
-# [ ] - dfcoag -- axa and apttr values
+# [/] - dfcoag -- axa and apttr values
+        # - dttr - pdf and xdf as data frames with TTR rose applied
 # [/] - dfcore - main dataframe demographics 
 # [ ] - dfhep -- heparin prescriptions
-# [ ] - dfhydrocortinf 
-# [ ] - dfprd  blood products transfused
+# [/] - dfhydrocortinf as "thinf"
+# [/] - dfprd as "tf"  blood products transfused
+# [/] - dg1 is a blood product transfused dataframe ready for model
 # [/] - tf is a blood products per day on ecmo
-# [ ] - dfrx - other medications
-# [ ] - dftxa - tranexemic acid infusions 
+# [/] - dfrx -"trx" -- other medications
+# [/] - dftxa - as "ttxainf" - tranexemic acid infusions 
 
 
 # 2.0. SOURCE ------------------------------------------------------------------
@@ -118,8 +120,8 @@ lwg <- function (x){
 mwt <- function (x){
         #fuction calculates time intervals in hours
         x<- x %>% 
-                mutate(ivethr = as.numeric(t2-chart_t))
-        x$ivethr <- x$ivethr * -0.016667
+                mutate(ivethr = as.numeric(difftime(t2,chart_t,units = "hours")))
+        x$ivethr <- x$ivethr * -1
         #this line converts secs to hours
         return(x)
 }
@@ -171,7 +173,7 @@ fnm <- function(a){
         #variability is a summary feature, so we can ignore individual NA's
         
         if ("axa" %in% names(a)){
-                z = 0.4
+                z = 0.4 #mid point of axa target
                 a <- a %>% 
                         select(mrn,axa,group,ivethr) %>%
                         drop_na(axa) %>%
@@ -180,9 +182,14 @@ fnm <- function(a){
                                 temp1 = (axa - 0.4)^2,
                                 temp2 = temp1 / ivethr
                         )
+                mrn <- sample(a$mrn,size=1)
+                group <- sample(a$group,size =1)
+                sigm <- (sum(a$temp2))/(dim(a)[1])
+                df <- data.frame(mrn,group,sigm)
+                return(df)
                 
         } else {
-                z = 1.75
+                z = 1.75 #midpoint of apttr target
                 a <- a %>%
                         select(mrn,apttr,group,ivethr) %>%
                         drop_na(apttr)%>%
@@ -191,6 +198,12 @@ fnm <- function(a){
                                 temp1 = (apttr - 1.75)^2 ,
                                 temp2 = temp1 / ivethr
                         )
+                
+                mrn <- sample(a$mrn,size=1)
+                group <- sample(a$group,size =1)
+                sigm <- (sum(a$temp2))/(dim(a)[1])
+                df <- data.frame(mrn,group,sigm)
+                return(df)
                 
         }
         
@@ -201,11 +214,11 @@ fnm <- function(a){
         #a$temp1 <- (a$y - z)^2 
         #a$temp2 <- a$temp1 / ivethr
         
-        mrn <- sample(a$mrn,size=1)
-        group <- sample(a$group,size =1)
-        sigm <- (sum(a$temp2))/(dim(a)[1])
-        df <- data.frame(mrn,group,sigm)
-        return(df)
+        #mrn <- sample(a$mrn,size=1)
+        #group <- sample(a$group,size =1)
+        #sigm <- (sum(a$temp2))/(dim(a)[1])
+        #df <- data.frame(mrn,group,sigm)
+        #return(df)
      
         #
 }
@@ -259,6 +272,7 @@ tf <- tf %>% select(-c(chart_t2,es2))
 tbl <- wr(dfbl,dfcore)
 ## 3.4. DFCOAG ------------------------------------------------------------
 tco <- wr(dfcoag,dfcore)
+
 ## 3.5. DFHEP ------------------------------------------------------------
 thep <- wr(dfhep,dfcore)
 
@@ -314,6 +328,46 @@ wdif$neud <- wdif$wkg - wdif$medianwkg
 xtabs(~group+s_label,data = thep)
 #this code showed most of hep ecmo iv is in gaxa.
 
+hx <- thep %>% 
+        filter(s_label == "hep_sysinf" | s_label == "hep_ecmoiv") %>%
+        filter(group == "gaxa")%>%
+        group_by(mrn)%>%
+        arrange(chart_t)
+
+hpt <- thep %>% 
+        filter(s_label == "hep_sysinf" | s_label == "hep_ecmoiv") %>%
+        filter(group == "gapt")%>%
+        group_by(mrn)%>%
+        arrange(chart_t)
+
+xtabs(~group+s_label,data= hx)
+#this needs sepearte treatment but because all hep_ecmoiv has wkg. 
+#we should assign 1kg to all NA values.
+hx[["wkg"]][is.na(hx[["wkg"]])]<-1
+#this assigns all NA's to 1
+
+hx <- hx %>% mutate(
+        dose = case_when(
+                s_label == "hep_sysinf" ~ t_form,
+                s_label == "hep_ecmoiv" ~ t_form *wkg
+        )
+)
+
+hx <- hx %>% 
+        group_by(mrn) %>%
+        arrange(chart_t)%>%
+        group_split()
+
+hpt <- hpt %>% 
+        group_by(mrn) %>%
+        arrange(chart_t)%>%
+        group_split()
+
+
+xtabs(~group+s_label,data= hpt)
+#apttr group is just sysinf so dont need anything special. just need to multiple with tinv
+
+
 ### 3.5.2.  Feature Engineering ---------------------------------------------
 
 thep <- thep %>%
@@ -359,7 +413,7 @@ dhep$ecmod <- as.numeric(dhep$ecmod)
 dhep$dosepd <- dhep$cumdose/dhep$ecmod
 dhep$wdosepd <- dhep$dosepd/dhep$wkg
 
-## 3.6. DF for model ------------------------------------------------------
+## 3.6. blood products dataframe for model -----------------------------------------------
 
 #GOAL : to have a format x vs. y for model purposes
 
@@ -435,200 +489,35 @@ tdf <- left_join(
         dfcore %>% select(mrn,group,ecmod),by = "mrn"
 )
 
-# 4.0. DEMOs -------------------------------------------------------------
-## 4.1. Products transfused table -----------------------------------------
+## 3.8. DFhydrocortinf -----------------------------------------------------
 
-#let's demonstrate that there are differences in blood products tx using simple 
-# table - labelled as "pt1", ctotcryo = cumulative total cryo and so on 
-
-#Assumption : each row is for 1 unit of blood products ONLY.
-
-sum(tf$t_form < 1 ,na.rm=T)
-sum(tf$t_form > 1, na.rm = T)
-#assumption passed 
+thinf <- wr(dfhydrocortinf,dfcore)
 
 
-pt1 <- tf %>%
-        select(mrn,group,s_label,nd) %>%
-        group_by(group) %>% 
-        summarise(
-                ctotcryo = sum(s_label == "cryo"),
-                ctotffp = sum(s_label == "ffp"),
-                ctotplt = sum(s_label == "plt"),
-                ctotrbc = sum(s_label == "prbcs")
-        )
-        
-#lets perform statistical test to confirm pt1 
-#chisq test due to proportions in group.
-chisq.test(xtabs(~group + s_label,data = tf))
-#lets test specifically for rbc by preparing a new datframe "t1" for testing1
-t1 <- tf %>% select(group,s_label) %>% filter(s_label == "prbcs")
-#lets check this t1 and it checked out with findings from pt1
-summary(t1) 
+## 3.9. DFtxainf -----------------------------------------------------------
 
-### Statistical Test ------------------------------------------------
-#note chi sq doesnt like small things 
-test1 <- chisq.test(table(t1$s_label == "prbcs",t1$group))
-
-## 4.2. ADJUSTED products table -------------------------------------------
-
-#We need to adjust as numbers and duration on ecmo VASTLY differ in the two group.
-
-tf$ecmod <- as.numeric(tf$ecmod)
-
-pt2 <- tf %>% 
-        select(mrn,s_label,group,ecmod)%>% 
-        group_by(mrn) %>% 
-        #add all the blood products transfused for each type per patient
-        summarise (
-                cryopp = sum(s_label == "cryo"),
-                ffppp = sum(s_label == "ffp"),
-                pltpp = sum(s_label == "plt"),
-                rbcpp = sum(s_label == "prbcs")
-        ) %>% 
-        ungroup()
-
-pt2 <- left_join(
-        pt2,
-        dfcore %>% select(mrn,ecmod,group),
-        by = "mrn"
-)
-
-pt2$ecmod <- as.numeric(pt2$ecmod)
-
-        #devide this by the duratin of each patient ecmo run but to make small
-        #no visible, we multiple by 1000
-pt2 <- pt2 %>% 
-        group_by(mrn) %>% 
-        transmute(
-                cryopp = (cryopp / ecmod)*1000,
-                ffppp = (ffppp / ecmod)*1000,
-                pltpp = (pltpp / ecmod)*1000,
-                rbcpp = (rbcpp / ecmod)*1000
-        ) %>% 
-        ungroup () 
-
-pt2 <- left_join (
-        pt2,
-        dfcore %>% select(mrn,group),
-        by = "mrn"
-)
-        
-
-pt2 %>% group_by(group) %>% group_map(~summary(.x))
-
-#lets check this by groupwise 
-sum(pt2$rbcpp[pt2$group == "gapt"])/63
-#essentially summing all the rbcpp for group apt and dividing by n.
-#it checks out
+ttxainf <- wr(dftxa,dfcore)
 
 
-### Statistical Test  -----------------------------------------------
-test2 <- wilcox.test(rbcpp ~ group, data = pt2)
+## 3.10. dfrx  -------------------------------------------------------------
 
+summary(dfrx)
 
-## 4.3. UNIT "TIME" ---------------------------------------------------------
+#this shows that there are 5846 entries
+#out of this this drugs are too infrequently used to be included in model.
 
-#Is it justifiable to use "calendar day" as a unit of time?
-pt3 <- dg %>% 
-        group_by(mrn) %>% 
-        summarise(
-                maxd = max(ecmod),
-                dtx = sum(totall != 0)
-        ) %>% 
-        mutate(prpn = dtx/maxd)
+#definition of infrequently used = 90% not used.
+#if entry is less than 5261 (i.e., 5846 - 10%  then we count as infreq)
+drx_lowuse <- names(dfrx)
+drx_lowuse <- drx_lowuse[-c(9:16)]
+drx_lowuse <- drx_lowuse[-c(1,2,6)]
 
-quantile(pt3$prpn)
-#this showed that over 75% doesnt receive daily blood products. 
-#thus is okay to use calendar day as a unit of time.
+trx <- dfrx %>%
+        select(-all_of(drx_lowuse))
 
+trx <- wr(trx,dfcore)
 
-
-
-## 4.4.  COMPLICATIONS  -------------------------------------------------
-
-#lets look at if complications are the same between groups. 
-br <- tdf %>% 
-        select(mrn,group,tot,tot_circhange,ecmod)%>% 
-        mutate( ecmod = as.numeric(ecmod)) %>% 
-        mutate(tot = as.numeric(tot)) %>%
-        mutate(tot_circhange = as.numeric(tot_circhange)) %>%
-        mutate(across(where(is.numeric),~replace_na(.x,0))) %>% 
-        group_by(mrn)%>%
-        mutate(
-                bter = tot / ecmod,
-                ccr = tot_circhange / ecmod
-        ) %>% 
-        ungroup()
-        
-xtabs(~tot+group , data = tdf)
-#this code showed that there are 
-br %>% group_by(group) %>% summarise(mean(bter),median(bter),mean(ccr),median(ccr))
-# 5.0. MODEL 1 --------------------------------------------------------------
-
-
-#however Var seems to be greater than Mean in where 0 are counted and not counted
-#likely OVERDISPERSION 
-m1 <- glm(totall ~ group, data =dg, family = poisson(link = "log"))
-m2 <- glm(totall ~ group, data =dg, family = quasipoisson(link = "log"))
-#univariate analysis looks promising.
-
-#lets try a logistic regression to see if it stands.
-dm <- dg
-dm$y <- ifelse(dm$totall == 0 , 0,1)
-dm <- left_join(
-        dm,
-        dfcore %>% select(mrn,age,surv_ecmo,wkg,apache),by="mrn"
-)
-
-m3 <- glm (y ~ group + age + surv_ecmo + wkg + apache + group*surv_ecmo, data = dm, family = binomial)
-
-
-#lets also see if this remains true for RBCs 
-
-m4 <- glm(totrbc ~ group, data = dg, family = poisson(link="log"))
-#looking good so far 
-
-#KEY ASSUMPTIONS OF MODELS
-#independence - a bit dififcult
-
-#checking overdispersion
-#residual deviance is great than degrees of freedom then overdispersion exists
-
-# Multivariate regression----
-
-#lets' look at dfcore variables such as ethnic, weight, gender, age, apache
-# lets look at dfbl variables such as hb, min, max, mean, plt min max mean, lactate
-#crp min max mean
-#also as admission variable and also as a delta ! 
-dt <- left_join(dg, dfcore %>% select(mrn,age,ethnic,apache,wkg,sex), by = "mrn")
-m5 <- glm(totall ~ group + age + ethnic + apache + wkg + sex, data =dt, family = poisson(link = "log"))
-#note ethnic is problematic as too many factor levels.
-m5mod <- glm(totall ~ group + age + apache + wkg + sex + ecmod + ecmod*group, data =dt, family = poisson(link = "log"))
-
-
-#let's look at "rate" 
-dgm <- dg %>% 
-        select(mrn,ecmod,totall,group)%>% 
-        group_by(mrn) %>% 
-        summarise(maxecmod = max(ecmod),sumtx = sum(totall))
-
-dgmt <- left_join(
-        dgm,
-        dfcore %>% select(mrn,age,ethnic,apache,sex,group,wkg),
-        by = "mrn"
-)
-
-dgmt$rate <- log(dgmt$maxecmod)
-
-#trial of univariate "rate" pois regression 
-m6 <- glm(sumtx ~ group + age + offset(rate),family = poisson(link="log"),data = dgmt)
-m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poisson(link="log"),data = dgmt)
-
-# 5.1. RANDOM FOREST ----
-
-
-# 6.0. Quality Markers ----------------------------------------------------
+# 4.0. Complex data transformations -Quality Markers ----------------------------------------------------
 
 #Quality markers are defined as :-
 # time to first threapeutic range
@@ -639,7 +528,7 @@ m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poiss
 # how about scaling and centering as per 
 
 
-# 6.1.  data prep  --------------------------------------------------------
+## 4.1.  data prep dfcoag  --------------------------------------------------------
 #to feed into ttrcalc function, we need for each patient,
 #col1 = time interval
 #col2 = v1 , value 1 at beginning of time interval
@@ -663,7 +552,7 @@ dim(tco)
 #tco %>%group_by(mrn) %>% filter(chart_t <= ecmo_start)
 #both turned out 0 so it checked out.
 
-#lets try reshaping with sample df. 
+### lets try reshaping with sample df. SAMPLE -------
 samp <- tco %>% filter(mrn == "1103375H")
 
 #we need to add ecmo_start and finish time as rows
@@ -690,117 +579,33 @@ samp$ttrose <- ttrcalc(lower = 0.2999,upper = 0.7001,x =samp$axa,y =samp$a2)
 
 #TTRrose works
 
-#Lets calculate Fihn's style variability 
+### Lets calculate Fihn's style variability -----
+
+#formula for Fihn's style variability 
+#Variance growth rate Fihn(method A)
+
+#lhs = sigma 2 = variance
+#$$\sigma^2 = \frac{1}{n}* \sum \limits_{i=1}^{n}\frac {(INR_i - target_i)^2}{\tau_i}$$
+
 #make a new col
 samp$a = (samp$axa - 0.5)^2
 samp$b = samp$a / samp$ivet
 sum(samp$b,na.rm=TRUE)
-#this looks legit on review but needs to work on rmoving 0's
+#this looks legit on review but needs to work on removing 0's
 
 #steps to do
-# 1. time need to be sorted. so chart_t needs to be desc. 
+# 1. time need to be sorted. so chart_t needs to be desc.
+# 2. remove divide by 0 errors.
+# therefore we should remove "ivethr = 0" and "value of blood test = 0"
 #####
 
 
 
-# 6.2. 1.  TTR traditional OR proportion ----------------------------------
 
-#in this approach, we count number of blood tests as denominator and numerator
-#numerator = no of blood tests in range. 
-#using targets of 0.3 to 0.7 for axa
-#using targets of 1.5 to 2.0 for apttr 
-
-#to ensure fair comparison, we should work out the person time in each group.
-dfcore %>% 
-        group_by(group)%>% 
-        summarise(n= n(),persondays = sum(ecmod))
-#this showed the person days
-message("above showed person days")
-
-tco %>% 
-        filter(group == "gapt") %>% 
-        select(apttr)%>%
-        summarise(
-                total_apttr_tests=sum(!is.na(apttr)),
-                total_above_range= sum(apttr>2.0,na.rm=TRUE),
-                total_in_range = sum(apttr>=1.5 & apttr <= 2.0,na.rm=TRUE)
-                )
-#this showeed for APPTTR group , raw or traditional TTR values at aggregate level 
-tco %>% 
-        filter(group == "gaxa") %>% 
-        select(axa)%>%
-        summarise(
-                total_axa_tests=sum(!is.na(axa)),
-                total_above_range= sum(axa>0.7,na.rm=TRUE),
-                total_in_range = sum(axa>=0.3 & axa <= 0.7,na.rm=TRUE)
-        )
-#this showeed for AXA group , raw or traditional TTR values at aggregate level 
+# 4.3. TTR Rosendaal ------------------------------------------------------
 
 
-# 6.2.2. Statistical Tests for traditional TTR ----------------------------
-
-tco %>% 
-        select(mrn,group,axa)%>% 
-        filter(group=="gaxa")%>%
-        drop_na()%>%
-        group_by(mrn)%>%
-        summarise(
-                no_tests_per_pts = n(),
-                no_tests_above_range = sum(axa>0.7,na.rm=TRUE),
-                no_tests_in_range = sum(axa>=0.3 & axa <= 0.7,na.rm=TRUE)
-        ) -> gaxatrad
-
-gaxatrad$g <- 'gaxa'
-gaxatrad$prop <- gaxatrad$no_tests_in_range/gaxatrad$no_tests_per_pts
-
-tco %>% 
-        select(mrn,apttr,group)%>% 
-        filter(group=="gapt")%>%
-        drop_na()%>%
-        group_by(mrn)%>%
-        summarise(
-                no_tests_per_pts = n(),
-                no_tests_above_range = sum(apttr>2.0,na.rm=TRUE),
-                no_tests_in_range = sum(apttr>=1.5 & apttr <= 2.0,na.rm=TRUE)
-        ) -> gapttrad
-
-gapttrad$g <- "gapt"
-gapttrad$prop <- gapttrad$no_tests_in_range/gapttrad$no_tests_per_pts
-
-pl_ttr_trad <- rbind(
-        gaxatrad %>% select(mrn,g,prop),
-        gapttrad %>% select(mrn,g,prop)
-)
-
-pl_ttr_trad$g <- as.factor(pl_ttr_trad$g)
-
-#undertake Statistical test
-wilcox.test(prop~ g , data = pl_ttr_trad)
-t.test(prop~g,data = pl_ttr_trad)
-
-
-# 6.2.3.  ggplot and save for trad TTR ------------------------------------
-
-
-#ggplot code
-p1 <- ggplot(data = pl_ttr_trad, aes(x=g,y=prop,color=g)) + 
-        geom_boxplot()+
-        theme_bw()+
-        labs(
-              x = "Monitoring Groups",
-              y = "proportion of blood tests  in range",
-              title = "Proportion of blood tests in desired range",
-              subtitle = "Welch Two Sample t- test : p <0.005"
-                    
-        )
-
-#ggsave("products/presentations/sept22_01",plot=p1,device ="png",dpi=320)
-
-
-# 6.3. TTR Rosendaal ------------------------------------------------------
-
-
-# 6.3.1. Data prep for TTR rose -------------------------------------------
+# 4.3.1. Data prep for TTR rose -------------------------------------------
 
 #the issue now is that data frame can be grouped but cannot do add row function
 #to a grouped data frame, so lets make a list
@@ -810,6 +615,7 @@ tlix <- tco %>%
         select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
         filter(group=="gaxa")%>%
         group_by(mrn)%>%
+        drop_na(axa)%>%
         arrange(chart_t)%>%
         group_split()
 
@@ -817,6 +623,7 @@ tlip <- tco %>%
         select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
         filter(group=="gapt")%>%
         group_by(mrn)%>%
+        drop_na(apttr)%>%
         arrange(chart_t)%>%
         group_split()
 
@@ -834,7 +641,6 @@ tlix <- map(tlix,mwt)
 
 # Applying TTR rose custom function ---------------------------------------
 
-
 #now apply custom function ttrrose
 tlixr <- map(tlix,rap)
 #this seems to work.
@@ -847,22 +653,10 @@ xdf <- plyr::ldply(tlixr,data.frame)
 xdf <- as.tibble(xdf)
 #now lets apply for tlip
 
-
-# applying fihn's  --------------------------------------------------------
-#
-#tsig <- map(tlix,fnm)
-#sgxdf <- plyr::ldply(tsig,data.frame)
-#sgxdf <- as.tibble(sgxdf)
-#
-
-
-
 #as per above
 tlip <-map(tlip,wo)
 tlip <- map(tlip,lwg)
 tlip <- map(tlip,mwt)
-# applying appt for rose --------------------------------------------------
-
 tlipr <- map(tlip,rap)
 tlipr <- map(tlipr,edd)
 
@@ -874,120 +668,109 @@ tlipr <- map(tlipr,edd)
 pdf <- plyr::ldply(tlipr,data.frame)
 pdf<-as.tibble(pdf)
 
-# applying Fihn's --------------------------------------------------
-#
-#tsip <- map(tlip,fnm)
-#sgpdf <- plyr::ldply(tsip,data.frame)
-#sgpdf <- as.tibble(sgpdf)
-#
+#4.3.2. FINAL engineered TTRrose ------------------------------------------------
+
 dttr  <- rbind(xdf,pdf)
-#dsigm <- rbind(sgxdf,sgpdf)
-#
-#ISSUES
-#- need to review the above some patients have very high and very low TTR 
 
-#- need to review why there is a drop off of a few patients on gaxa
-#- need to have a globally set ggplot2 theme
+# 4.4. Fihn's method A variability ------------------------------------------
+# applying Fihn's --------------------------------------------------
 
+tf1 <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
+        filter(group=="gaxa")%>%
+        group_by(mrn)%>%
+        drop_na(axa)%>%
+        arrange(chart_t)%>%
+        group_split()
 
-# 6.3.2. Statistical Tests ------------------------------------------------
+tf2 <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
+        filter(group=="gapt")%>%
+        group_by(mrn)%>%
+        drop_na(apttr)%>%
+        arrange(chart_t)%>%
+        group_split()
 
-wilcox.test(ttrg ~ group, data = dttr)        
-t.test(ttrg ~ group, data = dttr)
+#apply custom function wo to add begin and end times.
+tf1 <- map(tf1,wo)
+tf2 <- map(tf2,wo)
+
+#apply custom function lwg
+tf1 <- map(tf1,lwg)
+tf2 <- map(tf2,lwg)
+
+#apply custom func mwt
+tf1 <- map(tf1,mwt)
+tf2 <- map(tf2,mwt)
+
+#apply custom function fnm
+tf1 <- map(tf1,fnm)
+tf2 <- map(tf2,fnm)
+
+#tf1[[14]] is the problem because axa values are all NA's'
+#let's explore NA's in each group, for each patient. 
+#but NA here is meaningful 
+
+dxna <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
+        filter(group=="gaxa")%>%
+        group_by(mrn)%>%
+        arrange(chart_t)%>%
+        summarise(
+                n = length(axa),
+                n_na = sum(is.na(axa)),
+                p = round(n_na/n,digits =2)
+        ) %>% 
+        arrange(desc(p))
+
+dxap <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
+        filter(group=="gapt")%>%
+        group_by(mrn)%>%
+        arrange(chart_t)%>%
+        summarise(
+                n = length(apttr),
+                n_na = sum(is.na(apttr)),
+                p = round(n_na/n,digits =2)
+        ) %>% 
+        arrange(desc(p))
+
+#conver these list back to df. 
+tf1 <- plyr::ldply(tf1,data.frame)
+tf1 <- as.tibble(tf1)
+
+tf2 <- plyr::ldply(tf2,data.frame)
+tf2 <- as.tibble(tf2)
+
+dsig  <- rbind(tf1,tf2)
+
+#export this to write.csv
+
+l = setdiff(ls(),lsf.str())
+frm <- c(
+        "colfactors",
+        "edd",
+        "eg",
+        "nums4",
+        "nums5",
+        "pdf",
+        "ptid",
+        "samp",
+        "tf1",
+        "tf2",
+        "tlip",
+        "tlix",
+        "tlipr",
+        "tlixr",
+        "xdf"
         
-
-# 6.3.3. Ggplot2 output ---------------------------------------------------
-
-p2 <- ggplot(data = dttr, aes(x=group,y=ttrg,color=group)) + 
-        geom_boxplot()+
-        theme_bw()+
-        labs(
-                x = "Monitoring Groups",
-                y = "% of tests in range",
-                title = "Proportion of blood tests in range using Rosendaal method",
-                subtitle = "Welch Two Sample t- test : p <0.005"
-                
-        )
-
-#ggsave("products/presentations/sept22_01_p2",plot=p2,device ="jpeg",dpi=320)
-
-
-# 6.3.4. calculating t high's ---------------------------------------------
-
-dttr$prophi <- dttr$thi / dttr$totalhr
-
-
-p3 <- ggplot(data = dttr, aes(x=group,y=prophi,color=group)) + 
-        geom_boxplot()+
-        theme_bw()+
-        labs(
-                x = "hi Groups",
-                y = "% of tests in range",
-                title = "Proportion of blood tests in range using Rosendaal method",
-                subtitle = "Welch Two Sample t- test : p <0.005"
-        )
-
-
-# 6.4. Fihn's method variability ------------------------------------------
-
-dtest <- left_join(
-        dfcore %>% select(mrn,age,apache,ethnic,sex,surv_ecmo),
-        dttr %>% select(mrn,group,ttrg),
-        by = "mrn"
 )
 
-dtest <- dtest %>% select(-mrn)
+l = l[!l %in% frm]
 
-mz <- glm(surv_ecmo ~  ttrg + age + sex + apache, data = dtest,family = binomial(link="logit"))
-#I think there isa  dispersion in this model
-p41 <- ggplot(data = dtest,aes(x=group,y=ttrg,color = surv_ecmo))+
-        geom_boxplot()+
-        geom_jitter(width = 0.15,alpha = 0.45)+ 
-        theme_bw()+
-        labs(
-                x= "Monitoring Groups",
-                y= "Time in therapeutic range(Rosendaal)",
-                title = "ECMO survival as grouped by monitoring group"
-                
-        )
+#these are just names- not actual dataframe.
+# so we need to use get() to obtain.
 
-#ggsave("products/presentations/sept22_01_p41",plot=p41,device ="jpeg",dpi=320)
+#to <- lapply(l,get)
 
-p42 <- ggplot(data=dtest, aes(x=group,y=ttrg,color =surv_ecmo))+
-        geom_boxplot()+
-        geom_jitter(width = 0.15,alpha = 0.45)+
-        facet_wrap(~surv_ecmo)+
-        theme_bw()+
-        labs(
-                x= "Monitoring Groups",
-                y= "Time in therapeutic range(Rosendaal)",
-                title = "ECMO survival as grouped by monitoring group"
-        )
-
-#ggsave("products/presentations/sept22_01_p42",plot=p42,device ="jpeg",dpi=320)
-
-
-#lactate , ph , platelet -- preset score 
-
-dexp <- left_join(
-        dttr %>% select(mrn,ttrg,group),
-        tdf %>% select(mrn,tot_circhange),
-        by = "mrn"
-)
-dexp$tot_circhange <- as.numeric(dexp$tot_circhange)
-dexp[is.na(dexp)] <- 0
-
-
-
-# 7.0.
-
-# 8.0. 
-
-# 9.0. 
-
-# 10.0.
-df <- left_join(
-        df,
-        dfcore %>% select(mrn,group),
-        by = "mrn"
-)
+#save(list = l,file = "data/clean/out.RData")

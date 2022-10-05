@@ -827,6 +827,8 @@ frm <- c(
         "colfactors",
         "edd",
         "eg",
+        "hpt",
+        "hx",
         "nums4",
         "nums5",
         "pdf",
@@ -849,4 +851,4 @@ l = l[!l %in% frm]
 
 #to <- lapply(l,get)
 message("SUCCCESS")
-#save(list = l,file = "data/clean/out.RData")
+save(list = l,file = "data/clean/out.RData")

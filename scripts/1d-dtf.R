@@ -223,6 +223,37 @@ fnm <- function(a){
         #
 }
 
+
+hti <- function (x){
+        #function to add lagged values for heparin
+        
+        
+        x <- x %>%
+                 select(mrn,chart_t,s_label,t_form,u,wkg,dose,group) %>%
+                 mutate(t2=lag(chart_t)) %>%
+                 mutate(tinv = as.numeric(difftime(t2,chart_t,units = "hours")))%>%
+                 mutate(tinv = -1 * tinv) %>%
+                 mutate(tidose = tinv * dose)
+        
+        mrn <- sample(x$mrn,size=1)
+        group <- sample(x$group,size =1)
+        cudose <- sum(x$tidose,na.rm = TRUE)
+        cumtime <- sum(x$tinv,na.rm = TRUE)
+        df <- data.frame(mrn,group,cumtime,cudose)
+        return(df)
+}
+
+hr <- function(x){
+        #function to count run length and tell how many changes 
+        eg <- rle(x$t_form)
+        runl <- length(eg$lengths)
+        mrn <- sample(x$mrn,size =1)
+        group <- sample(x$group,size =1)
+        
+        df<- data.frame(mrn,group,runl)
+        return(df)
+}
+
 # 3.0. DATA MANIPULATION -------------------------------------------------------
 
 ## 3.1. DFCORE ------------------------------------------------------------
@@ -346,17 +377,34 @@ xtabs(~group+s_label,data= hx)
 hx[["wkg"]][is.na(hx[["wkg"]])]<-1
 #this assigns all NA's to 1
 
-hx <- hx %>% mutate(
-        dose = case_when(
-                s_label == "hep_sysinf" ~ t_form,
-                s_label == "hep_ecmoiv" ~ t_form *wkg
+
+xtabs(~group+s_label,data= hpt)
+#apttr group is just sysinf so dont need anything special. just need to multiple with tinv
+
+hx <- hx %>% 
+        mutate(
+                dose = case_when(
+                        s_label == "hep_sysinf" ~ t_form,
+                        s_label == "hep_ecmoiv" ~ t_form * wkg
+                )
         )
-)
+
+hpt <- hpt %>% 
+        mutate(
+                dose = case_when(
+                        s_label == "hep_sysinf" ~ t_form,
+                        s_label == "hep_ecmoiv" ~ t_form * wkg
+                )
+        )
+
+#now split groups
 
 hx <- hx %>% 
         group_by(mrn) %>%
         arrange(chart_t)%>%
         group_split()
+
+
 
 hpt <- hpt %>% 
         group_by(mrn) %>%
@@ -364,56 +412,80 @@ hpt <- hpt %>%
         group_split()
 
 
-xtabs(~group+s_label,data= hpt)
-#apttr group is just sysinf so dont need anything special. just need to multiple with tinv
+#now apply custom function to calculate cumulative doses
+ahx <- map(hx,hti)
+ahpt <- map(hpt,hti)
 
 
-### 3.5.2.  Feature Engineering ---------------------------------------------
+ahx <- plyr::ldply(ahx,data.frame)
+ahx <- as.tibble(ahx)
 
-thep <- thep %>%
-        group_by(mrn) %>%
-        arrange(chart_t)%>%
-        mutate( tdiff = difftime(chart_t,lag(chart_t),units = "hours")) %>%
-        mutate(tdiffnum = as.numeric(tdiff)) %>%
-        ungroup()
+ahpt <- plyr::ldply(ahpt,data.frame)
+ahpt <- as.tibble(ahpt)
+
+dcumhep  <- rbind(ahx,ahpt)
+
+
+#next question is how to calculate run_length
+#need to make sure same patient dont have ecmoiv and heparin inf together.
+
+### 3.5.2.  Run Length Feature Engineering ---------------------------------------------
+
+bhx <- map(hx,hr)
+bhpt <- map(hpt,hr)
+
+bhx <- plyr::ldply(bhx,data.frame)
+bhx <- as.tibble(bhx)
+
+bhpt <- plyr::ldply(bhpt,data.frame)
+bhpt <- as.tibble(bhpt)
+
+dheprl <- rbind(bhx,bhpt)
+
+#thep <- thep %>%
+#        group_by(mrn) %>%
+#        arrange(chart_t)%>%
+#        mutate( tdiff = difftime(chart_t,lag(chart_t),units = "hours")) %>%
+#        mutate(tdiffnum = as.numeric(tdiff)) %>%
+#        ungroup()
 #this generates time differences between each prescription.
 #perhaps we need mutate if here ! because you only want that for hep ecmo ones 
 
-thep <- thep %>% 
-        group_by(mrn) %>% 
-        mutate(
-                dose = 
-                        case_when(
-                               s_label == "hep_ecmoiv" ~ t_form * wkg,
-                               s_label == "hep_sysinf" ~ t_form
-                        )
-        )
-#now we have a thep with dose.   
+#thep <- thep %>% 
+#        group_by(mrn) %>% 
+#        mutate(
+#                dose = 
+#                        case_when(
+#                               s_label == "hep_ecmoiv" ~ t_form * wkg,
+#                               s_label == "hep_sysinf" ~ t_form
+#                        )
+#        )
+##now we have a thep with dose.   
 
-thep <- thep %>%
-        group_by(mrn) %>%
-        mutate(tdose = tdiffnum * dose)%>% 
-        ungroup()
-
-dhep <- thep %>% 
-        mutate(ecmod = as.numeric(ecmod))%>% 
-        group_by(mrn)%>%
-        summarise(
-                cumdose = sum(tdose,na.rm = T),
-                
-        )
-   
-dhep <- left_join(
-        dhep,
-        dfcore %>% select(mrn,ecmod,group,wkg),
-        by = "mrn"
-)     
-
-dhep$ecmod <- as.numeric(dhep$ecmod)
-dhep$dosepd <- dhep$cumdose/dhep$ecmod
-dhep$wdosepd <- dhep$dosepd/dhep$wkg
-
-## 3.6. blood products dataframe for model -----------------------------------------------
+#thep <- thep %>%
+#        group_by(mrn) %>%
+#        mutate(tdose = tdiffnum * dose)%>% 
+#        ungroup()
+#
+#dhep <- thep %>% 
+#        mutate(ecmod = as.numeric(ecmod))%>% 
+#        group_by(mrn)%>%
+#        summarise(
+#                cumdose = sum(tdose,na.rm = T),
+#                
+#        )
+#   
+#dhep <- left_join(
+#        dhep,
+#        dfcore %>% select(mrn,ecmod,group,wkg),
+#        by = "mrn"
+#)     
+#
+#dhep$ecmod <- as.numeric(dhep$ecmod)
+#dhep$dosepd <- dhep$cumdose/dhep$ecmod
+#dhep$wdosepd <- dhep$dosepd/dhep$wkg
+#
+### 3.6. blood products dataframe for model -----------------------------------------------
 
 #GOAL : to have a format x vs. y for model purposes
 
@@ -748,6 +820,10 @@ dsig  <- rbind(tf1,tf2)
 
 l = setdiff(ls(),lsf.str())
 frm <- c(
+        "ahpt",
+        "ahx",
+        "bhpt",
+        "bhx",
         "colfactors",
         "edd",
         "eg",
@@ -772,5 +848,5 @@ l = l[!l %in% frm]
 # so we need to use get() to obtain.
 
 #to <- lapply(l,get)
-
+message("SUCCCESS")
 #save(list = l,file = "data/clean/out.RData")

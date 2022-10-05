@@ -254,6 +254,23 @@ hr <- function(x){
         return(df)
 }
 
+blz <- function(x) {
+        #function to detect and find missing values for blood vars
+        if (sum(x$test %in% blvars) < 18){
+                status <- "missing"
+                no_m <- (24 - sum(x$test %in% blvars))
+                col_m <- setdiff(blvars,x$test)
+        } else {
+                status <- "no_missing"
+                no_m <- 0
+                col_m <- "none"
+        }
+        
+        mrn <- sample(x$mrn, size = 1)
+        df <- data.frame(mrn,status,no_m,col_m)
+        return(df)
+}
+
 # 3.0. DATA MANIPULATION -------------------------------------------------------
 
 ## 3.1. DFCORE ------------------------------------------------------------
@@ -301,6 +318,78 @@ tf <- tf %>% select(-c(chart_t2,es2))
 ## 3.3. DFBL --------------------------------------------------------------
 #now we need to wrangle "dfbl" into similar using custom func 
 tbl <- wr(dfbl,dfcore)
+
+#blood values 
+blvars <- c(
+        "hb",
+        "plt",
+        "neut",
+        "fib",
+        "ldh",
+        "ferritin",
+        "ck",
+        "crp",
+        "pct",
+        "bili",
+        "alb",
+        "creat",
+        "gfr",
+        "ca",
+        "corr_ca",
+        "bicarb",
+        "lactate",
+        "ph"
+)
+#list of interested blood vars
+
+#but needs to see how many missing values are 
+d1e <- tbl %>%
+        group_by(mrn)%>% #group wise operaeted
+        filter(nd < 2) %>%   #select first days of blood
+        select_if(function(x) is.character(x)| is.numeric(x)) %>%
+        select(-nd)
+
+#this selects numbers and mrn
+d1e <- pivot_longer(
+        d1e,
+        cols = !mrn,
+        names_to = "test",
+        values_to = "val",
+        values_drop_na = TRUE
+        )
+#this will drop tests that dont have any result.
+
+summary(d1e)
+#this shows there is no missing values here.
+#for each mrn see if they have hb missing.
+#
+
+d1t <- d1e %>% group_by(mrn) %>% group_split()
+#group split
+
+#custom function blz
+d1t <- map(d1t,blz)
+
+d1t <- plyr::ldply(d1t,data.frame)
+d1t <- as.tibble(d1t)
+        
+d1bl <- tbl %>%
+        group_by(mrn)%>% #group wise operaeted
+        filter(nd < 2) %>%   #select first days of blood
+        select_if(function(x) is.character(x)| is.factor(x)| is.numeric(x)) %>%# select dbl + mrn + group
+        summarise(across(
+                where(is.double),#execute numbers using folloing list offunction, and naming convention
+                list(mean = mean,
+                     min = min,
+                     max = max),
+                na.rm = TRUE,
+                .names = "{.col}_{.fn}"
+        ))
+
+
+
+#let's create a 1 st 24 hour blood results dataframe.
+
 ## 3.4. DFCOAG ------------------------------------------------------------
 tco <- wr(dfcoag,dfcore)
 

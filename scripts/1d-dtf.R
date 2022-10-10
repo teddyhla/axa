@@ -516,6 +516,19 @@ ahpt <- as.tibble(ahpt)
 dcumhep  <- rbind(ahx,ahpt)
 
 
+#let's calculate per kg per day 
+
+dcumhep <- left_join(
+        dcumhep,
+        dfcore %>% select(mrn,ecmod,wkg),
+        by = "mrn"
+)
+
+dcumhep$ecmod <- as.numeric(dcumhep$ecmod)
+dcumhep$hep_day<- dcumhep$cudose/dcumhep$ecmod
+dcumhep$hep_wkgday <- (dcumhep$cudose/dcumhep$wkg)/dcumhep$ecmod
+
+
 #next question is how to calculate run_length
 #need to make sure same patient dont have ecmoiv and heparin inf together.
 
@@ -532,6 +545,17 @@ bhpt <- as.tibble(bhpt)
 
 dheprl <- rbind(bhx,bhpt)
 
+
+#as per above lets work out adjusted for run length
+
+dheprl <- left_join(
+        dheprl,
+        dfcore %>% select(mrn,ecmod),
+        by = "mrn"
+)
+
+dheprl$ecmod <- as.numeric(dheprl$ecmod)
+dheprl$rl_day <- dheprl$runl/dheprl$ecmod
 #thep <- thep %>%
 #        group_by(mrn) %>%
 #        arrange(chart_t)%>%
@@ -915,6 +939,7 @@ frm <- c(
         "bhpt",
         "bhx",
         "colfactors",
+        "d1e",
         "edd",
         "eg",
         "hpt",

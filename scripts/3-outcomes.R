@@ -910,6 +910,10 @@ levels(df2$value)<- c(
         "haem",
         "throm"
 )
+summary(df2)
+#this showed 13 both, 112 ham, 142, throm, nil  238, na - 1013
+df2$value[is.na(df2$value)] <- "nil"
+# now there is no longer "NA" and has nil 1251 (238+1013)
 
 df3 <- df2 %>% 
         group_by(mrn)%>%
@@ -984,6 +988,20 @@ levels(df5$s2) <- c(
         "o_haem",
         "o_haem"#[36]
 )
+
+
+dfci <- df %>% select(mrn,tot_circhange)
+dfci$totc <- as.numeric(dfci$tot_circhange)
+dfci$totc[is.na(dfci$totc)] <- 0
+
+dfci <- left_join(
+        dfci,
+        dfcore %>% select(mrn,group,ecmod,surv_ecmo),
+        by = "mrn"
+)
+dfci$ecmod <- as.numeric(dfci$ecmod)
+
+dfci$cday <- dfci$totc / dfci$ecmod
 
 #df3 %>% filter ((toth>0 & totthr >0)|(toth == 0 & totthr == 0 & totboth>0))
 

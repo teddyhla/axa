@@ -40,7 +40,7 @@ dfcore %>% select(ecmoh) %>% count(ecmoh)
 
 # 2.1.  Blood results features -----------------------------------------------------
 #Haemoglobin, Platelet, Neutrophils, Fibrinogen, LDH, Ferritin, CK, CRP, PCT,Bilirubin
-#Albumin, Creatining, corrected calcium, bicarbonate, lactate, ph
+#Albumin, Creatinine, corrected calcium, bicarbonate, lactate, ph
 #16 variables
 
 # 2.2. Anticoagulation Features ------------------------------------------

@@ -478,4 +478,68 @@ p_dt <- ggplot(dtl)+
               axis.ticks.y = element_blank())
 
 
-        
+
+#calculate dose differences
+
+t.test(hep_wkgday ~ group, data = dcumhep)
+wilcox.test(hep_wkgday ~ group, data = dcumhep)
+
+# explore complications
+
+df3 <- left_join(
+        df3,
+        dfcore %>% select(mrn,group,ecmod,surv_ecmo),
+        by = "mrn"
+)
+
+df3$ecmod <- as.numeric(df3$ecmod)
+df3$all <- df3$toth + df3$totboth + df3$totthr
+df3$all_day <- df3$all / df3$ecmod
+
+
+df3 %>% filter(group == "gaxa") %>% summarise(mean = mean(all))
+
+mcomp <- glm(surv_ecmo ~ all_day, data = df3,family = binomial(link="logit"))
+
+
+t.test(all_day ~ group, data = df3)
+wilcox.test(all_day ~ group, data = df3)
+
+#lets explore circuit changes
+
+dfci <- df %>% select(mrn,tot_circhange)
+dfci$totc <- as.numeric(dfci$tot_circhange)
+dfci$totc[is.na(dfci$totc)] <- 0
+
+dfci <- left_join(
+        dfci,
+        dfcore %>% select(mrn,group,ecmod,surv_ecmo),
+        by = "mrn"
+)
+dfci$ecmod <- as.numeric(dfci$ecmod)
+
+dfci$cday <- dfci$totc / dfci$ecmod
+
+dfci %>% filter(group == "gapt") %>% summarise(mean = mean(totc))
+
+dfci %>% filter(group == "gapt") %>% summarise(med = median(totc))
+
+dfci %>% filter(group == "gaxa") %>% summarise(mean = mean(totc))
+
+dfci %>% filter(group == "gaxa") %>% summarise(med = median(totc))
+
+##
+
+dfci %>% filter(group == "gapt") %>% summarise(mean = mean(cday))
+
+dfci %>% filter(group == "gapt") %>% summarise(med = median(cday))
+
+dfci %>% filter(group == "gaxa") %>% summarise(mean = mean(cday))
+
+dfci %>% filter(group == "gaxa") %>% summarise(med = median(cday))
+
+##
+
+wilcox.test(cday ~ group, data = dfci)
+
+mci <- glm(surv_ecmo ~ cday ,family = binomial(link = "logit"), data = dfci)

@@ -543,3 +543,39 @@ dfci %>% filter(group == "gaxa") %>% summarise(med = median(cday))
 wilcox.test(cday ~ group, data = dfci)
 
 mci <- glm(surv_ecmo ~ cday ,family = binomial(link = "logit"), data = dfci)
+
+
+#3
+
+dttr <- left_join(dttr, dfcore %>% select(age,mrn,apache,wkg,sex),by ="mrn")
+
+
+
+#4 
+dttr <- left_join(
+        dttr,
+        dsig %>% select(mrn,sigm),
+        by = "mrn"
+)
+
+mo <- lm(ttrg ~ age + apache + wkg + sex + group, data = dttr)
+
+myo <- lm(ttrg ~ age + apache + wkg + sex + group + group*apache + sigm, data = dttr)
+my2 <- MASS::stepAIC(myo)
+
+my3 <- lm(ttrg ~ group + age + apache, data = dttr)
+
+my4 <- betareg::betareg(ttrg ~ age + apache , data = dttr)
+
+#ero-inflated beta regression
+
+my5 <- gamlss::gamlss(ttrg ~ age + apache +group, data = dttr)
+
+my5ans <- emmeans::emmeans(my5, "group",type = "response")
+
+#https://stats.stackexchange.com/questions/309047/zero-inflated-beta-regression-using-gamlss-for-vegetation-cover-data
+#m
+
+
+
+

@@ -196,3 +196,5 @@ lg3 <- glm(surv_ecmo ~ age + sex + ttrg + sigm + ttrg*sigm + group + ttrg*group 
            data = dm)
 
 lg4 <- MASS::stepAIC(lg3)
+
+lg5 <- glm(surv_ecmo ~ age + group + age *group, family = binomial(link="logit"),data = dm)

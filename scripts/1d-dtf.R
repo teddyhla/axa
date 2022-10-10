@@ -930,6 +930,19 @@ tf2 <- as.tibble(tf2)
 
 dsig  <- rbind(tf1,tf2)
 
+
+#####dfci 
+
+dfci <- left_join(
+        dfci,
+        dfcore %>% select(mrn,group,ecmod,surv_ecmo),
+        by = "mrn"
+)
+dfci$ecmod <- as.numeric(dfci$ecmod)
+
+dfci$cday <- dfci$totc / dfci$ecmod
+
+###
 #export this to write.csv
 
 l = setdiff(ls(),lsf.str())
@@ -959,11 +972,13 @@ frm <- c(
         
 )
 
-l = l[!l %in% frm]
+l <- l[!l %in% frm]
 
 #these are just names- not actual dataframe.
 # so we need to use get() to obtain.
 
 #to <- lapply(l,get)
-message("SUCCCESS")
+
 save(list = l,file = "data/clean/out.RData")
+
+message("SUCCCESS")

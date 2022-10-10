@@ -994,15 +994,15 @@ dfci <- df %>% select(mrn,tot_circhange)
 dfci$totc <- as.numeric(dfci$tot_circhange)
 dfci$totc[is.na(dfci$totc)] <- 0
 
-dfci <- left_join(
-        dfci,
-        dfcore %>% select(mrn,group,ecmod,surv_ecmo),
-        by = "mrn"
-)
-dfci$ecmod <- as.numeric(dfci$ecmod)
-
-dfci$cday <- dfci$totc / dfci$ecmod
-
+#dfci <- left_join(
+#        dfci,
+#        dfcore %>% select(mrn,group,ecmod,surv_ecmo),
+#        by = "mrn"
+#)
+#dfci$ecmod <- as.numeric(dfci$ecmod)
+#
+#dfci$cday <- dfci$totc / dfci$ecmod
+#
 #df3 %>% filter ((toth>0 & totthr >0)|(toth == 0 & totthr == 0 & totboth>0))
 
 # CHECK FINAL DF against df0 ----------------------------------------------

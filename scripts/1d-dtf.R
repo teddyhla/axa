@@ -342,10 +342,11 @@ blvars <- c(
 )
 #list of interested blood vars
 
+filter_day = 3
 #but needs to see how many missing values are 
 d1e <- tbl %>%
         group_by(mrn)%>% #group wise operaeted
-        filter(nd < 2) %>%   #select first days of blood
+        filter(nd < filter_day) %>%   #select first days of blood
         select_if(function(x) is.character(x)| is.numeric(x)) %>%
         select(-nd)
 
@@ -375,7 +376,7 @@ d1t <- as.tibble(d1t)
         
 d1bl <- tbl %>%
         group_by(mrn)%>% #group wise operaeted
-        filter(nd < 2) %>%   #select first days of blood
+        filter(nd < filter_day) %>%   #select first days of blood
         select_if(function(x) is.character(x)| is.factor(x)| is.numeric(x)) %>%# select dbl + mrn + group
         summarise(across(
                 where(is.double),#execute numbers using folloing list offunction, and naming convention

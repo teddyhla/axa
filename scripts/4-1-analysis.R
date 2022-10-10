@@ -402,3 +402,80 @@ p42 <- ggplot(data=dtest, aes(x=group,y=ttrg,color =surv_ecmo))+
 #ggsave("products/presentations/sept22_01_p42",plot=p42,device ="jpeg",dpi=320)
 
 
+# ecmo_timeline -----------------------------------------------------------
+#
+#milestone <- c(
+#        "acute respiratory failure",
+#        "intubation",
+#        "ARDS",
+#        "VV-ECMO Retrieval",
+#        "Bleeding and Thrombotic Complications",
+#        "Successful Wean from ECMO"
+#        
+#)
+#
+#timel <- c(
+#        "day1",
+#        "day3",
+#        "day5",
+#        "day6",
+#        "day12",
+#        "day18"
+#)
+#
+#dataval <- c(
+#        "no",
+#        "no",
+#        "no",
+#        "no",
+#        "yes",
+#        "yes"
+#)
+#
+#status_colors <- c(
+#        "#C00000",
+#        "#C00000",
+#        "#C00000",
+#        "#C00000",
+#        "#00B050",
+#        "#00B050"
+#        
+#)
+#
+#dtl <- data.frame(milestone,timel,dataval)
+#
+#dtl$dataval <- as.factor(dtl$dataval)
+#
+#plot_dt<- ggplot2::ggplot(dtl,aes(x=timel,y=0,col=milestone,label=dataval)) +
+#        labs(col = "Milestones")+
+#        scale_color_manual(values=status_colors, labels=milestone, drop = FALSE)+
+#        theme_classic()+
+#        geom_hline(yintercept =  0,color = "black",size = 0.5)+
+#        theme(axis.line.y = element_blank(),
+#              axis.text.y = element_blank(),
+#              axis.title.y = element_blank(),
+#              axis.title.x = element_blank(),
+#              axis.ticks.y = element_blank()
+#              )
+#        
+#     
+
+dtl <- data.frame(
+        event = c("acute resp failure","intubation_ards","vv_ecmo","complication","wean_from_ecmo"),
+        start = c("2020-06-06","2020-06-08","2020-06-10","2020-06-12","2020-06-25"),
+        end = c("2020-06-08","2020-06-10","2020-06-25","2020-06-13","2020-6-26"),
+        datav = c("no","no","yes","yes","yes")
+)
+
+
+p_dt <- ggplot(dtl)+
+        geom_segment(aes(x=start,xend = end,y=0,yend=0,color = datav,size = 10 ))+
+        labs(x = "Time(days)")+
+        scale_y_discrete()+
+        theme(axis.line.y = element_blank(),
+              axis.text.y = element_blank(),
+              axis.title.y = element_blank(),
+              axis.ticks.y = element_blank())
+
+
+        

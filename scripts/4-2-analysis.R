@@ -12,6 +12,16 @@ load(file="data/clean/out.RData")
 # ANALYSIS PLAN -----------------------------------------------------------
 
 
+#
+#1. Time TO therapeutic range
+# 2. Time IN therapeutic range 
+#3. less variability 
+#4. Frequency of changes
+#5. total per person per day dose of heparin ?
+#6. Patient outcomes
+#7. time to first complication
+#8. poisson regressions for blood products
+#
 
 
 # ASSUMPTIONS -------------------------------------------------------------

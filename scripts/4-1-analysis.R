@@ -578,4 +578,14 @@ my5ans <- emmeans::emmeans(my5, "group",type = "response")
 
 
 
+## bmi
+
+dfcore %>% 
+        filter(group == "gaxa") %>% 
+        select(bmi) %>% summarise (median = median(bmi),iqrbmi = IQR(bmi))
+
+dfcore %>% 
+        filter(group == "gapt") %>% 
+        select(bmi) %>% summarise (median = median(bmi),iqrbmi = IQR(bmi))
+
 

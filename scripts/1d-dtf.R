@@ -291,6 +291,7 @@ dfcore$ecmod <- round(difftime(dfcore$ecmo_finish,dfcore$ecmo_start,units = "day
 dfcore$group <- ifelse(dfcore$date_can < as.Date("2019-12-01"),"gapt","gaxa")
 dfcore$group <- as.factor(dfcore$group)
 
+dfcore$bmi <- dfcore$wkg / (dfcore$hcm/100)^2
 ## 3.2. DFPRD --------------------------------------------------------------------
 tf <- left_join(
         dfprd,
@@ -666,6 +667,10 @@ dg <- left_join(
         dfcore %>% select(mrn,group),
         by = "mrn"
 )
+
+dprd <- dg %>% 
+        group_by(mrn) %>% 
+        summarise(bldtot = sum(totall))
 
 
 ## 3.7.  DF results -----------------------------------------------------

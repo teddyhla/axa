@@ -76,6 +76,7 @@ dfcore %>% select(ecmoh) %>% count(ecmoh)
 
 # 2.8. Final df -----------------------------------------------------------
 
+#add demographic variables
 dm <- dfcore %>% 
         select(
                 mrn,
@@ -96,6 +97,7 @@ dm <- dfcore %>%
 #254 * 13
 dm$ecmod <- as.numeric(dm$ecmod)
 
+#add blood test variables
 dm <- left_join(
         dm,
         d1bl %>% select(-c(nd_mean,nd_min,nd_max)),
@@ -104,37 +106,56 @@ dm <- left_join(
 
 # 254 *67 
 
+#add ttrg related variables
 dm <- left_join(
         dm,
         dttr %>% select(mrn,tlow,thi,ttrg),
         by = "mrn"
 )
 
+#add variability related variables
 dm <- left_join(
         dm,
         dsig %>% select(mrn,sigm),
         by = "mrn"
 )
 
+#add hep day per dose relatd variables
 dm <- left_join(
         dm,
         dcumhep %>% select(mrn,hep_wkgday),
         by = "mrn"
 )
 
+#add no of prescription changes
 dm <- left_join(
         dm,
         dheprl %>% select(mrn,rl_day),
         by = "mrn"
 )
 
+#add circuitchange 
 dm <- left_join(
         dm,
         dfci %>% select(mrn,totc,cday),
         by = "mrn"
 )
 
-#
+##adding haemorhhagic comps
+
+df3$hboth <- df3$toth + df3$totboth
+
+dm <- left_join(
+        dm,
+        df3 %>% select(mrn,toth,hboth),
+        by = "mrn"
+)
+
+# add blood products transfused
+
+
+
+#remove messy repeated ones
 
 dm <- dm %>% select(
         - c(
@@ -148,6 +169,7 @@ dm <- dm %>% select(
         )
 )
 
+#remove missing datas
 dm <- dm %>% select(
         - c(
                 plt_min,
@@ -178,11 +200,15 @@ dm <- dm %>% select(
         )
 )
 
+
+
 ###NEED TO CORRECT Na's
 
 ## 
 dm[is.na(dm)] <- 0
 
+
+# DO A MULTI VAR ANALYSIS NOW 
 lg1 <- glm(surv_ecmo ~ ., family = binomial(link = "logit"),data = dm)
 
 lg2 <- MASS::stepAIC(lg1)

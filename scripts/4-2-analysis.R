@@ -91,7 +91,8 @@ dm <- dfcore %>%
                 sex,
                 wkg,
                 group,
-                ecmod
+                ecmod,
+                bmi
         )
 
 #254 * 13
@@ -153,6 +154,11 @@ dm <- left_join(
 
 # add blood products transfused
 
+dm <- left_join(
+        dm,
+        dprd,
+        by = "mrn"
+)
 
 
 #remove messy repeated ones
@@ -207,11 +213,24 @@ dm <- dm %>% select(
 ## 
 dm[is.na(dm)] <- 0
 
+#train test split using CARET
 
+set.seed(1234)
+trainIndex <- caret::createDataPartition(dm$surv_ecmo, p = .8 , list = FALSE, times = 1)
+
+dmTrain <- dm[trainIndex,]
+dmTest  <- dm[-trainIndex,]
 # DO A MULTI VAR ANALYSIS NOW 
-lg1 <- glm(surv_ecmo ~ ., family = binomial(link = "logit"),data = dm)
+lg1 <- glm(surv_ecmo ~ ., family = binomial(link = "logit"),data = dmTrain)
+
+fit1 <- predict(lg1,newdata = dmTest,type = "response")
+fit1 <- ifelse(fit1>0.5,1,0)
+fit1r <- ROCR::prediction(fit1,dmTest$surv_ecmo)
+fit1rf <- ROCR::performance(fit1r, measure = "tpr",x.measure = "fpr")
+plot(fit1rf)
 
 lg2 <- MASS::stepAIC(lg1)
+#AIC 206.
 
 ## with the blood variables, age,gender,ldh_mean,ferritin_mean,pct_mean,alb_mean,alb_max,creat_min,
 ## lactate_mean, ttrg,cday
@@ -219,8 +238,171 @@ lg2 <- MASS::stepAIC(lg1)
 lg3 <- glm(surv_ecmo ~ age + sex + ttrg + sigm + ttrg*sigm + group + ttrg*group + sigm*group
            ,
            family = binomial(link = "logit"),
-           data = dm)
+           data = dmTrain)
 
 lg4 <- MASS::stepAIC(lg3)
 
-lg5 <- glm(surv_ecmo ~ age + group + age *group, family = binomial(link="logit"),data = dm)
+lg5 <- glm(surv_ecmo ~ age + group + age *group, family = binomial(link="logit"),data = dmTrain)
+
+#lg6 based on stepAIC output from lg2
+lg6 <- glm(
+        surv_ecmo ~ 
+                age + sex + neut_min + 
+                ldh_mean + ferritin_mean + pct_mean + alb_mean + alb_max + creat_min +
+                lactate_mean + ttrg + sigm + cday + toth + hboth + bldtot,
+        family = binomial(link = "logit"), data = dmTrain
+)
+
+lg7 <- glm(
+        surv_ecmo ~ 
+                age + sex + neut_min + 
+                ldh_mean + ferritin_mean + pct_mean + alb_max + creat_min +
+                lactate_mean + ttrg + sigm + cday + toth + hboth + bldtot,
+        family = binomial(link = "logit"), data = dmTrain
+)
+
+#f
+anova(lg2,lg6,lg7, test = "Chisq")
+
+lg8 <- MASS::dropterm(lg1,test = "F")
+
+#this yielded "age,sex,ldh mean,ferritin mean, ck mean, pct mean, bili mean, alb_max, 
+# lactate_mean, ttrg, cday, toth,hboth,bldtot
+
+lg9 <- glm(
+        surv_ecmo ~ 
+                age + sex + 
+                ldh_mean + ferritin_mean + pct_mean + creat_min +
+                lactate_mean + ttrg + sigm + cday + toth + hboth + bldtot,
+        family = binomial(link = "logit"), data = dmTrain
+)
+
+anova(lg2,lg6,lg7,lg9,test = "Chisq")
+
+func <- function(x){
+        pscl::pR2(x)["McFadden"]
+}
+mlist <- list(lg1,lg2,lg3,lg4,lg5,lg6,lg7,lg9)
+
+glist <- map(mlist,func)
+
+
+##randomforest stuff
+rm1 <- randomForest::randomForest(surv_ecmo ~ ., data = dmTrain, importance = TRUE)
+
+#default setting rm1 OOB error = 23.04%
+rm2 <- randomForest::randomForest(surv_ecmo ~ ., data = dmTrain,ntree = 500,mtry = 5, importance = TRUE)
+#with mtry going from 2 to 5 22.06
+
+#lets try a couple of mtries
+
+a = c()
+i = 5
+
+for (i in 2:8){
+        rm3 <- randomForest::randomForest(surv_ecmo ~ ., data = dmTrain, ntree = 500,mtry = i,importance = TRUE)
+        predValid <- predict(rm3,dmTest,type = "class")
+        a[i-1] <- mean(predValid == dmTest$surv_ecmo)
+}
+
+
+rm4 <- randomForest::randomForest(surv_ecmo ~ ., data = dmTrain,ntree = 500,mtry = 6, importance = TRUE)
+#with mtry going from 2 to 5 22.06
+
+
+#
+fit1 <- predict(rm4,newdata = dmTest,type = "response")
+fit1 <- ifelse(fit1>0.5,1,0)
+fit1r <- ROCR::prediction(fit1,dmTest$surv_ecmo)
+fit1rf <- ROCR::performance(fit1r, measure = "tpr",x.measure = "fpr")
+
+auc <- ROCR::performance(fit1r, measure = "auc")
+auc <- auc@y.values[[1]]
+auc
+
+plot(fit1rf)
+
+
+##rand
+
+rfpt <- predict(rm4 , type = "response")[,2]
+rfptr <- ROCR::prediction(rfpt,dmTest$surv_ecmo)
+rauc <- ROCR::performance(rfptr,measure = "auc")@y.values[[1]]
+
+
+
+####
+
+##MVR for TTR
+
+library(ggplot2)
+
+gr1 <- ggplot(data =dm , aes(x= ttrg, colour = group)) +
+        geom_density()
+
+gr2 <- ggplot(data = dm ,aes(y = sigm, color = group)) +
+        geom_boxplot(outlier.shape = NA)+
+        coord_cartesian(ylim = c(0,0.3))
+
+gr3 <- ggplot(data = dm ,aes(x = group, color = group,y=sigm)) +
+        geom_boxplot(outlier.shape = NA)+
+        coord_cartesian(ylim = c(0,0.3))
+
+gr4 <- ggplot(data = dm, aes(x=sigm, color = group)) +
+        geom_density()+
+        coord_cartesian(xlim = c(0,0.3))
+
+#ggsave("products/presentations/final_presentations/src/gr1",plot = gr1, device = "png",dpi = 320)
+
+
+#ggsave("products/presentations/final_presentations/src/gr3.png",plot = gr3, device = "png",dpi = 600)
+
+#ggsave("products/presentations/final_presentations/src/gr4.png",plot = gr4, device = "png",dpi = 600)
+
+##dd
+
+dm$ttrgf <- ((dm$ttrg * 253) + 0.5)/254   
+
+
+bm1 <- betareg::betareg(ttrgf ~ age + sex + group + apache + ecmod + sigm , data = dm)
+
+
+bm2 <- betareg::betareg(ttrgf ~ sex + group + sex*group + ecmod + sigm , data = dm)
+
+
+bm3 <- betareg::betareg(ttrgf ~  group + hboth + totc + cday + ecmod + sigm , data = dm)
+
+bm4<- betareg::betareg(ttrgf ~  group + hboth + cday + ecmod , data = dm)
+
+
+##lets fit for variance.
+
+sm1 <- lm (sigm ~. , data = dm)
+sm2 <- MASS::stepAIC(sm1)
+
+
+## 
+library(survival)
+cm1 <- coxph(formula = Surv(ecmod,surv_ecmo), data = dm)
+
+s1 <- survfit(Surv(ecmod,surv_ecmo) ~ 1 , data = dm)
+
+survdiff(Surv(ecmod,surv_ecmo)~sex + group, data = dm)
+sm2 <- survfit(Surv(ecmod,surv_ecmo) ~ group + sex , data = dm)
+
+##
+hm1 <- lm(hep_wkgday ~ .,  data= dm)
+hm2 <- MASS::stepAIC(hm1)
+
+rlm1 <- lm(rl_day ~ .,  data= dm)
+rlm2 <- MASS::stepAIC(rlm1)
+rlm3 <- lm(rl_day ~ sex + wkg + group + ecmod + hb_max + lactate_mean + ttrg + sigm + bldtot + hboth + hep_wkgday 
+            ,data = dm)
+rlm4 <- lm(rl_day ~ sex + wkg + group + ecmod + hb_max + ttrg + hep_wkgday 
+           ,data = dm)
+rlm5 <- lm(rl_day ~ sex + wkg + group + ecmod + hb_max + lactate_mean + ttrg + sigm + bldtot + hboth 
+           ,data = dm)
+##
+
+
+

@@ -21,7 +21,7 @@
 # [/] - tf is a blood products per day on ecmo
 # [/] - dfrx -"trx" -- other medications
 # [/] - dftxa - as "ttxainf" - tranexemic acid infusions 
-
+# [ ] - dataframe for survival analysis AND relevant feature engineernig for dttg
 
 # 2.0. SOURCE ------------------------------------------------------------------
 ## 2.1. DATA ---------------------------------------------------------------
@@ -679,6 +679,179 @@ tdf <- left_join(
         df,
         dfcore %>% select(mrn,group,ecmod),by = "mrn"
 )
+# this line of code selects patient with events 
+
+dkf <- tdf %>% 
+        select(mrn,group,admn_ct_results,intct_dtm,comp1_dtm,int_ct_results,other_comp_1,comp_1_quali) %>%
+        mutate(tp1 = intct_dtm - comp1_dtm) %>% 
+        mutate(tp1 = as.numeric(tp1))
+
+#1st pt int ct 2018-01-20 happened after comp 1 which is on 2018-01-19,thus 
+#tp1 is positive, and if tp1 is positive we should take comp1_dtm results
+#this line of code selects patient events as whether they have interval scanning or complication before scanning 
+
+dkf <- dkf %>% 
+        mutate(et = case_when(
+                tp1 > 0 ~ comp1_dtm,
+                tp1 < 0 ~ intct_dtm,
+                is.na(tp1) & is.na(comp1_dtm) & !is.na(intct_dtm) ~ intct_dtm,
+                is.na(tp1) & is.na(comp1_dtm) & is.na(intct_dtm) ~ intct_dtm,
+                is.na(tp1) & !is.na(comp1_dtm)& is.na(intct_dtm) ~ comp1_dtm
+        ))
+
+dkf <- dkf %>% 
+        mutate(ev = case_when(
+                #et == comp1_dtm ~ paste(other_comp_1,comp_1_quali,sep = "+"),
+                et == intct_dtm ~ int_ct_results
+        )) 
+
+dkf$tp2 <- dkf$comp1_dtm == dkf$et
+#this line of code is still tidying those 
+dkf <- dkf %>% 
+        mutate(ev2 = case_when(
+                tp2 == TRUE ~ paste(other_comp_1,comp_1_quali,sep = "+")
+                
+        ))
+
+
+dkf <- dkf %>%
+        select(
+                mrn,
+                group,
+                #tp1,
+                admn_ct_results,
+                et,
+                ev,
+                ev2
+        )
+#now this line of code combines the outcomes into column z 
+dkf <- dkf %>% unite("z",ev:ev2,na.rm=TRUE,remove = FALSE)
+
+dkf <- left_join(
+        dkf,
+        tdf %>% select(mrn,ecmo_dtm,ecmod,ecmo_outcome),
+        by = "mrn"
+)
+
+dkf <- left_join(
+        dkf,
+        dfcore %>% select(mrn,ecmoh,ecmo_finish),
+        by = "mrn"
+)
+
+
+dkf$z <- as.factor(dkf$z)
+levels(dkf$z) <- c(
+        "no_comp",#1
+        "both",#2
+        "haem",#3
+        "haem",#4
+        "haem",
+        "no_comp",#6
+        "haem",
+        "throm",#8
+        "throm",
+        "throm",#10
+        "throm",
+        "throm",#12
+        "throm"
+)
+
+dkf <- dkf %>%
+        mutate( t = 
+                        case_when(
+                                z == "no_comp" ~ as.numeric(ecmod) * 24,
+                                z != "no_comp" ~ as.numeric(et - ecmo_dtm)
+                        )
+                
+        )
+
+dkf <- dkf %>% 
+        mutate(
+                end = case_when(
+                        !is.na(et) ~ et,
+                        is.na(et) ~ ecmo_finish
+                )
+        )
+ 
+###
+####### DF for the survival analysis
+#let's get ttrg and sigm for the 1st time to bleeding df.
+
+#tx1 <- tco %>% 
+#        select(mrn,chart_t,ecmo_start,ecmo_finish,axa,apttr,group)
+##        mutate(teb = difftime(chart_t,ecmo_start,units = "hours"))%>%
+##        mutate(teb = as.numeric(teb))
+
+
+#tx1 <- left_join(
+#        tx1,
+#        dkf %>% select(mrn,end),
+#        by = "mrn"
+#)
+
+#tx1 <- tx1 %>%
+#        group_by(group) %>%
+#        filter(chart_t < end) %>%
+#        ungroup()
+
+#ta <-  tx1 %>% 
+#        filter(group=="gaxa")%>%
+#        group_by(mrn)%>%
+#        drop_na(axa)%>%
+#        arrange(chart_t)%>%
+#        group_split()
+
+#tb <-  tx1 %>% 
+#        filter(group=="gapt")%>%
+#        group_by(mrn)%>%
+#        drop_na(apttr)%>%
+#        arrange(chart_t)%>%
+#        group_split()
+
+##as per above
+#ta <-map(ta,wo)
+#ta <- map(ta,lwg)
+#ta <- map(ta,mwt)
+#tar <- map(ta,rap)
+#tar <- map(tar,edd)
+#tarf <- plyr::ldply(tar,data.frame)
+#tarf <-as.tibble(tarf)
+##
+##tb <-map(tb,wo)
+##tb <- map(tb,lwg)
+##tb <- map(tb,mwt)
+##tbr <- map(tb,rap)
+##tbr <- map(tbr,edd)
+##
+##tbrf <- plyr::ldply(tbr,data.frame)
+##tbrf <-as.tibble(tbrf)
+##
+##darf <- rbind(tarf,tbrf)
+##
+###tao <- map(ta,fnm)
+##tbo <- map(tb,fnm)
+#
+##taor <- plyr::ldply(tao,data.frame)
+##taor <- as.tibble(taor)
+#
+#tbor <- plyr::ldply(tbo,data.frame)
+#tbor <- as.tibble(tbor)
+#
+#dorf <- rbind(taor,tbor)
+#
+#dkf <- left_join(
+##        dkf,
+#        darf %>% select(mrn,ttrg),
+#        by = "mrn"
+#)
+#
+#dkf <- left_join(
+#        dkf,
+#        dorf %>% select(mrn,sigm),
+#        by = "mrn"
+#)
+#
 
 ## 3.8. DFhydrocortinf -----------------------------------------------------
 
@@ -757,7 +930,7 @@ samp <- samp %>%
                 chart_t = sample(.$ecmo_finish,size = 1)
         )%>%
         arrange(chart_t)
-        
+
 #then we need to "lag"
 samp <- samp %>% 
         select(mrn,chart_t,axa,group) %>%
@@ -948,6 +1121,12 @@ dfci$ecmod <- as.numeric(dfci$ecmod)
 dfci$cday <- dfci$totc / dfci$ecmod
 
 ###
+
+
+#4.3.2. FINAL engineered TTRrose ------------------------------------------------
+
+
+######EXPORTAGE
 #export this to write.csv
 
 l = setdiff(ls(),lsf.str())

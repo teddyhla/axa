@@ -5,7 +5,7 @@
 
 # SOURCE DATA -------------------------------------------------------------
 load(file="data/clean/out.RData")
-
+library(tidyverse)
 #clean data sourced from 1d-dtf
 
 
@@ -162,6 +162,7 @@ dm <- left_join(
 
 
 #remove messy repeated ones
+dm2 <- dm
 
 dm <- dm %>% select(
         - c(
@@ -206,13 +207,22 @@ dm <- dm %>% select(
         )
 )
 
-
+###
 
 ###NEED TO CORRECT Na's
 
 ## 
 dm[is.na(dm)] <- 0
 
+
+#####
+
+#lets try coxph
+dm2$surv_ecmo <- as.numeric(dm2$surv_ecmo)
+
+so <- Surv(time = dm2$ecmod, event = dm2$surv_ecmo)
+sf1 <- survfit(so ~ group, data = dm2)
+sf2 <- coxph(so ~ age + group + ttrg + sigm, data = dm2 )
 #train test split using CARET
 
 set.seed(1234)
@@ -403,6 +413,25 @@ rlm4 <- lm(rl_day ~ sex + wkg + group + ecmod + hb_max + ttrg + hep_wkgday
 rlm5 <- lm(rl_day ~ sex + wkg + group + ecmod + hb_max + lactate_mean + ttrg + sigm + bldtot + hboth 
            ,data = dm)
 ##
+
+
+
+###
+
+car::vif(lg1)
+
+vif_values <- car::vif(lg1)
+barplot(vif_values, main = "VIF values", horiz = TRUE, col = "steelblue")
+abline(v=5,lwd = 3, lty= 2)
+
+#vif quite high
+##you want VIF < 4 is perfect
+#does standard error of model improve
+
+dcrs <- dm %>% select(where(is.numeric))
+cor1 <- cor(dcrs)
+
+
 
 
 

@@ -6,6 +6,7 @@
 # SOURCE DATA -------------------------------------------------------------
 load(file="data/clean/out.RData")
 library(tidyverse)
+library(Hmisc)
 #clean data sourced from 1d-dtf
 
 
@@ -223,6 +224,11 @@ dm2$surv_ecmo <- as.numeric(dm2$surv_ecmo)
 so <- Surv(time = dm2$ecmod, event = dm2$surv_ecmo)
 sf1 <- survfit(so ~ group, data = dm2)
 sf2 <- coxph(so ~ age + group + ttrg + sigm, data = dm2 )
+
+
+# SPLIT DATA  -------------------------------------------------------------
+
+
 #train test split using CARET
 
 set.seed(1234)
@@ -230,6 +236,16 @@ trainIndex <- caret::createDataPartition(dm$surv_ecmo, p = .8 , list = FALSE, ti
 
 dmTrain <- dm[trainIndex,]
 dmTest  <- dm[-trainIndex,]
+
+
+# FIT A NULL MODEL --------------------------------------------------------
+
+lg0 <- glm(surv_ecmo ~ 1, family = binomial(link = "logit"),data = dmTrain)
+
+
+# FIT AN ALL VAR MODEL ----------------------------------------------------
+
+
 # DO A MULTI VAR ANALYSIS NOW 
 lg1 <- glm(surv_ecmo ~ ., family = binomial(link = "logit"),data = dmTrain)
 
@@ -245,7 +261,7 @@ lg2 <- MASS::stepAIC(lg1)
 ## with the blood variables, age,gender,ldh_mean,ferritin_mean,pct_mean,alb_mean,alb_max,creat_min,
 ## lactate_mean, ttrg,cday
 
-lg3 <- glm(surv_ecmo ~ age + sex + ttrg + sigm + ttrg*sigm + group + ttrg*group + sigm*group
+lg3 <- glm(surv_ecmo ~ age + sex + ttrg + sigm + ttrg*sigm + group + ttrg*group + sigm*group +ferritin_mean + ph_mean + hep_wkgday+ rl_day
            ,
            family = binomial(link = "logit"),
            data = dmTrain)
@@ -272,7 +288,7 @@ lg7 <- glm(
 )
 
 #f
-anova(lg2,lg6,lg7, test = "Chisq")
+anova(lg0,lg2,lg6,lg7, test = "Chisq")
 
 lg8 <- MASS::dropterm(lg1,test = "F")
 
@@ -321,14 +337,14 @@ rm4 <- randomForest::randomForest(surv_ecmo ~ ., data = dmTrain,ntree = 500,mtry
 
 
 #
-fit1 <- predict(rm4,newdata = dmTest,type = "response")
-fit1 <- ifelse(fit1>0.5,1,0)
-fit1r <- ROCR::prediction(fit1,dmTest$surv_ecmo)
-fit1rf <- ROCR::performance(fit1r, measure = "tpr",x.measure = "fpr")
-
-auc <- ROCR::performance(fit1r, measure = "auc")
-auc <- auc@y.values[[1]]
-auc
+#fit1 <- predict(rm4,newdata = dmTest,type = "response")
+#fit1 <- ifelse(fit1>0.5,1,0)
+#fit1r <- ROCR::prediction(fit1,dmTest$surv_ecmo)
+#fit1rf <- ROCR::performance(fit1r, measure = "tpr",x.measure = "fpr")
+#
+#auc <- ROCR::performance(fit1r, measure = "auc")
+#auc <- auc@y.values[[1]]
+#auc
 
 plot(fit1rf)
 

@@ -7,6 +7,7 @@
 load(file="data/clean/out.RData")
 library(tidyverse)
 library(Hmisc)
+library(rms)
 #clean data sourced from 1d-dtf
 
 
@@ -75,7 +76,12 @@ dfcore %>% select(ecmoh) %>% count(ecmoh)
 #transfusion in 1st 24 hour, cumulative 
 #dg
 
-# 2.8. Final df -----------------------------------------------------------
+
+# 2.8. time as factor vs continuous ---------------------------------------
+
+
+
+# 2.9. Final df -----------------------------------------------------------
 
 #add demographic variables
 dm <- dfcore %>% 
@@ -93,10 +99,29 @@ dm <- dfcore %>%
                 wkg,
                 group,
                 ecmod,
-                bmi
+                bmi,
+                ecmo_start,
+                cohort
         )
 
 #254 * 13
+dm$ecmos <- as.Date(dm$ecmo_start)
+
+dm <- dm %>% 
+        mutate(ecmosb = case_when(
+                ecmo_start < as.Date("2015-04-01") ~ "15",
+                (as.Date("2015-04-01") < ecmo_start) & (ecmo_start < as.Date("2016-04-01")) ~ "15-16",
+                (as.Date("2016-04-01") < ecmo_start) & (ecmo_start < as.Date("2017-04-01")) ~ "16-17",
+                (as.Date("2017-04-01") < ecmo_start) & (ecmo_start < as.Date("2018-04-01")) ~ "17-18",
+                (as.Date("2018-04-01") < ecmo_start) & (ecmo_start < as.Date("2019-04-01")) ~ "18-19",
+                (as.Date("2019-04-01") < ecmo_start) & (ecmo_start < as.Date("2020-04-01")) ~ "19-20",
+                (as.Date("2020-04-01") < ecmo_start) & (ecmo_start < as.Date("2021-04-01")) ~ "20-21",
+                as.Date("2021-04-01") < ecmo_start ~ "21-22"
+        ))
+
+#ecmo is a winter game so treated as winter intervals
+dm$ecmosb <- as.factor(dm$ecmosb)
+
 dm$ecmod <- as.numeric(dm$ecmod)
 
 #add blood test variables
@@ -214,6 +239,10 @@ dm <- dm %>% select(
 
 ## 
 dm[is.na(dm)] <- 0
+
+
+
+# COX PH ------------------------------------------------------------------
 
 
 #####
@@ -450,4 +479,15 @@ cor1 <- cor(dcrs)
 
 
 
+
+
+
+# Harrell -----------------------------------------------------------------
+# [ ]Poisson circuit change. 
+# [ ]Poison of blood transfusion. 
+# [ ]As well as log reg of both. 
+# [/]And adjust for year of admission.  time as both bins and time as continuou
+# [ ]Talk about multi state model. 
+# [ ]Bleeding complications Poisson. 
+# [ ]Finalisenwith multi variate Alive. dead
 

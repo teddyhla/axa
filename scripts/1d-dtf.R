@@ -271,6 +271,20 @@ blz <- function(x) {
         return(df)
 }
 
+ht <- function(x){
+        x$nd <- round(difftime(x$chart_t,x$ecmo_start,units = "days"))
+        x$nd <- as.numeric(x$nd)
+        x<- x %>% 
+                group_by(nd) %>%
+                arrange(nd,chart_t)%>% 
+                summarise(mrn = mrn, nd = nd, rlnd = length(rle(t_form)$lengths)) %>%
+                group_by(nd)%>%
+                ungroup()
+        
+        x<-distinct(x)
+        return(x)        
+}
+
 # 3.0. DATA MANIPULATION -------------------------------------------------------
 
 ## 3.1. DFCORE ------------------------------------------------------------
@@ -557,6 +571,26 @@ dheprl <- left_join(
 
 dheprl$ecmod <- as.numeric(dheprl$ecmod)
 dheprl$rl_day <- dheprl$runl/dheprl$ecmod
+
+##make a run length per each day
+
+chx <- map(hx,ht)
+chpt <- map(hpt,ht)
+
+chx <- plyr::ldply(chx,data.frame)
+chx <- as.tibble(chx)
+
+chpt <- plyr::ldply(chpt,data.frame)
+chpt <- as.tibble(chpt)
+
+dgrhep <- rbind(chx,chpt)
+
+dgrhep <- left_join(
+        dgrhep,
+        dfcore %>% select (mrn,group),
+        by = "mrn"
+)
+
 #thep <- thep %>%
 #        group_by(mrn) %>%
 #        arrange(chart_t)%>%

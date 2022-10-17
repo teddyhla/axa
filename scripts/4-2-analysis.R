@@ -380,9 +380,9 @@ plot(fit1rf)
 
 ##rand
 
-rfpt <- predict(rm4 , type = "response")[,2]
-rfptr <- ROCR::prediction(rfpt,dmTest$surv_ecmo)
-rauc <- ROCR::performance(rfptr,measure = "auc")@y.values[[1]]
+#rfpt <- predict(rm4 , type = "response")[,2]
+#rfptr <- ROCR::prediction(rfpt,dmTest$surv_ecmo)
+#rauc <- ROCR::performance(rfptr,measure = "auc")@y.values[[1]]
 
 
 
@@ -445,14 +445,14 @@ sm2 <- MASS::stepAIC(sm1)
 
 
 ## 
-library(survival)
-cm1 <- coxph(formula = Surv(ecmod,surv_ecmo), data = dm)
-
-s1 <- survfit(Surv(ecmod,surv_ecmo) ~ 1 , data = dm)
-
-survdiff(Surv(ecmod,surv_ecmo)~sex + group, data = dm)
-sm2 <- survfit(Surv(ecmod,surv_ecmo) ~ group + sex , data = dm)
-
+#library(survival)
+#cm1 <- coxph(formula = Surv(ecmod,surv_ecmo), data = dm)
+#
+#s1 <- survfit(Surv(ecmod,surv_ecmo) ~ 1 , data = dm)
+#
+#survdiff(Surv(ecmod,surv_ecmo)~sex + group, data = dm)
+#sm2 <- survfit(Surv(ecmod,surv_ecmo) ~ group + sex , data = dm)
+#
 ##
 hm1 <- lm(hep_wkgday ~ .,  data= dm)
 hm2 <- MASS::stepAIC(hm1)
@@ -651,10 +651,17 @@ lambda <- bc$x[which.max(bc$y)]
 dmt$tsigm <- (dmt$sigm^lambda-1)/lambda
 #
 
+rm0 <- randomForest::randomForest(sigm ~. , data = dmTrain,ntree = 500, importance = TRUE)
+which.min(rm0$mse)
+#1
+#0.194 rmse 
 
-rmt <- randomForest::randomForest(sigm ~ age + group +  sex + wkg , data = dmTrain,ntree = 500, importance = TRUE,)
+rmt <- randomForest::randomForest(sigm ~ age + group +  sex + wkg , data = dmTrain,ntree = 500, importance = TRUE)
 #with mtry going from 2 to 5 22.06
 randomForest::importance(rmt)
+which.min(rmt$mse)
+#2
+#0.232
 
 
 mz <- glm(hboth ~ group + sigm + ttrg + age + sex + cohort + ecmod + ecmosb , data =dm, family = poisson(link = "log"))

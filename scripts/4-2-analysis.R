@@ -673,3 +673,5 @@ mr <- glm(hboth ~ group + sigm + ttrg + ecmod , data =dm, family = poisson(link 
 mrin <- glm(hboth ~age+ group + group:ttrg + sigm + ttrg + sigm:ttrg + ecmod , data =dm, family = poisson(link = "log"))
 #mrin is winning byt aic 428 vs aic 433
 #
+
+dheprl$log <- log(dheprl$runl)

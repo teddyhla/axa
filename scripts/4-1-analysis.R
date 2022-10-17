@@ -4,7 +4,7 @@
 
 # DATA SOURCE -------------------------------------------------------------
 load(file="data/clean/out.RData")
-
+library(ggplot2)
 # STRUCTURE OF ANALYSIS ---------------------------------------------------
 
 #Note we will use person-days
@@ -589,3 +589,48 @@ dfcore %>%
         select(bmi) %>% summarise (median = median(bmi),iqrbmi = IQR(bmi))
 
 
+grz <- ggplot(data = dheprl, aes(x=group, color = group,y=runl)) +
+        geom_boxplot()+
+        coord_cartesian(ylim = c(0,60))+
+        labs(
+                title = "Unadjusted total prescription changes",
+                x = "Monitoring group",
+                y = "Number of Prescription changes",
+                subtitle = "median for AXA = 11.00, median for APTTR = 16.00, p-value >0.05"
+        )
+
+grz2 <- ggplot(data = dgrhep[dgrhep$group == "gaxa",], aes(group =nd,x = nd,y =rlnd)) + 
+        geom_boxplot()
+
+grz4 <- ggplot(data = dheprl, aes(x=group, color = group,y=rl_day)) +
+        geom_boxplot() +
+        coord_cartesian(ylim = c(0,3))+
+        labs(
+                title = "Prescription changes ADJUSTED FOR DURATION",
+                x = "Monitoring group",
+                y = "Number of Prescription changes / durationof ecmo",
+                subtitle = "median for AXA = 0.75, median for APTTR = 1.26, *p-value <0.05*"
+        )
+
+ggsave("products/presentations/final_presentations/src/grz2.png",plot = grz, device = "png",dpi = 320)
+ggsave("products/presentations/final_presentations/src/grz4.png",plot = grz4, device = "png",dpi = 320)
+
+##
+#
+#p7<-ggplot(data = vin[vin$group == "gaxa",], aes(x = ecmod, y = axa)) +
+#        geom_boxplot(outlier.shape = NA)+
+#        geom_hline(yintercept = c(0.3,0.7),colour = "blue")+
+#        geom_hline(yintercept = 1.0,colour ="red")+
+#        coord_cartesian(ylim = ylim1 *1.05)+
+#        scale_x_discrete(breaks = seq(0,80,10))+
+#        theme(axis.text.x = element_text(angle = 45))+
+#        theme_minimal()+
+#        labs(title= "AXA values in AXA group",
+#             x = "Days on Ecmo",y ="anti-Xa levels",
+#             subtitle = "Normal Range 0.3 to 0.7, VTE Range 0.6 to 1.0")
+#
+
+
+
+
+##

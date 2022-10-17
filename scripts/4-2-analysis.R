@@ -6,8 +6,8 @@
 # SOURCE DATA -------------------------------------------------------------
 load(file="data/clean/out.RData")
 library(tidyverse)
-library(Hmisc)
-library(rms)
+#library(Hmisc)
+#library(rms)
 #clean data sourced from 1d-dtf
 
 
@@ -419,16 +419,24 @@ gr4 <- ggplot(data = dm, aes(x=sigm, color = group)) +
 dm$ttrgf <- ((dm$ttrg * 253) + 0.5)/254   
 
 
-bm1 <- betareg::betareg(ttrgf ~ age + sex + group + apache + ecmod + sigm , data = dm)
-
+bm1 <- betareg::betareg(ttrgf ~ age + sex + group + apache + ecmod + sigm + ldh_mean + ph_mean , data = dm)
+#pseudo R2 0.11 
 
 bm2 <- betareg::betareg(ttrgf ~ sex + group + sex*group + ecmod + sigm , data = dm)
+#pseudo R2 0.10
 
+bm3 <- betareg::betareg(ttrgf ~  group +sex + ecmod +ecmosb, data = dm)
+#pseudo R2 0.146
+bm4<- betareg::betareg(ttrgf ~  group + sex + ecmod , data = dm)
+#pseudo R2 0.10
+bm5 <- betareg::betareg(ttrgf ~  group + sex + ecmod +cohort, data = dm)
+#no association
+#pseudo R2
 
-bm3 <- betareg::betareg(ttrgf ~  group + hboth + totc + cday + ecmod + sigm , data = dm)
+bm7 <- betareg::betareg(ttrgf ~  group + sex + ecmod + cohort, data = dm)
 
-bm4<- betareg::betareg(ttrgf ~  group + hboth + cday + ecmod , data = dm)
-
+####
+sjPlot::plot_model(bm3,show.values = TRUE, value.offset = .3,title = "Adjusted Odds Ratio fortransformed  Time in Therapeutic Range")
 
 ##lets fit for variance.
 
@@ -483,11 +491,178 @@ cor1 <- cor(dcrs)
 
 
 # Harrell -----------------------------------------------------------------
-# [ ]Poisson circuit change. 
-# [ ]Poison of blood transfusion. 
-# [ ]As well as log reg of both. 
+# [ ]Poisson circuit change. Circuit change as an outcome because we are not setting it a priori
+# [ ]Poison of blood transfusion. same as above. 
+# [ ]As well as log reg of both. same as above
 # [/]And adjust for year of admission.  time as both bins and time as continuou
-# [ ]Talk about multi state model. 
+# [/]Talk about multi state model. 
 # [ ]Bleeding complications Poisson. 
-# [ ]Finalisenwith multi variate Alive. dead
+# [ ]Finalise with multi variate Alive. dead
 
+
+
+# mutlivarmodel -----------------------------------------------------------
+
+#based on lg2, age, apache, wkg, group, ecmos,ecmosb,neut_mean,ldh_mean,ferritin_mean,alb_mean,
+#creat_mean, bicarb meaen, lactate_mean, rl_day,totc, cday, toth,hboth,bldtot
+
+## ttrg, sigm
+## totc = total circuit change, cday = circuit change adjusted for run length
+## toth = total hemorrhage complications
+## hboth == both haem and thrombotic
+##blodtot = total blood products
+## AIC 155.36 without using rms package
+
+f <- "surv_ecmo ~ age + apache + wkg + group + ecmosb + neut_mean + ldh_mean + ferritin_mean + alb_mean
++ creat_mean + bicarb_mean + lactate_mean + rl_day + totc + cday + toth + hboth + bldtot +ttrg +sigm"
+
+#m1 <- lrm(
+#        formula = surv_ecmo ~ age + apache + wkg + group + ecmosb + neut_mean + ldh_mean + ferritin_mean + alb_mean
+#        + creat_mean + bicarb_mean + lactate_mean + rl_day + totc + cday + toth + hboth + bldtot +ttrg +sigm ,
+#        data = dm,
+#        x = TRUE,
+#        y = TRUE
+#)
+#
+
+m1 <- glm(surv_ecmo ~ age + apache + wkg + group + ecmosb + neut_mean + ldh_mean + ferritin_mean + alb_mean 
+          + creat_mean + bicarb_mean + lactate_mean + rl_day + totc + cday + toth + hboth + bldtot +ttrg +sigm,
+                family = binomial(link = "logit"), data = dm
+        
+)
+#pseudo R2 0.45, c 0.86 , aic 245
+#high VIF = remove hboth, 
+# cday, toth, hboth, bldtot, ttrg, 
+
+#m2 <- lrm(
+#        formula = surv_ecmo ~ age + apache + wkg + group + ecmosb + ldh_mean + cday + toth + bldtot +ttrg +sigm ,
+#        data = dm,
+#        x = TRUE,
+#        y = TRUE
+#)
+
+m2 <- glm(surv_ecmo ~ age + apache + wkg + group + ecmosb + ldh_mean + cday + toth + hboth + bldtot +ttrg +sigm,
+          family = binomial(link = "logit"), data = dm
+          
+)
+#pseudo R = 0.39, brier c 0.83 , aic 239 
+#m3 <- lrm(
+#        formula = surv_ecmo ~ age + group + ldh_mean + cday + toth + bldtot +ttrg ,
+#        data = dm,
+#        x = TRUE,
+#        y = TRUE
+#)
+#
+m3 <- glm(surv_ecmo ~ age + group + ldh_mean + cday + toth + bldtot +ttrg +sigm,
+          family = binomial(link = "logit"), data = dm
+          
+)
+#aic 233 
+m4 <- glm(surv_ecmo ~ age + group + cday + bldtot +ttrg +sigm,
+          family = binomial(link = "logit"), data = dm
+          
+)
+#aic 232
+
+m5 <- glm(surv_ecmo ~ age + group + cday + bldtot +ttrg,
+          family = binomial(link = "logit"), data = dm
+          
+)
+#aic 230
+
+m0<- glm(surv_ecmo ~ 1,
+          family = binomial(link = "logit"), data = dm
+          
+)
+#aic 286
+
+#anova(m0,m1,m2,m3,m4,m5,test = "Chisq")
+
+#lmtest::lrtest(m2,m5)
+#showed that m1 is still the best 
+#pseudoR2 is 0 for m0
+#pseoduR2 is 0.29 for m2
+
+
+
+#m1 <- glm(surv_ecmo ~ age + apache + wkg + group + ecmosb + neut_mean + ldh_mean + ferritin_mean + alb_mean 
+#          + creat_mean + bicarb_mean + lactate_mean + rl_day + totc + cday + toth + hboth + bldtot +ttrg +sigm,
+#          family = binomial(link = "logit"), data = dm, na.action = na.pass
+#          
+#)
+#mm <- MuMIn::dredge(m1)
+#head(mm)
+#
+
+
+# --- ---------------------------------------------------------------------
+
+library(caret)
+model <- m0<- glm(surv_ecmo ~ .,
+                  family = binomial(link = "logit"), data = dmTrain
+                  
+)
+
+mz <- glm(surv_ecmo ~ sigm + ttrg + age,
+                  family = binomial(link = "logit"), data = dmTrain
+                  
+)
+
+prob <- model %>% predict(dmTest, type = "response")
+pre_c <- ifelse(prob>0.5,"yes","no")
+mean(pre_c == dmTest$surv_ecmo)
+
+dmTrain %>% 
+        mutate(prob = ifelse(surv_ecmo == "yes",1,0)) %>%
+        ggplot(aes(hboth,prob))+
+        geom_point(alpha = 0.2)+
+        geom_smooth(method = "glm",method.args = list(family="binomial"))+
+        labs(
+                title = "mvlogreg",
+                x = "ttrg",
+                y = "probability of alive"
+        )
+
+#perhaps 
+
+
+
+###
+
+hist(dm$sigm,breaks = 100,xlim = c(0,0.8),main = "variability")
+
+dm$lsigm <- log(dm$sigm)
+
+
+hist(dm$lsigm,breaks = 100,main = "log variability")
+
+mv0 <- lm(sigm ~ age + group + ecmod + ecmosb + cohort + bicarb_mean + apache + wkg, data = dm)
+sjPlot::plot_model(mv0)
+
+mv1 <- sm2 <- MASS::stepAIC(mv0)
+
+dmt <- dm %>% filter(sigm >0)
+mv2 <- lm(sigm ~ age + group + sex + wkg , data = dmt)
+
+#find optimal lambda for box cox 
+bc <- MASS::boxcox(mv2)
+lambda <- bc$x[which.max(bc$y)]
+
+dmt$tsigm <- (dmt$sigm^lambda-1)/lambda
+#
+
+
+rmt <- randomForest::randomForest(sigm ~ age + group +  sex + wkg , data = dmTrain,ntree = 500, importance = TRUE,)
+#with mtry going from 2 to 5 22.06
+randomForest::importance(rmt)
+
+
+mz <- glm(hboth ~ group + sigm + ttrg + age + sex + cohort + ecmod + ecmosb , data =dm, family = poisson(link = "log"))
+mz2 <- MASS::stepAIC(mz)
+
+mr <- glm(hboth ~ group + sigm + ttrg + ecmod , data =dm, family = poisson(link = "log"))
+
+
+mrin <- glm(hboth ~age+ group + group:ttrg + sigm + ttrg + sigm:ttrg + ecmod , data =dm, family = poisson(link = "log"))
+#mrin is winning byt aic 428 vs aic 433
+#

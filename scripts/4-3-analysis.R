@@ -239,6 +239,8 @@ dm <- dm %>% select(
 ## 
 dm[is.na(dm)] <- 0
 
+
+########
 dheprl$y <- log(dheprl$runl)
 
 dh <- left_join(
@@ -301,9 +303,26 @@ anova(mb1,mb3,mb4,test="Chisq")
 mb8 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm, data = dm, family = poisson(link="log"))
 
 mb9 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = poisson(link="log"))
+#aic 2574.4
 
+
+mbx <- glm(bldtot ~ group + sex  + apache + ttrg + ecmod, data = dm, family = poisson(link="log"))
+#aic 2574
+
+
+mbxi <- glm(bldtot ~ group + sex + age + apache + ttrg + sigm + ecmod, data = dm, family = poisson(link="log"))
+#aic 2574.4
+
+
+mbxii <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = quasipoisson(link="log"))
+#aic 1574.4
 anova(mb3,mb6, test = "Chisq")
 
+mbi <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + cohort + ecmod, data = dm, family = quasipoisson(link="log"))
+#aic 1574.4
+
+mp9 <- sjPlot::plot_model(mb9,show.values=TRUE,value.offset = .3)
+mb12 <- sjPlot::plot_model(mbxii,show.values=TRUE,value.offset = .3)
 
 g3 <- sjPlot::plot_model(mb3,show.values = TRUE, value.offset = .3,title = "Blood Products Transfusion adjusted for other variables",vline.color = "yellow")
 ggsave("products/presentations/final_presentations/src/g3.png",plot = g3, device = "png",dpi = 320)

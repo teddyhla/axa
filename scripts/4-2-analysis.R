@@ -246,13 +246,15 @@ dm[is.na(dm)] <- 0
 
 
 #####
-
+dm2 <- dm
 #lets try coxph
 dm2$surv_ecmo <- as.numeric(dm2$surv_ecmo)
 
 so <- Surv(time = dm2$ecmod, event = dm2$surv_ecmo)
 sf1 <- survfit(so ~ group, data = dm2)
-sf2 <- coxph(so ~ age + group + ttrg + sigm, data = dm2 )
+sf2 <- coxph(so ~ age + group + ttrg + sigm + apache + wkg + ferritin_mean, data = dm2 )
+
+sf3 <- coxph(so ~ age + group + apache + wkg + bicarb_mean, data = dm2 )
 
 
 # SPLIT DATA  -------------------------------------------------------------

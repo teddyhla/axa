@@ -435,7 +435,14 @@ bm5 <- betareg::betareg(ttrgf ~  group + sex + ecmod +cohort, data = dm)
 #no association
 #pseudo R2
 
-bm7 <- betareg::betareg(ttrgf ~  group + sex + ecmod + cohort, data = dm)
+bm7 <- betareg::betareg(ttrgf ~  group + sex + cohort, data = dm)
+bm8 <- betareg::betareg(ttrgf ~  group + sex, data = dm)
+bm9 <- betareg::betareg(ttrgf ~  group + sex + age, data = dm)
+bm10 <- betareg::betareg(ttrgf ~  group + sex + age + apache, data = dm)
+
+bmii <- betareg::betareg(ttrgf ~  group + sex + age + apache:group, data = dm)
+bmix <- betareg::betareg(ttrgf ~  group + sex + age:group + apache, data = dm)
+
 
 ####
 sjPlot::plot_model(bm3,show.values = TRUE, value.offset = .3,title = "Adjusted Odds Ratio fortransformed  Time in Therapeutic Range")
@@ -644,8 +651,8 @@ sjPlot::plot_model(mv0)
 mv1 <- sm2 <- MASS::stepAIC(mv0)
 
 dmt <- dm %>% filter(sigm >0)
-mv2 <- lm(sigm ~ age + group + sex + wkg , data = dmt)
-
+mv2 <- lm(sigm ~ age + group + sex + wkg , data = dm)
+#mv3 <- lm(log(sigm)^2~ age + group + sex + wkg + apache , data = dm)
 #find optimal lambda for box cox 
 bc <- MASS::boxcox(mv2)
 lambda <- bc$x[which.max(bc$y)]
@@ -671,6 +678,8 @@ mz2 <- MASS::stepAIC(mz)
 
 mr <- glm(hboth ~ group + sigm + ttrg + ecmod , data =dm, family = poisson(link = "log"))
 
+mi <- glm(hboth ~ group + sigm + ttrg + age + sex + cohort , data =dm, family = poisson(link = "log"))
+mj <- glm(hboth ~ group + ttrg + sigm + ttrg:sigm, data= dm, family = poisson(link="log"))
 
 mrin <- glm(hboth ~age+ group + group:ttrg + sigm + ttrg + sigm:ttrg + ecmod , data =dm, family = poisson(link = "log"))
 #mrin is winning byt aic 428 vs aic 433

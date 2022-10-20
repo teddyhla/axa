@@ -234,7 +234,7 @@ m7 <- glm(sumtx ~ group + age + apache + wkg + sex + offset(rate),family = poiss
 #in this approach, we count number of blood tests as denominator and numerator
 #numerator = no of blood tests in range. 
 #using targets of 0.3 to 0.7 for axa
-#using targets of 1.5 to 2.0 for apttr 
+#using targets of 1.5 to 2.5 for apttr 
 
 #to ensure fair comparison, we should work out the person time in each group.
 dfcore %>% 
@@ -248,8 +248,8 @@ tco %>%
         select(apttr)%>%
         summarise(
                 total_apttr_tests=sum(!is.na(apttr)),
-                total_above_range= sum(apttr>2.0,na.rm=TRUE),
-                total_in_range = sum(apttr>=1.5 & apttr <= 2.0,na.rm=TRUE)
+                total_above_range= sum(apttr>2.5,na.rm=TRUE),
+                total_in_range = sum(apttr>=1.5 & apttr <= 2.5,na.rm=TRUE)
         )
 #this showeed for APPTTR group , raw or traditional TTR values at aggregate level 
 tco %>% 
@@ -286,8 +286,8 @@ tco %>%
         group_by(mrn)%>%
         summarise(
                 no_tests_per_pts = n(),
-                no_tests_above_range = sum(apttr>2.0,na.rm=TRUE),
-                no_tests_in_range = sum(apttr>=1.5 & apttr <= 2.0,na.rm=TRUE)
+                no_tests_above_range = sum(apttr>2.5,na.rm=TRUE),
+                no_tests_in_range = sum(apttr>=1.5 & apttr <= 2.5,na.rm=TRUE)
         ) -> gapttrad
 
 gapttrad$g <- "gapt"
@@ -313,7 +313,7 @@ p1 <- ggplot(data = pl_ttr_trad, aes(x=g,y=prop,color=g)) +
                 x = "Monitoring Groups",
                 y = "proportion of blood tests  in range",
                 title = "Proportion of blood tests in desired range",
-                subtitle = "Welch Two Sample t- test : p <0.005"
+                subtitle = "Welch Two Sample t- test : p > 0.005"
                 
         )
 
@@ -365,8 +365,8 @@ p3 <- ggplot(data = dttr, aes(x=group,y=prophi,color=group)) +
 
 
 dtest <- left_join(
-        dfcore %>% select(mrn,age,apache,ethnic,sex,surv_ecmo),
-        dttr %>% select(mrn,group,ttrg),
+        dfcore %>% select(mrn,age,apache,ethnic,sex,surv_ecmo,group),
+        dttr %>% select(mrn,ttrg),
         by = "mrn"
 )
 

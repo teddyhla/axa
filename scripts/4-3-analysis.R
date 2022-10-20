@@ -241,6 +241,20 @@ dm[is.na(dm)] <- 0
 
 
 ########
+
+
+
+# model for duration or length of ecmo ------------------------------------
+
+#median ecmo duration is 14 days.
+
+
+###### TTR traditional
+
+
+
+
+########
 dheprl$y <- log(dheprl$runl)
 
 dh <- left_join(
@@ -355,8 +369,8 @@ anova(c0,c1,c2,c3,test="Chisq")
 
 #c2 is the winner 
 c2 <- sjPlot::plot_model(c2,show.values = TRUE, value.offset = .3,title = "Circuit change adjusted for other variables",vline.color = "yellow")
-ggsave("products/presentations/final_presentations/src/c2.png",plot = c2, device = "png",dpi = 320)
-sjPlot::tab_model(c2)
+#ggsave("products/presentations/final_presentations/src/c2.png",plot = c2, device = "png",dpi = 320)
+#sjPlot::tab_model(c2)
 
 
 ##

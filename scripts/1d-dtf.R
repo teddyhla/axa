@@ -182,7 +182,7 @@ fnm <- function(a){
         #variability is a summary feature, so we can ignore individual NA's
         
         if ("axa" %in% names(a)){
-                z = 0.4 #mid point of axa target
+                z = 0.5 #mid point of axa target
                 a <- a %>% 
                         select(mrn,axa,group,ivethr) %>%
                         drop_na(axa) %>%
@@ -198,7 +198,7 @@ fnm <- function(a){
                 return(df)
                 
         } else {
-                z = 1.75 #midpoint of apttr target
+                z = 2 #midpoint of apttr target
                 a <- a %>%
                         select(mrn,apttr,group,ivethr) %>%
                         drop_na(apttr)%>%

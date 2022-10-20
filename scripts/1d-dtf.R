@@ -118,9 +118,18 @@ lwg <- function (x){
 #4th custom function
 #function to calculate time intervals in hours 
 mwt <- function (x){
-        #fuction calculates time intervals in hours
+        #fuction calculates time intervals in hours mainly for TTR
         x<- x %>% 
                 mutate(ivethr = as.numeric(difftime(t2,chart_t,units = "hours")))
+        x$ivethr <- x$ivethr * -1
+        #this line converts secs to hours
+        return(x)
+}
+
+mwtv <- function (x){
+        #fuction calculates time intervals in hours mainly for Fihn var
+        x<- x %>% 
+                mutate(ivethr = as.numeric(difftime(t2,chart_t,units = "days")))
         x$ivethr <- x$ivethr * -1
         #this line converts secs to hours
         return(x)
@@ -140,7 +149,7 @@ rap <- function (a){
                 return(a)
         } else {
                 l = 1.49999
-                u = 2.00001
+                u = 2.50001
                 a$ttrose <- ttrcalc(lower = l, upper = u, x=a$apttr,y=a$v2)
                 return(a)
         }
@@ -179,7 +188,7 @@ fnm <- function(a){
                         drop_na(axa) %>%
                         filter(ivethr>0) %>%
                         mutate(
-                                temp1 = (axa - 0.4)^2,
+                                temp1 = (axa - 0.5)^2,
                                 temp2 = temp1 / ivethr
                         )
                 mrn <- sample(a$mrn,size=1)
@@ -195,7 +204,7 @@ fnm <- function(a){
                         drop_na(apttr)%>%
                         filter(ivethr > 0) %>%
                         mutate(
-                                temp1 = (apttr - 1.75)^2 ,
+                                temp1 = (apttr - 2)^2 ,
                                 temp2 = temp1 / ivethr
                         )
                 
@@ -1098,8 +1107,8 @@ tf1 <- map(tf1,lwg)
 tf2 <- map(tf2,lwg)
 
 #apply custom func mwt
-tf1 <- map(tf1,mwt)
-tf2 <- map(tf2,mwt)
+tf1 <- map(tf1,mwtv)
+tf2 <- map(tf2,mwtv)
 
 #apply custom function fnm
 tf1 <- map(tf1,fnm)

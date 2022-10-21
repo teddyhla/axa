@@ -156,6 +156,24 @@ rap <- function (a){
         
 }
 
+rpe <- function (a){
+        #FOR PE function to apply ttrose function
+        #need to select axa or apt
+        
+        if ("axa" %in% names(a)){
+                l = 0.5999
+                u = 1.0001
+                a$ttrose <- ttrcalc(lower = l,upper = u, x=a$axa,y=a$v2)
+                return(a)
+        } else {
+                l = 1.99999
+                u = 3.00001
+                a$ttrose <- ttrcalc(lower = l, upper = u, x=a$apttr,y=a$v2)
+                return(a)
+        }
+        
+}
+
 #6th custom function
 #here the goal is to generate a summary value for each patient.
 edd <- function (a){
@@ -216,21 +234,49 @@ fnm <- function(a){
                 
         }
         
-        
-        #a <- a[!is.na(a$y),]
-        #we will filter time interval 0 or NA in values
-      
-        #a$temp1 <- (a$y - z)^2 
-        #a$temp2 <- a$temp1 / ivethr
-        
-        #mrn <- sample(a$mrn,size=1)
-        #group <- sample(a$group,size =1)
-        #sigm <- (sum(a$temp2))/(dim(a)[1])
-        #df <- data.frame(mrn,group,sigm)
-        #return(df)
-     
-        #
 }
+
+fpe <- function(a){
+        #FOR PE this is a function to calculate variability using Fihn's method
+        #variability is a summary feature, so we can ignore individual NA's
+        
+        if ("axa" %in% names(a)){
+                z = 0.8 #mid point of axa target
+                a <- a %>% 
+                        select(mrn,axa,group,ivethr) %>%
+                        drop_na(axa) %>%
+                        filter(ivethr>0) %>%
+                        mutate(
+                                temp1 = (axa - 0.8)^2,
+                                temp2 = temp1 / ivethr
+                        )
+                mrn <- sample(a$mrn,size=1)
+                group <- sample(a$group,size =1)
+                sigm <- (sum(a$temp2))/(dim(a)[1])
+                df <- data.frame(mrn,group,sigm)
+                return(df)
+                
+        } else {
+                z = 2.5 #midpoint of apttr target
+                a <- a %>%
+                        select(mrn,apttr,group,ivethr) %>%
+                        drop_na(apttr)%>%
+                        filter(ivethr > 0) %>%
+                        mutate(
+                                temp1 = (apttr - 2.5)^2 ,
+                                temp2 = temp1 / ivethr
+                        )
+                
+                mrn <- sample(a$mrn,size=1)
+                group <- sample(a$group,size =1)
+                sigm <- (sum(a$temp2))/(dim(a)[1])
+                df <- data.frame(mrn,group,sigm)
+                return(df)
+                
+        }
+        
+}
+
 
 
 hti <- function (x){
@@ -416,7 +462,23 @@ d1bl <- tbl %>%
 #let's create a 1 st 24 hour blood results dataframe.
 
 ## 3.4. DFCOAG ------------------------------------------------------------
+
+
 tco <- wr(dfcoag,dfcore)
+#there is a lot of extreme outlier values
+#variabilities are individually examined.
+#6580709X 2019-01-04 23:48:00  NA  39.4 gapt
+# 6584394E 2019-02-06 12:21:00  NA  60.0
+# 6584394E 2019-02-06 20:27:00  NA  59.7
+# 6584394E 2019-02-07 10:06:00  NA  66.6
+# 6419229C 2019-05-17 12:52:00  NA  41.9
+
+tco <- tco %>% 
+        filter(!(mrn == "6580709X" & apttr == 39.4)) %>%
+        filter(!(mrn =="6584384E" & apttr == 59.7)) %>%
+        filter(!(mrn =="6584384E" & apttr == 60.0)) %>%
+        filter(!(mrn =="6584384E" & apttr == 66.6)) %>%
+        filter(!(mrn =="6419229C" & apttr == 41.9))
 
 ## 3.5. DFHEP ------------------------------------------------------------
 thep <- wr(dfhep,dfcore)
@@ -1016,34 +1078,72 @@ sum(samp$b,na.rm=TRUE)
 
 #the issue now is that data frame can be grouped but cannot do add row function
 #to a grouped data frame, so lets make a list
+pe_axa <- c("8022005E","8050928N","6101323L","8065809T")
 
 #first for axa group, dont forget 'arrange by time to work
 tlix <- tco %>% 
         select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
+        filter(!mrn %in% pe_axa) %>% 
         filter(group=="gaxa")%>%
         group_by(mrn)%>%
         drop_na(axa)%>%
         arrange(chart_t)%>%
         group_split()
 
+#8022005E,
+#8050928N
+#6101323L
+#8065809T
+#at admissions
+txpe <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
+        filter(mrn %in% pe_axa) %>% 
+        filter(group=="gaxa")%>%
+        group_by(mrn)%>%
+        drop_na(axa)%>%
+        arrange(chart_t)%>%
+        group_split()
+
+
+#seperate treatment for PE patients 
+        
+pe_apt <- c("6513466R","6584394E")
+
 tlip <- tco %>% 
         select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
+        filter(!mrn %in% pe_apt)%>%
         filter(group=="gapt")%>%
         group_by(mrn)%>%
         drop_na(apttr)%>%
         arrange(chart_t)%>%
         group_split()
 
+trpe <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
+        filter(mrn %in% pe_apt)%>%
+        filter(group=="gapt")%>%
+        group_by(mrn)%>%
+        drop_na(apttr)%>%
+        arrange(chart_t)%>%
+        group_split()
+
+# 6513466R 
+# 6584394E are two patients with PE in gapt
+#at admissions
+
 #tlix and tlip data frames for each patient in each group
 #lets' apply series of custom functions
 
 tlix <- map(tlix,wo)
+txpe <- map(txpe,wo)
 #this should now look like there is an added row for start and finish.
 
 tlix <- map(tlix,lwg)
+txpe <- map(txpe,lwg)
 #this should now have a t2,v2 cols
 
 tlix <- map(tlix,mwt)
+txpe <- map(txpe,mwt)
 #this should now have interval calculated
 
 # Applying TTR rose custom function ---------------------------------------
@@ -1051,21 +1151,36 @@ tlix <- map(tlix,mwt)
 #now apply custom function ttrrose
 tlixr <- map(tlix,rap)
 #this seems to work.
+#now apply sepeate custom function for PE patients
+txper <- map(txpe,rpe)
 
 tlixr <- map(tlixr,edd)
 #this works in trying to get a summary df
+txper <- map(txper,edd)
 
 #now lets' convert back to df
 xdf <- plyr::ldply(tlixr,data.frame)
 xdf <- as.tibble(xdf)
 #now lets apply for tlip
 
+xpef <- plyr::ldply(txper,data.frame)
+xpef <- as.tibble(xpef)
+
 #as per above
 tlip <-map(tlip,wo)
+trpe <- map(trpe,wo)
+
 tlip <- map(tlip,lwg)
+trpe <- map(trpe,lwg)
+
 tlip <- map(tlip,mwt)
+trpe <- map(trpe,mwt)
+
 tlipr <- map(tlip,rap)
+tper <- map(trpe,rpe)
+
 tlipr <- map(tlipr,edd)
+tper <- map(tper,edd)
 
 #what we really care about is individual patient, 
 
@@ -1075,15 +1190,28 @@ tlipr <- map(tlipr,edd)
 pdf <- plyr::ldply(tlipr,data.frame)
 pdf<-as.tibble(pdf)
 
+tprf <- plyr::ldply(tper,data.frame)
+tprf <- as.tibble(tprf)
+
 #4.3.2. FINAL engineered TTRrose ------------------------------------------------
 
-dttr  <- rbind(xdf,pdf)
+dttr  <- rbind(xdf,xpef,pdf,tprf)
 
 # 4.4. Fihn's method A variability ------------------------------------------
 # applying Fihn's --------------------------------------------------
 
 tf1 <- tco %>% 
         select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
+        filter(!mrn %in% pe_axa) %>%
+        filter(group=="gaxa")%>%
+        group_by(mrn)%>%
+        drop_na(axa)%>%
+        arrange(chart_t)%>%
+        group_split()
+
+fxpe <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,axa,group)%>%
+        filter(mrn %in% pe_axa) %>% 
         filter(group=="gaxa")%>%
         group_by(mrn)%>%
         drop_na(axa)%>%
@@ -1092,6 +1220,16 @@ tf1 <- tco %>%
 
 tf2 <- tco %>% 
         select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
+        filter(!mrn %in% pe_apt)%>%
+        filter(group=="gapt")%>%
+        group_by(mrn)%>%
+        drop_na(apttr)%>%
+        arrange(chart_t)%>%
+        group_split()
+
+frpe <- tco %>% 
+        select(mrn,chart_t,ecmo_start,ecmo_finish,apttr,group)%>%
+        filter(mrn %in% pe_apt)%>%
         filter(group=="gapt")%>%
         group_by(mrn)%>%
         drop_na(apttr)%>%
@@ -1100,19 +1238,27 @@ tf2 <- tco %>%
 
 #apply custom function wo to add begin and end times.
 tf1 <- map(tf1,wo)
+fxpe <- map(fxpe,wo)
 tf2 <- map(tf2,wo)
+frpe <- map(frpe,wo)
 
 #apply custom function lwg
 tf1 <- map(tf1,lwg)
+fxpe <- map(fxpe,lwg)
 tf2 <- map(tf2,lwg)
+frpe<-map(frpe,lwg)
 
 #apply custom func mwt
 tf1 <- map(tf1,mwtv)
+fxpe <- map(fxpe,mwtv)
 tf2 <- map(tf2,mwtv)
+frpe <- map(frpe,mwtv)
 
 #apply custom function fnm
 tf1 <- map(tf1,fnm)
+fxpe <- map(fxpe,fpe)
 tf2 <- map(tf2,fnm)
+frpe <- map(frpe,fpe)
 
 #tf1[[14]] is the problem because axa values are all NA's'
 #let's explore NA's in each group, for each patient. 
@@ -1149,7 +1295,13 @@ tf1 <- as.tibble(tf1)
 tf2 <- plyr::ldply(tf2,data.frame)
 tf2 <- as.tibble(tf2)
 
-dsig  <- rbind(tf1,tf2)
+fxpe <- plyr::ldply(fxpe,data.frame)
+fxpe <- as.tibble(fxpe)
+
+frpe <- plyr::ldply(frpe,data.frame)
+frpe <- as.tibble(frpe)
+
+dsig  <- rbind(tf1,fxpe,tf2,frpe)
 
 
 #####dfci 

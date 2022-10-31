@@ -4,7 +4,7 @@ load(file="data/clean/out.RData")
 
 #libraries
 library(tidyverse)
-
+library(tidylog)
 #load other data
 tp <- readRDS("data/axa_NONanonymised_data_20220714.rds")
 
@@ -256,6 +256,15 @@ tx6 <- shp("comp_4","comp4_dtm")
 dcmp <- rbind(tx1,tx2,tx3,tx4,tx5,tx6)
 dcmp$value[is.na(dcmp$value)] <- "no_comp"
 
+levels(dcmp$value) <- c(
+        "both",
+        "only_h",
+        "only_t",
+        "no_comp",
+        "only_h",
+        "only_t"
+)
+
 dcmp <- dcmp %>% 
         group_by(mrn)%>%
         arrange(mrn) %>% 
@@ -270,9 +279,11 @@ t1cmp <- dcmp %>%
         slice(1)%>%
         ungroup()
 
+
+#this coden needs fixing.
 t1cmp <- left_join(
-        dfcore %>% select(mrn,group),
         t1cmp, 
+        dfcore %>% select(mrn,group),
         by = "mrn"
 )
         

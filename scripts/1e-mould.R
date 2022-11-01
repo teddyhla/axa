@@ -280,10 +280,9 @@ t1cmp <- dcmp %>%
         ungroup()
 
 
-#this coden needs fixing.
 t1cmp <- left_join(
-        t1cmp, 
         dfcore %>% select(mrn,group),
+        t1cmp,
         by = "mrn"
 )
         
@@ -333,7 +332,10 @@ sl <- c(
         "pt_without_bldproducts",
         "pt_without_heparin",
         "dm",
-        "dm2"
+        "dm2",
+        "t1cmp",
+        "dcmp",
+        "dxc"
 )
 
 #l <- l[!l %in% frm]

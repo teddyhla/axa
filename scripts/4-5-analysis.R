@@ -3,6 +3,12 @@ load(file="data/clean/finalout.RData")
 
 
 # LIBRARIES ---------------------------------------------------------------
+library(survival)
+
+library(survminer)
+
+# NOTE --------------------------------------------------------------------
+
 
 
 #need to adjust for 
@@ -22,17 +28,72 @@ load(file="data/clean/finalout.RData")
 # TTR ---------------------------------------------------------------------
 
 
-
-mb1 <- glm(bldtot ~ group, data =dm, family = poisson(link = "log"))
-mb2 <- glm(bldtot ~ group + age + apache + wkg + ttrg + sigm + cohort, family = poisson(link="log"),data=dm)
-mb3 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + cohort, family = poisson(link="log"),data=dm)
-mb4 <- glm(bldtot ~ group + sex + apache + wkg + ttrg + sigm + cohort, family = poisson(link="log"),data=dm)
-
-mb5 <- glm(bldtot ~ group + sex + apache + wkg + ttrg + ecmosb + cohort, family = poisson(link="log"),data=dm)
-mb6 <- glm(bldtot ~ group + sex + apache + wkg + ttrg + rl_day, family = poisson(link = "log"),data = dm)
-anova(mb1,mb3,mb4,test="Chisq")
-
 # FINAL -------------------------------------------------------------------
 
 
+# 6. Time to 1st Complication ---------------------------------------------
+
+t2cmp <- t1cmp
+#the levels are both, only h, only t and no comp
+#both should be event and only h should be event and others are non events
+levels(t2cmp$value) <- c(1,1,0,0)
+t2cmp$value <- as.numeric(as.character(t2cmp$value))
+
+#na here is meaninfgul -- because na means event does not happen.
+
+t2cmp <- left_join(
+        t2cmp,
+        dfcore %>% select(mrn, ecmoh),
+        by = "mrn"
+)
+
+t2cmp$ecmoh <- as.numeric(t2cmp$ecmoh)
+##important this code needs to be run in this current order
+##1
+t2cmp <- t2cmp %>%
+        mutate(t = case_when(
+                is.na(value) ~ ecmoh,
+                !is.na(value) ~ duhr
+                
+        ))
+
+##2 order no 2 
+
+t2cmp$value[is.na(t2cmp$value)] <- 0
+
+
+
+t2cmp <- t2cmp %>% filter(!is.na(t) & t> 0)
+so <- coxph(Surv(t,value)~group, data= t2cmp)
+
+
+# 7. Circuit change -------------------------------------------------------
+dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))
+
+sum(duplicated(dxc2$mrn))
+#code works
+
+dxc2 <- left_join(
+        dfcore %>% select(mrn,group,ecmo_start,ecmoh),
+        dxc2,
+        by = "mrn"
+)
+
+dxc2$ecmoh <- as.numeric(dxc2$ecmoh)
+
+#lets calc time interval
+dxc2$duhr <- difftime(dxc2$time,dxc2$ecmo_start,units = "hours")
+dxc2$duhr <- round(as.numeric(dxc2$duhr),2)
+
+dxc2 <- dxc2 %>% 
+        mutate(t = case_when(
+                is.na(xc) ~ ecmoh,
+                !is.na(xc) ~ duhr
+        ))
+
+#order of code running is important , this has to be run after above code
+dxc2$xc[is.na(dxc2$xc)] <- 0
+
+sx <- coxph(Surv(t,xc)~group, data= dxc2)
+####
 

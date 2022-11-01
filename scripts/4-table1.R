@@ -175,13 +175,15 @@ label(dm3$ecmod) <- "Duration on ECMO"
 units(dm3$ecmod) <- "Days"
 
 
-# TABLE 1 geneartion ------------------------------------------------------
+# TABLE 1 generation ------------------------------------------------------
 
 
-table1(~age + sex + apache + wkg + bmi + cohort + ecmod+ hb_mean + hb_min + hb_max + plt_mean + neut_mean +
-               neut_min + neut_max + fib_mean + ldh_mean + ferritin_mean + ck_mean + crp_mean + pct_mean +
-               bili_mean + alb_mean + alb_min + alb_max + creat_mean + creat_min + creat_max + gfr_mean + ca_mean +
-               corr_ca_mean + bicarb_mean + bicarb_min + bicarb_max + lactate_mean + lactate_min + lactate_max + ph_mean +
-               tlow + ttrhi + ttrg + sigm + hep_wkgday + rl_day + totc + cday + toth + aki + bldtot  + ecmoconfig + pe |group, data = dm3
+table1(~age + sex + apache + wkg + bmi + cohort + ecmod + tlow + ttrhi + ttrg + sigm + hep_wkgday + rl_day + totc + cday + toth + aki + bldtot  + ecmoconfig + pe |group, data = dm3
+       ,overall = F, extra.col = list("P-value"=pvalue))
+
+table1( ~ hb_mean + hb_min + hb_max + plt_mean + neut_mean +
+        neut_min + neut_max + fib_mean + ldh_mean + ferritin_mean + ck_mean + crp_mean + pct_mean +
+        bili_mean + alb_mean + alb_min + alb_max + creat_mean + creat_min + creat_max + gfr_mean + ca_mean +
+        corr_ca_mean + bicarb_mean + bicarb_min + bicarb_max + lactate_mean + lactate_min + lactate_max + ph_mean | group, data = dm3
        ,overall = F, extra.col = list("P-value"=pvalue))
 

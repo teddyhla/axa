@@ -66,6 +66,32 @@ t2cmp$value[is.na(t2cmp$value)] <- 0
 t2cmp <- t2cmp %>% filter(!is.na(t) & t> 0)
 so <- coxph(Surv(t,value)~group, data= t2cmp)
 
+# 6.1. 1st Haemorrhagic complication --------------------------------------
+
+oh2cmp <- oh1cmp
+levels(oh2cmp$value) <- c(1,1,0,0)
+oh2cmp$value <- as.numeric(as.character(oh2cmp$value))
+
+oh2cmp <- left_join(
+        oh2cmp,
+        dfcore %>% select(mrn,ecmoh),
+        by = "mrn"
+        
+)
+
+oh2cmp$ecmoh <- as.numeric(oh2cmp$ecmoh)
+
+oh2cmp <- oh2cmp %>%
+        mutate( t= case_when(
+                is.na(value) ~ ecmoh,
+                !is.na(value) ~ duhr
+        ))
+
+oh2cmp$value[is.na(oh2cmp$value)] <- 0
+
+sh <- coxph(Surv(t,value)~group,data= oh2cmp)
+
+
 
 # 7. Circuit change -------------------------------------------------------
 dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))

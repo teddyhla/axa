@@ -189,7 +189,9 @@ dm <- dm %>% select(
 ## 
 dm[is.na(dm)] <- 0
 
-##export all this 
+
+
+# COMPLICATIONS LONGFORM --------------------------------------------------
 
 
 ####use custom function to churn out complications in long form
@@ -234,7 +236,7 @@ t1cmp <- left_join(
         t1cmp,
         by = "mrn"
 )
-        
+
 #t1cmp on review
 
 # 6419229C comp1 is 8 days older (?) [/] likely mistake comp1_dtm "2019-05-17"
@@ -275,6 +277,191 @@ dxc <- dxc %>%
         arrange(mrn) %>%
         ungroup()
 
+####
+
+# NOW USE THIS FOR TTR PRE 1stcomp ----------------------------------------
+
+#we will use t1cmp$time & oh1cmp
+
+d1tr <- t1cmp %>% select(mrn,value,time)
+d1tr <- left_join(
+        d1tr,
+        dfcore %>% select(mrn,ecmo_finish),
+        by = "mrn"
+)
+d1tr <- d1tr %>% 
+        mutate(tn = case_when(
+                is.na(time) ~ ecmo_finish,
+                !is.na(time) ~ time
+        ))
+
+d1tr <- d1tr %>% select(mrn,tn)
+
+#d1tr is a dataframe that has times for "ANY" event
+###
+
+o1 <- oh1cmp %>% select(mrn,value,time)
+o1 <- left_join(
+        o1,
+        dfcore %>% select(mrn,ecmo_finish),
+        by = "mrn"
+)
+o1 <- o1 %>% 
+        mutate(tn = case_when(
+                is.na(time) ~ ecmo_finish,
+                !is.na(time) ~ time
+        ))
+
+o1 <- o1 %>% select(mrn,tn)
+#o1 is a dataframe that has times for "ONLY HAEM" event
+
+
+# now lets use it to subset from "tco" ------------------------------------
+
+#for verification 
+#temp <- d1tr
+
+d1tr <- left_join(
+        tco,
+        d1tr %>% select(mrn,tn),
+        by = "mrn"
+)
+
+d1tr <- d1tr %>% 
+        group_by(mrn) %>%
+        filter(chart_t >= ecmo_start & chart_t <= tn) %>%
+        ungroup()
+#1103375H - checked out
+
+d1trx <- d1tr %>%
+        select(mrn,chart_t,ecmo_start,tn,axa,group) %>%
+        filter(group == "gaxa") %>%
+        group_by(mrn) %>%
+        drop_na(axa) %>%
+        arrange(chart_t) %>%
+        group_split()
+
+d1trp <- d1tr %>%
+        select(mrn,chart_t,ecmo_start,tn,axa,group) %>%
+        filter(group == "gapt") %>%
+        group_by(mrn) %>%
+        drop_na(axa) %>%
+        arrange(chart_t) %>%
+        group_split()
+
+#treatment for gaxa 
+temp1 <- map(d1trx,wz)
+temp1 <- map(temp1,lwg)
+temp3 <- map(temp1,mwt)
+temp3 <- map(temp3,rap)
+temp3 <- map(temp3,edd)
+
+temp3 <- plyr::ldply(temp3,data.frame)
+temp3 <- as.tibble(temp3)
+
+## treatment for gapt 
+
+temp2 <- map(d1trp,wz)
+temp2 <- map(temp2,lwg)
+temp4 <- map(temp2,mwt)
+temp4 <- map(temp4,rap)
+temp4 <- map(temp4,edd)
+
+temp4 <- plyr::ldply(temp4,data.frame)
+temp4 <- as.tibble(temp4)
+
+d1tr <- rbind(temp3,temp4)
+
+### Fihns variability
+
+temp5 <- map(temp1,mwtv)
+temp5 <- map(temp5,fnm)
+
+temp6 <- map(temp2,mwtv)
+temp6 <- map(temp6,fnm)
+
+temp5 <- plyr::ldply(temp5,data.frame)
+temp5 <- as.tibble(temp5)
+temp6 <- plyr::ldply(temp6,data.frame)
+temp6 <- as.tibble(temp6)
+
+d1sig <- rbind(temp5,temp6)
+
+rm(temp1,temp2,temp3,temp4,temp5,temp6)
+
+###
+
+o1 <- left_join(
+        tco,
+        o1 %>% select(mrn,tn),
+        by = "mrn"
+)
+
+o1 <- o1 %>% 
+        group_by(mrn) %>%
+        filter(chart_t >= ecmo_start & chart_t <= tn) %>%
+        ungroup()
+
+o1x <- o1 %>%
+        select(mrn,chart_t,ecmo_start,tn,axa,group) %>%
+        filter(group == "gaxa") %>%
+        group_by(mrn) %>%
+        drop_na(axa) %>%
+        arrange(chart_t) %>%
+        group_split()
+
+o1p <- o1 %>%
+        select(mrn,chart_t,ecmo_start,tn,axa,group) %>%
+        filter(group == "gapt") %>%
+        group_by(mrn) %>%
+        drop_na(axa) %>%
+        arrange(chart_t) %>%
+        group_split()
+
+
+#treatment for gaxa 
+temp1 <- map(o1x,wz)
+temp1 <- map(temp1,lwg)
+temp3 <- map(temp1,mwt)
+temp3 <- map(temp3,rap)
+temp3 <- map(temp3,edd)
+
+temp3 <- plyr::ldply(temp3,data.frame)
+temp3 <- as.tibble(temp3)
+
+## treatment for gapt 
+
+temp2 <- map(o1p,wz)
+temp2 <- map(temp2,lwg)
+temp4 <- map(temp2,mwt)
+temp4 <- map(temp4,rap)
+temp4 <- map(temp4,edd)
+
+temp4 <- plyr::ldply(temp4,data.frame)
+temp4 <- as.tibble(temp4)
+
+o1tr <- rbind(temp3,temp4)
+
+##
+
+### Fihns variability
+
+temp5 <- map(temp1,mwtv)
+temp5 <- map(temp5,fnm)
+
+temp6 <- map(temp2,mwtv)
+temp6 <- map(temp6,fnm)
+
+temp5 <- plyr::ldply(temp5,data.frame)
+temp5 <- as.tibble(temp5)
+temp6 <- plyr::ldply(temp6,data.frame)
+temp6 <- as.tibble(temp6)
+
+o1sig <- rbind(temp5,temp6)
+
+rm(temp1,temp2,temp3,temp4,temp5,temp6)
+
+# EXPORTAGE ---------------------------------------------------------------
 
 
 ####
@@ -297,14 +484,18 @@ sl <- c(
         "t1cmp",
         "dcmp",
         "dxc",
-        "oh1cmp"
+        "oh1cmp",
+        "d1tr",
+        "d1sig",
+        "o1tr",
+        "o1sig"
 )
 
 #l <- l[!l %in% frm]
 
 save(list = sl,file = "data/clean/finalout.RData")
 
-message("SUCCCESS")
+message("SUCCCESS 1e-mould")
 
 
 #things need to be fixed and reviewed (very comprehensive)

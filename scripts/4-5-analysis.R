@@ -64,7 +64,20 @@ t2cmp$value[is.na(t2cmp$value)] <- 0
 
 
 t2cmp <- t2cmp %>% filter(!is.na(t) & t> 0)
-so <- coxph(Surv(t,value)~group, data= t2cmp)
+t2cmp <- t2cmp %>% select(mrn,group,value,t)
+t2cmp <- left_join(
+        t2cmp,
+        d1tr %>% select(mrn,ttrg),
+        by = "mrn"
+)
+
+t2cmp <- left_join(
+        t2cmp,
+        d1sig %>% select(mrn,sigm),
+        by = "mrn"
+)
+
+so <- coxph(Surv(t,value)~ttrg + group , data= t2cmp)
 
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 

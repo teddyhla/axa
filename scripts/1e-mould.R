@@ -17,7 +17,7 @@ daki <- tp$rrt_data
 #length(intersect(dfcore$mrn,daki$mrn))
 #so thats all checks out and is reassuring.
 
-daki <- daki %>%
+daki2 <- daki %>%
         group_by(mrn) %>%
         summarise(temp = sum(RRT)) %>%
         mutate(aki = case_when(
@@ -28,7 +28,7 @@ daki <- daki %>%
 
 dfcore <- left_join(
         dfcore,
-        daki %>% select(mrn,aki),
+        daki2 %>% select(mrn,aki),
         by = "mrn"
 )
 
@@ -342,10 +342,10 @@ d1trx <- d1tr %>%
         group_split()
 
 d1trp <- d1tr %>%
-        select(mrn,chart_t,ecmo_start,tn,axa,group) %>%
+        select(mrn,chart_t,ecmo_start,tn,apttr,group) %>%
         filter(group == "gapt") %>%
         group_by(mrn) %>%
-        drop_na(axa) %>%
+        drop_na(apttr) %>%
         arrange(chart_t) %>%
         group_split()
 
@@ -411,10 +411,10 @@ o1x <- o1 %>%
         group_split()
 
 o1p <- o1 %>%
-        select(mrn,chart_t,ecmo_start,tn,axa,group) %>%
+        select(mrn,chart_t,ecmo_start,tn,apttr,group) %>%
         filter(group == "gapt") %>%
         group_by(mrn) %>%
-        drop_na(axa) %>%
+        drop_na(apttr) %>%
         arrange(chart_t) %>%
         group_split()
 
@@ -488,7 +488,8 @@ sl <- c(
         "d1tr",
         "d1sig",
         "o1tr",
-        "o1sig"
+        "o1sig",
+        "daki"
 )
 
 #l <- l[!l %in% frm]

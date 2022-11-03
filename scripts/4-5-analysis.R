@@ -23,6 +23,7 @@ library(survminer)
 #5. total blood products
 #6. time to first complication
 #7. time to first circuit change
+#8. should test "duration" and should test "death"
 
 
 # TTR ---------------------------------------------------------------------
@@ -64,7 +65,46 @@ t2cmp$value[is.na(t2cmp$value)] <- 0
 
 
 t2cmp <- t2cmp %>% filter(!is.na(t) & t> 0)
-t2cmp <- t2cmp %>% select(mrn,group,value,t)
+
+drrt <- t2cmp
+drrt <- left_join(
+        drrt,
+        dfcore %>% select(mrn,ecmo_finish),
+        by = "mrn"
+)
+
+drrt <- drrt %>% 
+        mutate(t2 = case_when(
+                is.na(time)~ ecmo_finish,
+                !is.na(time)~ time
+        ))
+
+drrt <- left_join(
+        daki,
+        drrt %>% select(mrn,t2),
+        by = "mrn"
+)
+
+drrt <- drrt %>%
+        group_by(mrn) %>%
+        filter(dates < t2) %>% 
+        summarise (aki = sum(RRT)) %>%
+        mutate(rrt = case_when(
+                aki >0 ~ "yes",
+                aki == 0 ~ "no"
+        )) %>%
+        ungroup()
+
+drrt$rrt <- as.factor(drrt$rrt)
+        
+t2cmp <- left_join(
+        t2cmp,
+        drrt %>% select(mrn,rrt),
+        by = "mrn"
+)
+rm(drrt)
+
+t2cmp <- t2cmp %>% select(mrn,group,value,t,rrt)
 t2cmp <- left_join(
         t2cmp,
         d1tr %>% select(mrn,ttrg),
@@ -77,7 +117,18 @@ t2cmp <- left_join(
         by = "mrn"
 )
 
+t2cmp <- left_join(
+        t2cmp,
+        dfcore %>% select(mrn,age,sex,apache),
+        by = "mrn"
+)
 so <- coxph(Surv(t,value)~ttrg + group , data= t2cmp)
+s1 <- coxph(Surv(t,value)~sigm + group, data= t2cmp)
+s2 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg, data= t2cmp)
+s3 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache, data= t2cmp)
+
+
+s5 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + rrt + apache, data= t2cmp)
 
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 
@@ -102,7 +153,27 @@ oh2cmp <- oh2cmp %>%
 
 oh2cmp$value[is.na(oh2cmp$value)] <- 0
 
-sh <- coxph(Surv(t,value)~group,data= oh2cmp)
+oh2cmp <- oh2cmp %>% select(mrn,group,value,t)
+oh2cmp <- left_join(
+        oh2cmp,
+        o1tr %>% select(mrn,ttrg),
+        by = "mrn"
+)
+
+oh2cmp <- left_join(
+        oh2cmp,
+        o1sig %>% select(mrn,sigm),
+        by = "mrn"
+)
+
+oh2cmp <- left_join(
+        oh2cmp,
+        dfcore %>% select(mrn,age,sex,apache),
+        by = "mrn"
+)
+
+sh <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg,data= oh2cmp)
+sh1 <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg + age + sex + apache, data= oh2cmp)
 
 
 

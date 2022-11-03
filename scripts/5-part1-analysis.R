@@ -75,6 +75,8 @@ h3 <- lm(cudose ~  sigm + group + age + wkg + group:sigm + group:ttrg + ttrg:sig
 
 bp1 <- glm(bldtot ~ age + apache + wkg + aki + ferritin_mean + ph_mean + cudose , data= dm, family = quasipoisson(link = "log"))
 
+bp2 <- glm(bldtot ~ apache + aki + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
 #mb2 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 #mb1 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = poisson(link="log"))
 #mb3 <- glm(bldtot ~ group + sex + age + apache + wkg + sigm + ecmod, data = dm, family = poisson(link="log"))

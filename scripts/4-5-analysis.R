@@ -122,11 +122,18 @@ t2cmp <- left_join(
         dfcore %>% select(mrn,age,sex,apache),
         by = "mrn"
 )
+
+t2cmp <- left_join(
+        t2cmp,
+        dm %>% select(mrn,ph_mean,ferritin_mean),
+        by = "mrn"
+)
 so <- coxph(Surv(t,value)~ttrg + group , data= t2cmp)
 s1 <- coxph(Surv(t,value)~sigm + group, data= t2cmp)
 s2 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg, data= t2cmp)
 s3 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache, data= t2cmp)
 
+s4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_mean + ferritin_mean, data= t2cmp)
 
 s5 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + rrt + apache, data= t2cmp)
 
@@ -172,9 +179,17 @@ oh2cmp <- left_join(
         by = "mrn"
 )
 
+oh2cmp <- left_join(
+        oh2cmp,
+        dm %>% select(mrn,ph_mean,ferritin_mean),
+        by = "mrn"
+)
+
 sh <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg,data= oh2cmp)
 sh1 <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg + age + sex + apache, data= oh2cmp)
 
+
+sh4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_mean + ferritin_mean, data= oh2cmp)
 
 
 # 7. Circuit change -------------------------------------------------------

@@ -201,6 +201,9 @@ h3 <- lm(cudose~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= 
 h5 <- lm(cudose~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm +ecmod:wkg, data= dm)
 
 
+h7 <- lm(log(cudose)~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= dm)
+
+
 hpl1 <- ggplot(data = dk, aes(x=ttrg,y=cudose))+
         geom_point()+
         geom_smooth(aes(y=predict(h3,dk)))+

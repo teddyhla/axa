@@ -326,28 +326,41 @@ d1tr <- left_join(
         d1tr %>% select(mrn,tn),
         by = "mrn"
 )
+#here is 254 patients
 
 d1tr <- d1tr %>% 
         group_by(mrn) %>%
         filter(chart_t >= ecmo_start & chart_t <= tn) %>%
         ungroup()
+#here it drops the other patients it drops 4 patients.
+#lets find out who they are
+#"6419229C" "6803879M" "5096268E" "2442798A"
+#prob1 <- t1cmp %>% filter(mrn %in% c("6419229C","6803879M","5096268E","2442798A"))
 #1103375H - checked out
+
+#up to here is 250 pt
 
 d1trx <- d1tr %>%
         select(mrn,chart_t,ecmo_start,tn,axa,group) %>%
-        filter(group == "gaxa") %>%
-        group_by(mrn) %>%
-        drop_na(axa) %>%
+        filter(group == "gaxa") %>% #177 up to here 
+        group_by(mrn) %>% #here drop na results in dropping 6 patients.
+        drop_na(axa) %>% 
         arrange(chart_t) %>%
         group_split()
 
+#setdiff((unique(d1tr$mrn[d1tr$group == "gaxa"])),d1trx$mrn)
+#prob2 <- setdiff((unique(d1tr$mrn[d1tr$group == "gaxa"])),d1trx$mrn)
+#this showed the 6 patients lost - why?
+#171
+
 d1trp <- d1tr %>%
         select(mrn,chart_t,ecmo_start,tn,apttr,group) %>%
-        filter(group == "gapt") %>%
+        filter(group == "gapt") %>% #73 
         group_by(mrn) %>%
         drop_na(apttr) %>%
         arrange(chart_t) %>%
         group_split()
+#73 
 
 #treatment for gaxa 
 temp1 <- map(d1trx,wz)

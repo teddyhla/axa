@@ -255,6 +255,8 @@ hx[["wkg"]][is.na(hx[["wkg"]])]<-1
 xtabs(~group+s_label,data= hpt)
 #apttr group is just sysinf so dont need anything special. just need to multiple with tinv
 
+
+
 hx <- hx %>% 
         mutate(
                 dose = case_when(
@@ -285,6 +287,9 @@ hpt <- hpt %>%
         arrange(chart_t)%>%
         group_split()
 
+#setdiff(setdiff(dfcore$mrn,dcumhep$mrn),pt_without_heparin)
+#there are discrepancy of six patients
+#"5764499G" "5970380Q" "5972607Y" "5978426J" "6389948G"
 
 #now apply custom function to calculate cumulative doses
 ahx <- map(hx,hti)

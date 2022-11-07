@@ -4,7 +4,7 @@ load(file="data/clean/finalout.RData")
 
 # LIBRARIES ---------------------------------------------------------------
 library(survival)
-
+library(tidyverse)
 library(survminer)
 
 
@@ -132,7 +132,7 @@ t2cmp <- left_join(
         by = "mrn"
 )
 so <- coxph(Surv(t,value)~ttrg + group , data= t2cmp)
-s1 <- coxph(Surv(t,value)~sigm + group, data= t2cmp)
+s1 <- coxph(Surv(t,value)~sigm + group + sigm:group, data= t2cmp)
 s2 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg, data= t2cmp)
 s3 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache, data= t2cmp)
 
@@ -140,6 +140,7 @@ s4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache +
 
 s5 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + rrt + apache, data= t2cmp)
 
+s6 <- coxph(Surv(t,value)~group + sigm + age + rrt + sex + apache  ,data= t2cmp)
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 
 oh2cmp <- oh1cmp

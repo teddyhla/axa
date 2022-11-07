@@ -86,7 +86,7 @@ bm7 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod + lacta
 summary(bm7)$pseudo.r.squared
 
 lmtest::lrtest(bm6,bm7)
-plot(bm6) #not bad
+#plot(bm6) #not bad
 #better AIC 
 #lets plot for ferritin and ecmod
 
@@ -142,7 +142,7 @@ mo4 <- lm(sigm ~ apache + group + group:apache, data = dk)
 mo5 <- lm(sigm ~., data =dk2)
 
 #seems need to add "aki " , latate mean , bicarb mean , platelet mean, fib, wkg, platelet
-mo6 <- MASS::stepAIC(mo5)
+#mo6 <- MASS::stepAIC(mo5)
 #multipleR2 0.49, p val sig
 
 mo7 <- lm(sigm ~ age + aki + apache + group + sex + wkg + lactate_mean + bicarb_mean + plt_mean + alb_mean + group:apache, data= dk)
@@ -158,7 +158,7 @@ Hmisc::describe(dk)
 
 #this output showed that 
 
-mox <- lm(sigm ~ wkg + group + lact2 + alb_mean + group:lact2 , data= dk)
+#mox <- lm(sigm ~ wkg + group + lact2 + alb_mean + group:lact2 , data= dk)
 mop <- lm (sigm ~ wkg + group + alb_mean + plt_mean + ph_mean + group:ph_mean, data = dk)
 
 moh <- lm(sigm ~ wkg + group + plt_mean + ferritin_mean + alb_mean + aki , data= dk)
@@ -191,10 +191,11 @@ sigpl1 <- ggplot(data = dk, aes(x=alb_mean,y=sigm))+
 
 # 3. HEPARIN  -------------------------------------------------------------
 h0 <- lm(cudose ~ ., data= dk2)
+ho2 <- lm(cudose ~ 1,data= dk2)
 
 h1 <- lm(cudose ~ age + wkg + apache + sex + group + alb_mean + lactate_mean + ecmod, data = dm)
 
-h2 <- lm(cudose ~ age + wkg + apache + sex + group + alb_mean + lactate_mean + ecmod + , data = dm)
+h2 <- lm(cudose ~ age + wkg + apache + sex + group + alb_mean + lactate_mean + ecmod , data = dm)
 
 h3 <- lm(cudose~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= dm)
 
@@ -203,10 +204,13 @@ h5 <- lm(cudose~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm +ecmod:w
 
 h7 <- lm(log(cudose)~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= dm)
 
+h8 <- lm(sqrt(cudose)~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= dm)
 
-hpl1 <- ggplot(data = dk, aes(x=ttrg,y=cudose))+
+#need to think about sigm
+
+hpl1 <- ggplot(data = dk, aes(x=sigm,y=log(cudose)))+
         geom_point()+
-        geom_smooth(aes(y=predict(h3,dk)))+
+        geom_smooth(method = lm,aes(y=predict(h7,dk)))+
         #coord_cartesian(ylim = c(0,10),xlim=c(15,25))+
         facet_wrap(~group)
 
@@ -226,6 +230,30 @@ h4 <- glm(cudose ~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , fami
 
 # 4. PRESCRIPTION CHANGES -------------------------------------------------
 
+dr <- dm
+
+dr <- left_join(
+        dr,
+        dheprl %>% select(mrn,runl),
+        by = "mrn"
+)
+
+r0 <- glm(runl ~ 1 , data= dr,family = poisson(link="log"))
+
+r1 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_mean + ttrg + sigm, family = poisson(link="log"),data= dr)
+
+
+r2 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_mean + ttrg + sigm + group:sigm + group:ttrg + ttrg:sigm, family = poisson(link="log"),data= dr)
+
+anova(r0,r1,r2,test= "Chisq")
+
+rpl1 <- ggplot(data = dr, aes(x=ecmod, y= runl))+
+        geom_point()+
+        geom_smooth(method = glm)+
+        #coord_cartesian(xlim = c(0,3),ylim = c(0,20))+
+        facet_wrap(~group)
+
+#r2 is the winner
 
 # 5. BLOOD PRODUCTS ----------------------------------------------------------
 

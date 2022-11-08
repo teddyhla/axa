@@ -14,7 +14,7 @@ library(survminer)
 
 
 #need to adjust for 
-#age, apache, weight, bmi, mean_platelets, fibrinogen , neutrophils, ferritin
+#age, apache, weight, bmi, median_platelets, fibrinogen , neutrophils, ferritin
 #ck,#crp #pct #albumin ,creat, eGFR, bicarb, ph,rrt
 
 #targets
@@ -43,7 +43,7 @@ t2cmp <- t1cmp
 levels(t2cmp$value) <- c(1,1,0,0)
 t2cmp$value <- as.numeric(as.character(t2cmp$value))
 
-#na here is meaninfgul -- because na means event does not happen.
+#na here is medianinfgul -- because na medians event does not happen.
 
 t2cmp <- left_join(
         t2cmp,
@@ -128,7 +128,7 @@ t2cmp <- left_join(
 
 t2cmp <- left_join(
         t2cmp,
-        dm %>% select(mrn,ph_mean,ferritin_mean),
+        dm %>% select(mrn,ph_median,ferritin_median),
         by = "mrn"
 )
 so <- coxph(Surv(t,value)~ttrg + group , data= t2cmp)
@@ -136,12 +136,15 @@ s1 <- coxph(Surv(t,value)~sigm + group + sigm:group, data= t2cmp)
 s2 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg, data= t2cmp)
 s3 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache, data= t2cmp)
 
-s4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_mean + ferritin_mean, data= t2cmp)
+s4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_median + ferritin_median, data= t2cmp)
 
 s5 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + rrt + apache, data= t2cmp)
 
+s5i <- coxph(Surv(t,value)~sigm + ttrg + group  + age + group:sigm + sex + rrt + apache, data= t2cmp)
+
 s6 <- coxph(Surv(t,value)~group + sigm + age + rrt + sex + apache  ,data= t2cmp)
 
+s7 <- coxph(Surv(t,value)~sigm + ttrg + group + ttrg:group + age + sex + rrt+ apache, data= t2cmp)
 
 sfit <- survfit(Surv(t,value)~group, data= t2cmp)
 
@@ -189,7 +192,7 @@ oh2cmp <- left_join(
 
 oh2cmp <- left_join(
         oh2cmp,
-        dm %>% select(mrn,ph_mean,ferritin_mean),
+        dm %>% select(mrn,ph_median,ferritin_median),
         by = "mrn"
 )
 
@@ -197,7 +200,7 @@ sh <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg,data= oh2cmp)
 sh1 <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg + age + sex + apache, data= oh2cmp)
 
 
-sh4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_mean + ferritin_mean, data= oh2cmp)
+sh4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_median + ferritin_median, data= oh2cmp)
 
 
 # 7. Circuit change -------------------------------------------------------

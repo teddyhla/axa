@@ -24,9 +24,9 @@ library(lme4)
 
 dm <- left_join(
         dm,
-        dfcore %>% select(mrn,aki),
+        dfcore %>% select(mrn,rrt),
         by = "mrn"
-)d
+)
 
 dm <- left_join(
         dm,
@@ -114,13 +114,17 @@ summary(bm7)$pseudo.r.squared
 summary(bm8)$pseudo.r.squared
 #0.093
 
-bm9 <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + aki + group:ecmod + ferritin_median + ecmod, data= dm)
+bm9 <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + rrt + group:ecmod + ferritin_median + ecmod, data= dm)
 
 lmtest::lrtest(bm6,bm7)
 
 lmtest::lrtest(bm6,bm8)
 
 lmtest::lrtest(bm8,bm9)
+
+
+bmx <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + rrt + group:ecmod + ferritin_median + ecmod + ph_median, data= dm)
+lmtest::lrtest(bm9,bmx)
 #plot(bm6) #not bad
 #better AIC 
 #lets plot for ferritin and ecmod
@@ -129,10 +133,11 @@ ttr_finalmod <- bm9
 
 bmu <- betareg::betareg(ttrgf ~ group, data= dm)
 
+
 car::vif(ttr_finalmod)
 #no VIF
 
-ttrpl1 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = aki)+
+ttrpl1 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = rrt))+
         geom_point(alpha = 0.3)+
         geom_smooth(method = lm,aes(y=predict(bm9,dm)))+
         facet_wrap(~group)
@@ -140,13 +145,18 @@ ttrpl1 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = aki)+
 ttrpl2 <- ggplot(data = dm, aes(x=ferritin_median,y=ttrgf))+
         geom_point()+
         geom_smooth(method = lm,aes(y=predict(bm8,dm)))+
-        coord_cartesian(xlim = c(0,20000))+
-        facet_wrap(~group)
+        coord_cartesian(xlim = c(0,5000))+
+        facet_wrap(~group )
 
 ttrpl3 <- ggplot(data = dm, aes(x=age,y=ttrgf))+
         geom_point()+
-        geom_smooth(aes(y=predict(bm6,dm)))+
+        geom_smooth(aes(y=predict(bm9,dm)))+
         facet_wrap(~group)
+
+ttrpl4 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = rrt))+
+        geom_point(alpha = 0.3)+
+        geom_smooth(method = lm,aes(y=predict(bm9,dm)))+
+        facet_wrap(~sex)
 #should cap the outlier values!
 
 
@@ -181,14 +191,14 @@ mo4 <- lm(sigm ~ apache + group + group:apache, data = dk)
 
 mo5 <- lm(sigm ~., data =dk2)
 
-#seems need to add "aki " , latate median , bicarb median , platelet median, fib, wkg, platelet
+#seems need to add "rrt " , latate median , bicarb median , platelet median, fib, wkg, platelet
 #mo6 <- MASS::stepAIC(mo5)
 #multipleR2 0.49, p val sig
 
-mo7 <- lm(sigm ~ age + aki + apache + group + sex + wkg + lactate_median + bicarb_median + plt_median + alb_median + group:apache, data= dk)
+mo7 <- lm(sigm ~ age + rrt + apache + group + sex + wkg + lactate_median + bicarb_median + plt_median + alb_median + group:apache, data= dk)
 
 
-mo8 <- lm(sigm ~ aki + group + wkg + lactate_median + bicarb_median + alb_median + group:lactate_median, data= dk)
+mo8 <- lm(sigm ~ rrt + group + wkg + lactate_median + bicarb_median + alb_median + group:lactate_median, data= dk)
 #mo
 mo9 <- lm(sigm ~ wkg + group + lactate_median + alb_median + group:lactate_median + group:wkg , data = dk)
 
@@ -201,13 +211,13 @@ Hmisc::describe(dk)
 #mox <- lm(sigm ~ wkg + group + lact2 + alb_median + group:lact2 , data= dk)
 mop <- lm (sigm ~ wkg + group + alb_median + plt_median + ph_median + group:ph_median, data = dk)
 
-moh <- lm(sigm ~ wkg + group + plt_median + ferritin_median + alb_median + aki , data= dk)
+moh <- lm(sigm ~ wkg + group + plt_median + ferritin_median + alb_median + rrt , data= dk)
 #mo
 
 
-moh2 <- lm(sigm ~ wkg + group + plt_median + ferritin_median + alb_median + aki , data= dkr)
+moh2 <- lm(sigm ~ wkg + group + plt_median + ferritin_median + alb_median + rrt , data= dkr)
 #mo
-moh3 <- lm(sigm ~wkg  + group + plt_median + ferritin_median + alb_median + aki +ecmod , data= dkr)
+moh3 <- lm(sigm ~wkg  + group + plt_median + ferritin_median + alb_median + rrt +ecmod , data= dkr)
 
 mof <- lm(sigm ~ age + wkg + apache + sex + ferritin_median + group + alb_median + group:alb_median + group:ferritin_median, data= dk)
 
@@ -217,14 +227,28 @@ mog<- lm(sigm ~ age + wkg + apache + sex  + group + alb_median + group:alb_media
 moh<- lm(sigm ~ age + wkg + apache + sex + group + alb_median + lactate_median + plt_median + creat_median + ferritin_median + ecmod, data= dk)
 
 
-car::vif(moh)
+mox <- lm(sigm ~ age + wkg + apache + sex + group + alb_median + lactate_median + plt_median + rrt + ferritin_median + ecmod, data= dk)
 
-sigm_finalmod <- moh
+
+moxi <- lm(sigm ~ age + wkg + apache + sex + group + alb_median + lactate_median + group:alb_median + lactate_median:alb_median + rrt  + ecmod, data= dk)
+
+
+
+moxii <- lm(sigm ~ age + wkg + apache + sex + group + alb_median + lactate_median + group:alb_median + group:lactate_median + lactate_median:alb_median + rrt  + ecmod, data= dk)
+
+AIC(moh,mox)
+anova(mop,mox,test="Chisq")
+anova(mox,moxi,moxii,test="Chisq")
+
+#thus mox is the winner 
+car::vif(mox)
+
+sigm_finalmod <- mox
 #no vif 
-sigpl1 <- ggplot(data = dk, aes(x=alb_median,y=sigm))+
+sigpl1 <- ggplot(data = dk, aes(x=lactate_median,y=sigm,color = sex))+
         geom_point()+
-        geom_smooth(aes(y=predict(mo2,dk)))+
-        coord_cartesian(ylim = c(0,10),xlim=c(15,25))+
+        geom_smooth(method = lm,aes(y=predict(mox,dk)))+
+        coord_cartesian(ylim = c(0,10),xlim= c(0,5))+
         facet_wrap(~group)
 
 
@@ -285,12 +309,13 @@ r1 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_median + ttrg + sigm,
 
 r2 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_median + ttrg + sigm + group:sigm + group:ttrg + ttrg:sigm, family = poisson(link="log"),data= dr)
 
-anova(r0,r1,r2,test= "Chisq")
+r3 <- glm (runl ~ age + sex + wkg + group + ecmod + lactate_median + ttrg + sigm, offset = log(ecmod), family = poisson(link = "log"),data=dr)
+anova(r0,r1,r2,r3,test= "Chisq")
 
-rpl1 <- ggplot(data = dr, aes(x=ecmod, y= runl))+
+rpl1 <- ggplot(data = dr, aes(x=sigm, y= runl,color))+
         geom_point()+
-        geom_smooth(method = glm)+
-        #coord_cartesian(xlim = c(0,3),ylim = c(0,20))+
+        geom_smooth(method = lm,aes(y=predict(r2,dr)))+
+        coord_cartesian(xlim = c(0,3),ylim = c(0,20))+
         facet_wrap(~group)
 
 #r2 is the winner
@@ -300,9 +325,9 @@ rpl1 <- ggplot(data = dr, aes(x=ecmod, y= runl))+
 #age, apache, weight, bmi, median_platelets, fibrinogen , neutrophils, ferritin
 #ck,#crp #pct #albumin ,creat, eGFR, bicarb, ph,rrt
 
-bp1 <- glm(bldtot ~ age + apache + wkg + aki + ferritin_median + ph_median + cudose , data= dm, family = quasipoisson(link = "log"))
+bp1 <- glm(bldtot ~ age + apache + wkg + rrt + ferritin_median + ph_median + cudose , data= dm, family = quasipoisson(link = "log"))
 
-bp2 <- glm(bldtot ~ apache + aki + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+bp2 <- glm(bldtot ~ apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
 #mb2 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 #mb1 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = poisson(link="log"))

@@ -142,6 +142,8 @@ dm <- left_join(
         by = "mrn"
 )
 
+dm$bldtot_day <- dm$bldtot/as.numeric(dm$ecmod)
+
 
 #remove messy repeated ones
 dm2 <- dm

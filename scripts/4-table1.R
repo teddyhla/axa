@@ -222,6 +222,55 @@ label(dm3$ecmod) <- "Duration on ECMO"
 units(dm3$ecmod) <- "Days"
 
 
+
+
+# TABLE 3 -----------------------------------------------------------------
+
+dm4 <- dfcore %>% select(mrn,group,ecmod)
+
+dm4$ecmod <- as.numeric(dm4$ecmod)
+dm4 <- left_join(
+        dm4,
+        dcumhep %>% select(mrn,cudose,hep_wkgday),
+        by = "mrn"
+)
+
+dm4 <- left_join(
+        dm4,
+        dheprl %>% select(mrn,runl,rl_day),
+        by = "mrn"
+)
+
+dm4 <- left_join(
+        dm4,
+        dm %>% select(mrn, totc,toth, bldtot,hboth,cday,bldtot_day),
+        by= "mrn"
+)
+
+
+dm4[is.na(dm4)]<- 0
+
+label(dm4$cudose) <- "Cumulative Dosage of Heparin"
+units(dm4$cudose) <- "Units"
+
+label(dm4$runl) <- "Cumulative Prescription changes of heparin"
+label(dm4$ecmod) <- "Duration on ECMO"
+units(dm4$ecmod) <- "Days"
+
+label(dm4$totc) <- "Cumulative ECMO Circuit Changes"
+
+label(dm4$hep_wkgday) <- "Heparin dose per kilogram per day"
+units(dm4$hep_wkgday) <- "Units/kg/day"
+
+label(dm4$rl_day) <- "No of prescription changes per day"
+
+label(dm4$bldtot) <- "Cumulative blood products"
+units(dm4$bldtot) <- "units"
+
+label(dm4$toth) <- "Total Hemorrhagic Complications"
+units(dm4$toth) <- "event"
+
+
 # TABLE 1 generation ------------------------------------------------------
 
 
@@ -262,4 +311,33 @@ dm3 %>%
                 med = median(ph_median),
                 two = quantile(ph_median,prob = c(0.75)))
 
+table1 (~  ecmod +cudose + hep_wkgday + runl + rl_day + totc + cday+ toth + bldtot + bldtot_day  | group, data = dm4,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
 
+dm4 %>% 
+        select(group,runl) %>% 
+        group_by(group) %>% 
+        summarise(
+                one = quantile(runl,prob= c(0.25)),
+                med = median(runl),
+                two = quantile(runl,prob = c(0.75)))
+
+
+dm4 %>% 
+        select(group,bldtot_day) %>% 
+        group_by(group) %>% 
+        summarise(
+                one = quantile(bldtot_day,prob= c(0.25)),
+                med = median(bldtot_day),
+                two = quantile(bldtot_day,prob = c(0.75)))
+
+
+dm4 %>% 
+        select(group,toth) %>% 
+        group_by(group) %>% 
+        summarise(
+                suth = sum(toth))

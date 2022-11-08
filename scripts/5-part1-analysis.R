@@ -54,10 +54,34 @@ plcor1 <- GGally::ggpairs(labt)
 dm$ttrgf <- ((dm$ttrg * 253) + 0.5)/254  #this is as per Smithson and Vekuilen 2006
 
 f1 <- ggplot(data= dm, aes(x= ttrgf,color = group)) + 
-        geom_histogram(aes(y=..density..),fill = "white")+
-        geom_vline(aes(xintercept=mean(ttrgf)),
+        geom_density()+
+        geom_vline(aes(xintercept=median(ttrgf)),
                    color="blue", linetype="dashed", size=1)+
         facet_wrap(~group)
+
+f2 <- ggplot(data = dm, aes(x= group, y= ttrgf))+
+        geom_point()+
+        geom_jitter()
+
+f3 <- ggplot(data = dm, aes(x=group, y= ttrgf))+
+        ggdist::stat_halfeye(
+                adjust = .5, 
+                width = .6,
+                justification = - .3,
+                .width = 0,
+                point_colour = NA
+        ) +
+        geom_boxplot(
+                width = .25,
+                outlier.color = NA,
+        ) +
+        geom_point(
+                size = 1.3,
+                alpha = .3,
+                position = position_jitter(
+                        seed = 1, width = .1
+                )
+        )
 
 bm0 <- betareg::betareg(ttrgf ~ 1, data= dm)
 
@@ -83,6 +107,8 @@ AIC(bm3,bm6)
 
 
 bm7 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod + lactate_mean +sex + ferritin_mean + ecmod +1|group:ecmod , data = dm)
+
+
 summary(bm7)$pseudo.r.squared
 
 lmtest::lrtest(bm6,bm7)

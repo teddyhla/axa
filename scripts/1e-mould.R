@@ -77,7 +77,7 @@ dm$ecmod <- as.numeric(dm$ecmod)
 #add blood test variables
 dm <- left_join(
         dm,
-        d1bl %>% select(-c(nd_mean,nd_min,nd_max)),
+        d1bl %>% select(-c(nd_median,nd_min,nd_max)),
         by = "mrn"
 )
 

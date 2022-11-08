@@ -148,7 +148,7 @@ d1bl <- tbl %>%
         select_if(function(x) is.character(x)| is.factor(x)| is.numeric(x)) %>%# select dbl + mrn + group
         summarise(across(
                 where(is.double),#execute numbers using folloing list offunction, and naming convention
-                list(mean = mean,
+                list(median = median,
                      min = min,
                      max = max),
                 na.rm = TRUE,

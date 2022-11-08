@@ -141,6 +141,10 @@ s4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache +
 s5 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + rrt + apache, data= t2cmp)
 
 s6 <- coxph(Surv(t,value)~group + sigm + age + rrt + sex + apache  ,data= t2cmp)
+
+
+sfit <- survfit(Surv(t,value)~group, data= t2cmp)
+
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 
 oh2cmp <- oh1cmp

@@ -22,6 +22,18 @@ pvalue <- function(x,...){
         c("",sub("<","&lt;",format.pval(p,digits= 3, eps = 0.001)))
 }
 
+my.render.cont <- function(x) {
+        with(stats.apply.rounding(stats.default(x), digits=2), 
+             c("","Median (IQR)"=sprintf("%s (%s,%s)", MEDIAN, 
+                                         round(quantile(x,na.rm=TRUE,prob=c(.25,.75))[[1]],1),
+                                         round(quantile(x,na.rm=TRUE,prob=c(.25,.75))[[2]],1)
+                                         )))
+}
+my.render.cat <- function(x) {
+        c("", sapply(stats.default(x), function(y) with(y,
+                                                        sprintf("%d (%0.0f %%)", FREQ, PCT))))
+}
+
 # TABLE 1 -----------------------------------------------------------------
 
 setdiff(names(dfcore),names(dm))
@@ -53,17 +65,17 @@ label(dm3$cohort) <- "Cohorts within assigned group"
 label(dm3$hb_max) <- "Max Haemoglobin"
 units(dm3$hb_max) <- "g/L"
 
-label(dm3$hb_mean) <- "Mean Haemoglobin"
-units(dm3$hb_mean) <- "g/L"
+label(dm3$hb_median) <- "median Haemoglobin"
+units(dm3$hb_median) <- "g/L"
 
 label(dm3$hb_min) <- "Minimum Haemoglobin"
 units(dm3$hb_min) <- "g/L"
 
-label(dm3$plt_mean) <- "Mean Platelets"
-units(dm3$plt_mean) <- "needed"
+label(dm3$plt_median) <- "median Platelets"
+units(dm3$plt_median) <- "needed"
 
-label(dm3$neut_mean) <- "Mean Neutrophils"
-units(dm3$neut_mean) <- "needed"
+label(dm3$neut_median) <- "median Neutrophils"
+units(dm3$neut_median) <- "needed"
 
 label(dm3$neut_min) <- "Minimum neutrophils"
 units(dm3$neut_min) <- "needed"
@@ -71,32 +83,32 @@ units(dm3$neut_min) <- "needed"
 label(dm3$neut_max) <- "Maximum neutrophils"
 units(dm3$neut_max) <- "needed"
 
-label(dm3$fib_mean) <- "Mean Fibrinogen levels"
-units(dm3$fib_mean) <- "unit needed"
+label(dm3$fib_median) <- "median Fibrinogen levels"
+units(dm3$fib_median) <- "unit needed"
 
-label(dm3$ck_mean) <- "Mean Creatinine Kinase levels"
-units(dm3$ck_mean) <- "unit needed"
+label(dm3$ck_median) <- "median Creatinine Kinase levels"
+units(dm3$ck_median) <- "unit needed"
 
-label(dm3$crp_mean) <- "Mean C-Reactive Protein"
-units(dm3$crp_mean) <- "unit needed"
+label(dm3$crp_median) <- "median C-Reactive Protein"
+units(dm3$crp_median) <- "unit needed"
 
-label(dm3$pct_mean) <- "Mean Procalcitonin"
-units(dm3$pct_mean) <- "unit needed"
+label(dm3$pct_median) <- "median Procalcitonin"
+units(dm3$pct_median) <- "unit needed"
 
-label(dm3$bili_mean) <- "Mean Bilirubin"
-units(dm3$bili_mean) <- "unit needed"
+label(dm3$bili_median) <- "median Bilirubin"
+units(dm3$bili_median) <- "unit needed"
 
 label(dm3$alb_max) <- "Max Albumin"
 units(dm3$alb_max) <- "needed"
 
-label(dm3$alb_mean) <- "Mean Albumin"
-units(dm3$alb_mean) <- "needed"
+label(dm3$alb_median) <- "median Albumin"
+units(dm3$alb_median) <- "needed"
 
 label(dm3$alb_min) <- "Min Albumin"
 units(dm3$alb_min) <- "needed"
 
-label(dm3$creat_mean) <- "Mean Creatinine"
-units(dm3$creat_mean) <- "needed"
+label(dm3$creat_median) <- "median Creatinine"
+units(dm3$creat_median) <- "needed"
 
 label(dm3$creat_max) <- "Maximum Creatinine"
 units(dm3$creat_max) <- "needed"
@@ -104,20 +116,20 @@ units(dm3$creat_max) <- "needed"
 label(dm3$creat_min) <- "Minimum Creatinine"
 units(dm3$creat_min) <- "needed"
 
-label(dm3$gfr_mean) <- "Mean eGFR"
-units(dm3$gfr_mean) <- "needed"
+label(dm3$gfr_median) <- "median eGFR"
+units(dm3$gfr_median) <- "needed"
 
-label(dm3$ca_mean) <- "Mean Calcium"
-units(dm3$ca_mean) <- "needed"
+label(dm3$ca_median) <- "median Calcium"
+units(dm3$ca_median) <- "needed"
 
-label(dm3$corr_ca_mean) <- "Mean Corrected Calcium"
-units(dm3$corr_ca_mean) <- "needed"
+label(dm3$corr_ca_median) <- "median Corrected Calcium"
+units(dm3$corr_ca_median) <- "needed"
 
 label(dm3$bicarb_max) <- "Max Bicarb "
 units(dm3$bicarb_max) <- "needed"
 
-label(dm3$bicarb_mean) <- "Mean Bicarb"
-units(dm3$bicarb_mean) <- "needed"
+label(dm3$bicarb_median) <- "median Bicarb"
+units(dm3$bicarb_median) <- "needed"
 
 label(dm3$bicarb_min) <- "Minimum Bicarb"
 units(dm3$bicarb_min) <- "needed"
@@ -125,13 +137,13 @@ units(dm3$bicarb_min) <- "needed"
 label(dm3$lactate_max) <- "Maximum Lactate"
 units(dm3$lactate_max) <- "needed"
 
-label(dm3$lactate_mean) <- "Mean Lactate"
-units(dm3$lactate_mean) <- "needed"
+label(dm3$lactate_median) <- "median Lactate"
+units(dm3$lactate_median) <- "needed"
 
 label(dm3$lactate_min) <- "Minimum Lactate"
 units(dm3$lactate_min) <- "needed"
 
-label(dm3$ph_mean) <- "mean pH"
+label(dm3$ph_median) <- "median pH"
 
 label(dm3$tlow) <- "Time in therapeutic range BELOW target"
 units(dm3$tlow) <- "%"
@@ -179,11 +191,15 @@ units(dm3$ecmod) <- "Days"
 
 
 table1(~age + sex + apache + wkg + bmi + cohort + ecmod + tlow + ttrhi + ttrg + sigm + hep_wkgday + rl_day + totc + cday + toth + aki + bldtot  + ecmoconfig + pe |group, data = dm3
-       ,overall = F, extra.col = list("P-value"=pvalue))
+       ,overall = F,
+       render.continuous = my.render.cont,
+       render.categorical = my.render.cat,
+       topclass = "Rtable1-zebra",
+       extra.col = list("P-value"=pvalue))
 
-table1( ~ hb_mean + hb_min + hb_max + plt_mean + neut_mean +
-        neut_min + neut_max + fib_mean + ldh_mean + ferritin_mean + ck_mean + crp_mean + pct_mean +
-        bili_mean + alb_mean + alb_min + alb_max + creat_mean + creat_min + creat_max + gfr_mean + ca_mean +
-        corr_ca_mean + bicarb_mean + bicarb_min + bicarb_max + lactate_mean + lactate_min + lactate_max + ph_mean | group, data = dm3
+table1( ~ hb_median + hb_min + hb_max + plt_median + neut_median +
+        neut_min + neut_max + fib_median + ldh_median + ferritin_median + ck_median + crp_median + pct_median +
+        bili_median + alb_median + alb_min + alb_max + creat_median + creat_min + creat_max + gfr_median + ca_median +
+        corr_ca_median + bicarb_median + bicarb_min + bicarb_max + lactate_median + lactate_min + lactate_max + ph_median | group, data = dm3
        ,overall = F, extra.col = list("P-value"=pvalue))
 

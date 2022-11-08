@@ -9,8 +9,8 @@ library(lme4)
 
 #need to adjust for 
 #age, sex,  apache, weight, bmi, ecmod, 
-# mean_platelets, mean_neutrophils,ferritin_mean, mean_CRP,mean_procalcitonin
-# mean_albumin , mean _creat, minimum bicarb, mean pH 
+# median_platelets, median_neutrophils,ferritin_median, median_CRP,median_procalcitonin
+# median_albumin , median _creat, minimum bicarb, median pH 
 
 #targets
 #1. ttr - improvement in favour of axa but no statistical significance
@@ -26,7 +26,7 @@ dm <- left_join(
         dm,
         dfcore %>% select(mrn,aki),
         by = "mrn"
-)
+)d
 
 dm <- left_join(
         dm,
@@ -38,8 +38,8 @@ dm <- left_join(
 # CORRELATED VALUES -------------------------------------------------------
 labt <- dm %>% 
         select(
-                plt_mean, neut_mean,ferritin_mean,crp_mean,pct_mean,
-                alb_mean,creat_mean,bicarb_mean,ph_mean,ck_mean,apache
+                plt_median, neut_median,ferritin_median,crp_median,pct_median,
+                alb_median,creat_median,bicarb_median,ph_median,ck_median,apache
         )
 
 
@@ -85,15 +85,15 @@ f3 <- ggplot(data = dm, aes(x=group, y= ttrgf))+
 
 bm0 <- betareg::betareg(ttrgf ~ 1, data= dm)
 
-bm1 <- betareg::betareg(ttrgf ~  group + age + wkg + apache +sex + ferritin_mean+ crp_mean+ ph_mean +bicarb_mean + ecmod, data = dm)
+bm1 <- betareg::betareg(ttrgf ~  group + age + wkg + apache +sex + ferritin_median+ crp_median+ ph_median +bicarb_median + ecmod, data = dm)
 
-bm3 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod +sex + ferritin_mean + ecmod +1|ecmod , data = dm)
+bm3 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod +sex + ferritin_median + ecmod +1|ecmod , data = dm)
 
 lmtest::lrtest(bm0,bm1,bm3)
 AIC(bm0,bm1,bm3)
  
 #now lets fit with link = log log
-bm4 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod+sex + ferritin_mean + ecmod +1|ecmod , data = dm, link = "loglog")
+bm4 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod+sex + ferritin_median + ecmod +1|ecmod , data = dm, link = "loglog")
 summary(bm3)$pseudo.r.squared
 #0.08
 summary(bm4)$pseudo.r.squared
@@ -101,34 +101,46 @@ summary(bm4)$pseudo.r.squared
 #doesnt make an improvement.
 #thus stick with original logit.
 
-bm6 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod +sex + ferritin_mean + ecmod +1|group:ecmod , data = dm)
+bm6 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod +sex + ferritin_median + ecmod +1|group:ecmod , data = dm)
 summary(bm6)$pseudo.r.squared
 AIC(bm3,bm6)
 
 
-bm7 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod + lactate_mean +sex + ferritin_mean + ecmod +1|group:ecmod , data = dm)
+bm7 <- betareg::betareg(ttrgf ~ group + age + wkg + apache + group:ecmod + lactate_median +sex + ferritin_median + ecmod +1|group:ecmod , data = dm)
 
+bm8 <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + group:ecmod + ferritin_median + ecmod , data=dm)
 
 summary(bm7)$pseudo.r.squared
+summary(bm8)$pseudo.r.squared
+#0.093
+
+bm9 <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + aki + group:ecmod + ferritin_median + ecmod, data= dm)
 
 lmtest::lrtest(bm6,bm7)
+
+lmtest::lrtest(bm6,bm8)
+
+lmtest::lrtest(bm8,bm9)
 #plot(bm6) #not bad
 #better AIC 
 #lets plot for ferritin and ecmod
 
-ttr_finalmod <- bm6
+ttr_finalmod <- bm9
+
+bmu <- betareg::betareg(ttrgf ~ group, data= dm)
 
 car::vif(ttr_finalmod)
 #no VIF
 
-ttrpl1 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf))+
-        geom_point()+
-        geom_smooth(aes(y=predict(bm6,dm)))+
+ttrpl1 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = aki)+
+        geom_point(alpha = 0.3)+
+        geom_smooth(method = lm,aes(y=predict(bm9,dm)))+
         facet_wrap(~group)
 
-ttrpl2 <- ggplot(data = dm, aes(x=ferritin_mean,y=ttrgf))+
+ttrpl2 <- ggplot(data = dm, aes(x=ferritin_median,y=ttrgf))+
         geom_point()+
-        geom_smooth(aes(y=predict(bm6,dm)))+
+        geom_smooth(method = lm,aes(y=predict(bm8,dm)))+
+        coord_cartesian(xlim = c(0,20000))+
         facet_wrap(~group)
 
 ttrpl3 <- ggplot(data = dm, aes(x=age,y=ttrgf))+
@@ -136,16 +148,18 @@ ttrpl3 <- ggplot(data = dm, aes(x=age,y=ttrgf))+
         geom_smooth(aes(y=predict(bm6,dm)))+
         facet_wrap(~group)
 #should cap the outlier values!
+
+
 # 2. VARIABILITY ----------------------------------------------------------
 
-mo1 <- lm(sigm ~ age + apache + sex + group + ttrg + ferritin_mean + wkg + ecmod,data= dm)
+mo1 <- lm(sigm ~ age + apache + sex + group + ttrg + ferritin_median + wkg + ecmod,data= dm)
 #model diagnstics showed "21" is a big problem
 dk <- dm %>% filter(sigm < 100)
 dk2 <- dk %>% select(-mrn) %>% drop_na()
 dk2 <- dk %>%
         mutate(lact2 = case_when(
-                lactate_mean < 7 ~ lactate_mean,
-                lactate_mean > 7 ~ 7
+                lactate_median < 7 ~ lactate_median,
+                lactate_median > 7 ~ 7
         ))
 
 dkr <- dk[-c(1,8,60),]
@@ -157,26 +171,26 @@ dkr <- dk[-c(1,8,60),]
 
 
 
-mo2 <- lm(sigm ~ age + apache + sex + group + ttrg + ferritin_mean + wkg + ecmod,data= dk)
+mo2 <- lm(sigm ~ age + apache + sex + group + ttrg + ferritin_median + wkg + ecmod,data= dk)
 #mo
 
-mo3 <- lm(sigm ~ age + apache + sex + group + crp_mean + ph_mean + wkg + ecmod, data = dk)
+mo3 <- lm(sigm ~ age + apache + sex + group + crp_median + ph_median + wkg + ecmod, data = dk)
 
 mo4 <- lm(sigm ~ apache + group + group:apache, data = dk)
 #Rsq 0.18
 
 mo5 <- lm(sigm ~., data =dk2)
 
-#seems need to add "aki " , latate mean , bicarb mean , platelet mean, fib, wkg, platelet
+#seems need to add "aki " , latate median , bicarb median , platelet median, fib, wkg, platelet
 #mo6 <- MASS::stepAIC(mo5)
 #multipleR2 0.49, p val sig
 
-mo7 <- lm(sigm ~ age + aki + apache + group + sex + wkg + lactate_mean + bicarb_mean + plt_mean + alb_mean + group:apache, data= dk)
+mo7 <- lm(sigm ~ age + aki + apache + group + sex + wkg + lactate_median + bicarb_median + plt_median + alb_median + group:apache, data= dk)
 
 
-mo8 <- lm(sigm ~ aki + group + wkg + lactate_mean + bicarb_mean + alb_mean + group:lactate_mean, data= dk)
+mo8 <- lm(sigm ~ aki + group + wkg + lactate_median + bicarb_median + alb_median + group:lactate_median, data= dk)
 #mo
-mo9 <- lm(sigm ~ wkg + group + lactate_mean + alb_mean + group:lactate_mean + group:wkg , data = dk)
+mo9 <- lm(sigm ~ wkg + group + lactate_median + alb_median + group:lactate_median + group:wkg , data = dk)
 
 #observations 60,20,8
 
@@ -184,30 +198,30 @@ Hmisc::describe(dk)
 
 #this output showed that 
 
-#mox <- lm(sigm ~ wkg + group + lact2 + alb_mean + group:lact2 , data= dk)
-mop <- lm (sigm ~ wkg + group + alb_mean + plt_mean + ph_mean + group:ph_mean, data = dk)
+#mox <- lm(sigm ~ wkg + group + lact2 + alb_median + group:lact2 , data= dk)
+mop <- lm (sigm ~ wkg + group + alb_median + plt_median + ph_median + group:ph_median, data = dk)
 
-moh <- lm(sigm ~ wkg + group + plt_mean + ferritin_mean + alb_mean + aki , data= dk)
+moh <- lm(sigm ~ wkg + group + plt_median + ferritin_median + alb_median + aki , data= dk)
 #mo
 
 
-moh2 <- lm(sigm ~ wkg + group + plt_mean + ferritin_mean + alb_mean + aki , data= dkr)
+moh2 <- lm(sigm ~ wkg + group + plt_median + ferritin_median + alb_median + aki , data= dkr)
 #mo
-moh3 <- lm(sigm ~wkg  + group + plt_mean + ferritin_mean + alb_mean + aki +ecmod , data= dkr)
+moh3 <- lm(sigm ~wkg  + group + plt_median + ferritin_median + alb_median + aki +ecmod , data= dkr)
 
-mof <- lm(sigm ~ age + wkg + apache + sex + ferritin_mean + group + alb_mean + group:alb_mean + group:ferritin_mean, data= dk)
+mof <- lm(sigm ~ age + wkg + apache + sex + ferritin_median + group + alb_median + group:alb_median + group:ferritin_median, data= dk)
 
-mog<- lm(sigm ~ age + wkg + apache + sex  + group + alb_mean + group:alb_mean , data= dk)
+mog<- lm(sigm ~ age + wkg + apache + sex  + group + alb_median + group:alb_median , data= dk)
 
 
-moh<- lm(sigm ~ age + wkg + apache + sex + group + alb_mean + lactate_mean + plt_mean + creat_mean + ferritin_mean + ecmod, data= dk)
+moh<- lm(sigm ~ age + wkg + apache + sex + group + alb_median + lactate_median + plt_median + creat_median + ferritin_median + ecmod, data= dk)
 
 
 car::vif(moh)
 
 sigm_finalmod <- moh
 #no vif 
-sigpl1 <- ggplot(data = dk, aes(x=alb_mean,y=sigm))+
+sigpl1 <- ggplot(data = dk, aes(x=alb_median,y=sigm))+
         geom_point()+
         geom_smooth(aes(y=predict(mo2,dk)))+
         coord_cartesian(ylim = c(0,10),xlim=c(15,25))+
@@ -219,18 +233,18 @@ sigpl1 <- ggplot(data = dk, aes(x=alb_mean,y=sigm))+
 h0 <- lm(cudose ~ ., data= dk2)
 ho2 <- lm(cudose ~ 1,data= dk2)
 
-h1 <- lm(cudose ~ age + wkg + apache + sex + group + alb_mean + lactate_mean + ecmod, data = dm)
+h1 <- lm(cudose ~ age + wkg + apache + sex + group + alb_median + lactate_median + ecmod, data = dm)
 
-h2 <- lm(cudose ~ age + wkg + apache + sex + group + alb_mean + lactate_mean + ecmod , data = dm)
+h2 <- lm(cudose ~ age + wkg + apache + sex + group + alb_median + lactate_median + ecmod , data = dm)
 
-h3 <- lm(cudose~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= dm)
+h3 <- lm(cudose~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , data= dm)
 
-h5 <- lm(cudose~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm +ecmod:wkg, data= dm)
+h5 <- lm(cudose~ age + wkg + group + ecmod + lactate_median + ttrg + sigm +ecmod:wkg, data= dm)
 
 
-h7 <- lm(log(cudose)~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= dm)
+h7 <- lm(log(cudose)~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , data= dm)
 
-h8 <- lm(sqrt(cudose)~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , data= dm)
+h8 <- lm(sqrt(cudose)~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , data= dm)
 
 #need to think about sigm
 
@@ -251,7 +265,7 @@ hpl3 <- ggplot(data = dk, aes(x=wkg, y= cudose))+
 
 #looks like a gamma distribution
 
-h4 <- glm(cudose ~ age + wkg + group + ecmod + lactate_mean + ttrg + sigm , family = Gamma, data= dm)
+h4 <- glm(cudose ~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , family = Gamma, data= dm)
 
 
 # 4. PRESCRIPTION CHANGES -------------------------------------------------
@@ -266,10 +280,10 @@ dr <- left_join(
 
 r0 <- glm(runl ~ 1 , data= dr,family = poisson(link="log"))
 
-r1 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_mean + ttrg + sigm, family = poisson(link="log"),data= dr)
+r1 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_median + ttrg + sigm, family = poisson(link="log"),data= dr)
 
 
-r2 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_mean + ttrg + sigm + group:sigm + group:ttrg + ttrg:sigm, family = poisson(link="log"),data= dr)
+r2 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_median + ttrg + sigm + group:sigm + group:ttrg + ttrg:sigm, family = poisson(link="log"),data= dr)
 
 anova(r0,r1,r2,test= "Chisq")
 
@@ -283,10 +297,10 @@ rpl1 <- ggplot(data = dr, aes(x=ecmod, y= runl))+
 
 # 5. BLOOD PRODUCTS ----------------------------------------------------------
 
-#age, apache, weight, bmi, mean_platelets, fibrinogen , neutrophils, ferritin
+#age, apache, weight, bmi, median_platelets, fibrinogen , neutrophils, ferritin
 #ck,#crp #pct #albumin ,creat, eGFR, bicarb, ph,rrt
 
-bp1 <- glm(bldtot ~ age + apache + wkg + aki + ferritin_mean + ph_mean + cudose , data= dm, family = quasipoisson(link = "log"))
+bp1 <- glm(bldtot ~ age + apache + wkg + aki + ferritin_median + ph_median + cudose , data= dm, family = quasipoisson(link = "log"))
 
 bp2 <- glm(bldtot ~ apache + aki + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 

@@ -5,7 +5,7 @@ source(file = "scripts/utils.R")
 
 #libraries
 library(tidyverse)
-library(tidylog)
+#library(tidylog)
 #load other data
 tp <- readRDS("data/axa_NONanonymised_data_20220714.rds")
 
@@ -23,14 +23,20 @@ daki2 <- daki %>%
         mutate(aki = case_when(
                 temp >0 ~ 1,
                 temp == 0 ~ 0
+        )) %>%
+        mutate(rrt = case_when(
+                temp >0 ~ "yes",
+                temp == 0 ~ "no"
         ))
 #clean RRT data ever been on RRT vs never been on RRT
 
 dfcore <- left_join(
         dfcore,
-        daki2 %>% select(mrn,aki),
+        daki2 %>% select(mrn,aki,rrt),
         by = "mrn"
 )
+
+dfcore$rrt <- as.factor(dfcore$rrt)
 
 ####
 #make a final ready to use dataframe "dm"

@@ -46,7 +46,7 @@ dm3 <- dm
 
 dm3 <- left_join(
         dm3,
-        dfcore %>% select(mrn,mode,ecmoconfig,pe,aki),
+        dfcore %>% select(mrn,mode,ecmoconfig,pe,aki,ethnic,pmh),
         by = "mrn"
 )
 
@@ -56,8 +56,40 @@ dm3 <- left_join(
         by = "mrn"
 )
 
+dm3 <- dm3 %>% mutate(
+        ethnic2 = case_when(
+                ethnic %in% c("A","B","C") ~ "White",
+                ethnic %in% c("D","E","F","G") ~ "Mixed",
+                ethnic %in% c("H","J","K","L") ~ "Asian",
+                ethnic %in% c("M","N","P","R") ~ "Black",
+                ethnic %in% c("S") ~ "Other",
+                ethnic %in% c("Z") ~ "Not stated"
+        )
+)
+
+dm3$ethnic2 <- forcats::fct_relevel(dm3$ethnic2, "White","Mixed","Asian","Black","Other","Not stated")
+
+levels(dm3$pmh)<- c(
+        "Liver cirrhosis",
+        "Immunodeficiency",
+        "Immunodeficiency",
+        "None",
+        "Severe respiratory disease",
+        "Corticosteroid Usage"
+)
+dm3$pmh <- forcats::fct_relevel(
+        dm3$pmh, 
+        "None","Corticosteroid Usage","Severe respiratory disease","Liver cirrhosis",
+        "Immunodeficiency"
+        )
+
+
 dm3$aki <- as.factor(dm3$aki)
 levels(dm3$aki) <- c("no","yes")
+
+label(dm3$ethnic2) <- "Ethnicity"
+
+label(dm3$pmh) <- "Past Medical History"
 
 label(dm3$aki) <- "Renal Replacement Therapy"
 label(dm3$cohort) <- "Cohorts within assigned group"
@@ -65,16 +97,16 @@ label(dm3$cohort) <- "Cohorts within assigned group"
 label(dm3$hb_max) <- "Max Haemoglobin"
 units(dm3$hb_max) <- "g/L"
 
-label(dm3$hb_median) <- "median Haemoglobin"
+label(dm3$hb_median) <- "Median Haemoglobin"
 units(dm3$hb_median) <- "g/L"
 
 label(dm3$hb_min) <- "Minimum Haemoglobin"
 units(dm3$hb_min) <- "g/L"
 
-label(dm3$plt_median) <- "median Platelets"
+label(dm3$plt_median) <- "Median Platelets"
 units(dm3$plt_median) <- "needed"
 
-label(dm3$neut_median) <- "median Neutrophils"
+label(dm3$neut_median) <- "Median Neutrophils"
 units(dm3$neut_median) <- "needed"
 
 label(dm3$neut_min) <- "Minimum neutrophils"
@@ -83,31 +115,31 @@ units(dm3$neut_min) <- "needed"
 label(dm3$neut_max) <- "Maximum neutrophils"
 units(dm3$neut_max) <- "needed"
 
-label(dm3$fib_median) <- "median Fibrinogen levels"
+label(dm3$fib_median) <- "Median Fibrinogen levels"
 units(dm3$fib_median) <- "unit needed"
 
-label(dm3$ck_median) <- "median Creatinine Kinase levels"
+label(dm3$ck_median) <- "Median Creatinine Kinase levels"
 units(dm3$ck_median) <- "unit needed"
 
-label(dm3$crp_median) <- "median C-Reactive Protein"
+label(dm3$crp_median) <- "Median C-Reactive Protein"
 units(dm3$crp_median) <- "unit needed"
 
-label(dm3$pct_median) <- "median Procalcitonin"
+label(dm3$pct_median) <- "Median Procalcitonin"
 units(dm3$pct_median) <- "unit needed"
 
-label(dm3$bili_median) <- "median Bilirubin"
+label(dm3$bili_median) <- "Median Bilirubin"
 units(dm3$bili_median) <- "unit needed"
 
 label(dm3$alb_max) <- "Max Albumin"
 units(dm3$alb_max) <- "needed"
 
-label(dm3$alb_median) <- "median Albumin"
+label(dm3$alb_median) <- "Median Albumin"
 units(dm3$alb_median) <- "needed"
 
 label(dm3$alb_min) <- "Min Albumin"
 units(dm3$alb_min) <- "needed"
 
-label(dm3$creat_median) <- "median Creatinine"
+label(dm3$creat_median) <- "Median Creatinine"
 units(dm3$creat_median) <- "needed"
 
 label(dm3$creat_max) <- "Maximum Creatinine"
@@ -122,13 +154,13 @@ units(dm3$gfr_median) <- "needed"
 label(dm3$ca_median) <- "median Calcium"
 units(dm3$ca_median) <- "needed"
 
-label(dm3$corr_ca_median) <- "median Corrected Calcium"
+label(dm3$corr_ca_median) <- "Median Corrected Calcium"
 units(dm3$corr_ca_median) <- "needed"
 
 label(dm3$bicarb_max) <- "Max Bicarb "
 units(dm3$bicarb_max) <- "needed"
 
-label(dm3$bicarb_median) <- "median Bicarb"
+label(dm3$bicarb_median) <- "Median Bicarb"
 units(dm3$bicarb_median) <- "needed"
 
 label(dm3$bicarb_min) <- "Minimum Bicarb"
@@ -137,13 +169,15 @@ units(dm3$bicarb_min) <- "needed"
 label(dm3$lactate_max) <- "Maximum Lactate"
 units(dm3$lactate_max) <- "needed"
 
-label(dm3$lactate_median) <- "median Lactate"
+label(dm3$lactate_median) <- "Median Lactate"
 units(dm3$lactate_median) <- "needed"
 
 label(dm3$lactate_min) <- "Minimum Lactate"
 units(dm3$lactate_min) <- "needed"
 
-label(dm3$ph_median) <- "median pH"
+label(dm3$ldh_median) <- "Median Lactatedehydrogenase levels(units)"
+
+label(dm3$ph_median) <- "Median pH"
 
 label(dm3$tlow) <- "Time in therapeutic range BELOW target"
 units(dm3$tlow) <- "%"
@@ -170,6 +204,7 @@ label(dm3$ecmoconfig) <- "ECMO Cannula configuration"
 
 label(dm3$pe) <- "Pulmonary Embolism on admission"
 
+label(dm3$ferritin_median) <- "Median Ferritin(unit needed)"
 
 label(dm3$age) <- "Age"
 units(dm3$age) <- "Years"
@@ -197,9 +232,34 @@ table1(~age + sex + apache + wkg + bmi + cohort + ecmod + tlow + ttrhi + ttrg + 
        topclass = "Rtable1-zebra",
        extra.col = list("P-value"=pvalue))
 
+table1(~age + sex + apache + wkg + bmi + cohort + ethnic2 + pmh +  aki  + ecmoconfig + pe + ecmod|group, data = dm3
+       ,overall = F,
+       render.continuous = my.render.cont,
+       render.categorical = my.render.cat,
+       topclass = "Rtable1-zebra",
+       extra.col = list("P-value"=pvalue))
+
 table1( ~ hb_median + hb_min + hb_max + plt_median + neut_median +
         neut_min + neut_max + fib_median + ldh_median + ferritin_median + ck_median + crp_median + pct_median +
         bili_median + alb_median + alb_min + alb_max + creat_median + creat_min + creat_max + gfr_median + ca_median +
         corr_ca_median + bicarb_median + bicarb_min + bicarb_max + lactate_median + lactate_min + lactate_max + ph_median | group, data = dm3
        ,overall = F, extra.col = list("P-value"=pvalue))
+
+table1( ~ hb_median + plt_median + neut_median + fib_median + ldh_median + ferritin_median + ck_median + crp_median + pct_median +
+                bili_median + alb_median + creat_median +
+                corr_ca_median + bicarb_median + lactate_median + ph_median | group, data = dm3
+        ,overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
+
+dm3 %>% 
+        select(group,ph_median) %>% 
+        group_by(group) %>% 
+        summarise(
+                one = quantile(ph_median,prob= c(0.25)),
+                med = median(ph_median),
+                two = quantile(ph_median,prob = c(0.75)))
+
 

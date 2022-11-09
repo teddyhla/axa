@@ -28,19 +28,16 @@ library(survminer)
 #8. should test "duration" and should test "death"
 
 
-# Table1 ---------------------------------------------------------------------
-
-#lets generate table 1
 
 # FINAL -------------------------------------------------------------------
 
 
-# 6. Time to 1st Complication ---------------------------------------------
+# 6. Time to 1st Complication ANY complication --------------------------------
 
 t2cmp <- t1cmp
 #the levels are both, only h, only t and no comp
 #both should be event and only h should be event and others are non events
-levels(t2cmp$value) <- c(1,1,0,0)
+levels(t2cmp$value) <- c(1,1,1,0)
 t2cmp$value <- as.numeric(as.character(t2cmp$value))
 
 #na here is medianinfgul -- because na medians event does not happen.
@@ -64,8 +61,6 @@ t2cmp <- t2cmp %>%
 ##2 order no 2 
 
 t2cmp$value[is.na(t2cmp$value)] <- 0
-
-
 
 t2cmp <- t2cmp %>% filter(!is.na(t) & t> 0)
 
@@ -131,6 +126,11 @@ t2cmp <- left_join(
         dm %>% select(mrn,ph_median,ferritin_median),
         by = "mrn"
 )
+
+
+# model fit for ANY complications -----------------------------------------
+
+
 so <- coxph(Surv(t,value)~ttrg + group , data= t2cmp)
 s1 <- coxph(Surv(t,value)~sigm + group + sigm:group, data= t2cmp)
 s2 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg, data= t2cmp)
@@ -176,7 +176,53 @@ oh2cmp <- oh2cmp %>%
                 !is.na(value) ~ duhr
         ))
 
+##this code neeeds to be run in this order 
 oh2cmp$value[is.na(oh2cmp$value)] <- 0
+
+##addd in rrt information 
+drrt <- oh2cmp
+drrt <- left_join(
+        drrt,
+        dfcore %>% select(mrn,ecmo_finish),
+        by = "mrn"
+)
+
+drrt <- drrt %>% 
+        mutate(t2 = case_when(
+                is.na(time)~ ecmo_finish,
+                !is.na(time)~ time
+        ))
+
+drrt <- left_join(
+        daki,
+        drrt %>% select(mrn,t2),
+        by = "mrn"
+)
+
+drrt <- drrt %>%
+        group_by(mrn) %>%
+        filter(dates < t2) %>% 
+        summarise (aki = sum(RRT)) %>%
+        mutate(rrt = case_when(
+                aki >0 ~ "yes",
+                aki == 0 ~ "no"
+        )) %>%
+        ungroup()
+
+drrt$rrt <- as.factor(drrt$rrt)
+
+t2cmp <- left_join(
+        t2cmp,
+        drrt %>% select(mrn,rrt),
+        by = "mrn"
+)
+rm(drrt)
+
+# -------------------------------------------------------------------------
+
+
+# -------------------------------------------------------------------------
+
 
 oh2cmp <- oh2cmp %>% select(mrn,group,value,t)
 oh2cmp <- left_join(
@@ -202,6 +248,14 @@ oh2cmp <- left_join(
         dm %>% select(mrn,ph_median,ferritin_median),
         by = "mrn"
 )
+
+
+
+
+
+# model fit only hemorrhagic ----------------------------------------------
+
+
 
 sh <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg,data= oh2cmp)
 sh1 <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg + age + sex + apache, data= oh2cmp)

@@ -10,6 +10,10 @@ library(tidyverse)
 tp <- readRDS("data/axa_NONanonymised_data_20220714.rds")
 
 
+# AKI  --------------------------------------------------------------------
+
+
+
 ####sort aki rrt data
 
 daki <- tp$rrt_data
@@ -39,6 +43,11 @@ dfcore <- left_join(
 dfcore$rrt <- as.factor(dfcore$rrt)
 
 ####
+
+
+# DM df -------------------------------------------------------------------
+
+
 #make a final ready to use dataframe "dm"
 dm <- dfcore %>% 
         select(
@@ -230,6 +239,7 @@ dcmp <- dcmp %>%
         arrange(mrn) %>% 
         ungroup()
 
+#this is to calculate time elapsed
 dcmp <- drs(dcmp)
 
 t1cmp <- dcmp %>%

@@ -34,6 +34,13 @@ library(survminer)
 
 # 6. Time to 1st Complication ANY complication --------------------------------
 
+#Requirements
+#key var : time and event
+# events need to be cross checked
+# time need to be cut for "pre-event" 
+
+#all other vars need to satisfy this.
+
 t2cmp <- t1cmp
 #the levels are both, only h, only t and no comp
 #both should be event and only h should be event and others are non events

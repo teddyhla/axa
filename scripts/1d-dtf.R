@@ -179,7 +179,21 @@ tco <- tco %>%
         filter(!(mrn =="6419229C" & apttr == 41.9))
 
 ## 3.5. DFHEP ------------------------------------------------------------
+
+pt_without_heparin <- as.data.frame(pt_without_heparin)
+names(pt_without_heparin)<-
+
+pt_without_heparin <- left_join(
+        pt_without_heparin,
+        dfcore %>% select(mrn,group),
+        by = "mrn"
+)
+#7 in gaxa and #10 in gapt
+#means with 180 in gaxa and 74 in gapt 
+#should have 171 in gaxa and 64 in gapt 
+
 thep <- wr(dfhep,dfcore)
+#here is 237 (which checks out as 237 + 17 = 254)
 
 #dfhep seems to have multiple prescriptions
 summary(thep$s_label)
@@ -238,12 +252,37 @@ hx <- thep %>%
         filter(group == "gaxa")%>%
         group_by(mrn)%>%
         arrange(chart_t)
+#here is 173 - and expected is 173. so checked out
+
 
 hpt <- thep %>% 
         filter(s_label == "hep_sysinf" | s_label == "hep_ecmoiv") %>%
         filter(group == "gapt")%>%
         group_by(mrn)%>%
         arrange(chart_t)
+#here is 59 and expected is 64 so 5 lost.
+tm1 <- setdiff(dfcore$mrn[dfcore$group=="gapt"],unique(hpt$mrn))
+tm2 <- setdiff(tm1,pt_without_heparin$mrn[pt_without_heparin$group == "gapt"])
+
+#this code identified the 5 missing patients.
+#this line of code showed patients that are in group apt but not has had heparin.
+
+tm2 %in% unique(hpt$mrn)
+#thus checked out that these are the five missing patients
+#they are all patients with icb
+
+#so this is where the losses occur. 
+thep %>% filter(group == "gapt") %>% 
+        group_by(mrn) %>% 
+        summarise(
+                n = n(),
+                p_hep = sum(s_label == "hep")/n,
+                p_hep_ecmoiv = sum(s_label == "hep_ecmoiv")/n,
+                p_hep_ivbol = sum(s_label == "hep_ivbol")/n,
+                p_hep_rrt = sum(s_label == "hep_rrt")/n,
+                p_hep_sysinf = sum(s_label == "hep_sysinf")/n
+        ) %>%
+        arrange(p_hep,p_hep_rrt,p_hep_ivbol)
 
 xtabs(~group+s_label,data= hx)
 #this needs sepearte treatment but because all hep_ecmoiv has wkg. 

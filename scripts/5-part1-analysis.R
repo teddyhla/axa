@@ -22,11 +22,11 @@ library(lme4)
 
 # MOULDING ----------------------------------------------------------------
 
-dm <- left_join(
-        dm,
-        dfcore %>% select(mrn,rrt),
-        by = "mrn"
-)
+#dm <- left_join(
+#        dm,
+#        dfcore %>% select(mrn),
+#        by = "mrn"
+#)
 
 dm <- left_join(
         dm,
@@ -267,9 +267,17 @@ h5 <- lm(cudose~ age + wkg + group + ecmod + lactate_median + ttrg + sigm +ecmod
 
 
 h7 <- lm(log(cudose)~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , data= dm)
-
+#h7 showed us ecmod, wkg, lactate, ttrg 
 h8 <- lm(sqrt(cudose)~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , data= dm)
+#h8 showed us wkg, ecmod, lactate, ttrg
 
+h9 <- lm((cudose/wkg)~ age + group + ecmod + lactate_median + ttrg + sigm, data= dm)
+
+dm$pw <- dm$cudose/dm$wkg
+h10 <- lm(pw ~ age + sex + group + ecmod + lactate_median + ttrg + sigm , data= dm)
+#ecmod or ttrg
+
+#h9 showed us ecmod, ttrg 
 #need to think about sigm
 
 hpl1 <- ggplot(data = dk, aes(x=sigm,y=log(cudose)))+
@@ -278,13 +286,14 @@ hpl1 <- ggplot(data = dk, aes(x=sigm,y=log(cudose)))+
         #coord_cartesian(ylim = c(0,10),xlim=c(15,25))+
         facet_wrap(~group)
 
-hpl2 <- ggplot(data = dk , aes(x = cudose))+
-        geom_density()+
+hpl2 <- ggplot(data = dm , aes(x = ttrg , y = pw,color = lactate_median))+
+        geom_point()+
+        geom_smooth(method = lm)+
         facet_wrap(~group)
 
-hpl3 <- ggplot(data = dk, aes(x=wkg, y= cudose))+
+hpl3 <- ggplot(data = dm, aes(x=lactate_median, y= pw))+
         geom_point()+
-        geom_smooth(aes(y=predict(h3,dk)))+
+        #geom_smooth(aes(y=predict(h3,dk)))+
         facet_wrap(~group)
 
 #looks like a gamma distribution
@@ -301,6 +310,10 @@ dr <- left_join(
         dheprl %>% select(mrn,runl),
         by = "mrn"
 )
+dr$runl[is.na(dr$runl)] <- 0
+
+dr3 <- dr
+dr3$runl2 <- ifelse(dr3$runl > 25,25,dr3$runl)
 
 r0 <- glm(runl ~ 1 , data= dr,family = poisson(link="log"))
 
@@ -312,11 +325,47 @@ r2 <- glm(runl ~ age + sex + wkg + group + ecmod + lactate_median + ttrg + sigm 
 r3 <- glm (runl ~ age + sex + wkg + group + ecmod + lactate_median + ttrg + sigm, offset = log(ecmod), family = poisson(link = "log"),data=dr)
 anova(r0,r1,r2,r3,test= "Chisq")
 
-rpl1 <- ggplot(data = dr, aes(x=sigm, y= runl,color))+
+r4 <- glm (runl ~ age + sex + wkg + group + lactate_median + ttrg + sigm, offset = log(ecmod), family = poisson(link = "log"),data=dr)
+
+r6 <- MASS::stepAIC(r4)
+
+r6 <- glm(runl2 ~ age + wkg + group + lactate_median + ttrg + sigm , offset = log(ecmod),family = quasipoisson(link="log"),data=dr3)
+
+r7 <- glm(runl2 ~ age + wkg + group + lactate_median + ttrg + sigm , offset = log(ecmod),family = quasipoisson(link="log"),data=dr3)
+
+r8 <- glm(runl2 ~ age + wkg + group + lactate_median + ttrg + sigm + (sigm*sigm) , offset = log(ecmod),family = quasipoisson(link="log"),data=dr3)
+
+#5974944J leverage
+
+#dr2 <- dr %>% filter(!mrn == "5974944J")
+#r7 <- glm(runl ~ age + wkg + group + lactate_median + ttrg + sigm, offset = log(ecmod),family = quasipoisson(link="log"),data=dr2)
+#doesnt make a huge difference. so let's just fit a normal
+
+r5 <- glm (runl ~ age + sex + wkg + group + lactate_median + ttrg + sigm + group:ttrg, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
+
+
+dr %>% 
+        select(group,runl) %>% 
+        group_by(group) %>% 
+        summarise(
+                one = quantile(runl,prob= c(0.25)),
+                med = median(runl),
+                two = quantile(runl,prob = c(0.75)))
+
+rpl1 <- ggplot(data = dr, aes(x=sigm, y= runl))+
         geom_point()+
-        geom_smooth(method = lm,aes(y=predict(r2,dr)))+
-        coord_cartesian(xlim = c(0,3),ylim = c(0,20))+
-        facet_wrap(~group)
+        geom_smooth(method = loess,aes(predict.glm(r7,dr3)))+
+        coord_cartesian(xlim = c(0,2),ylim=c(0,40))+
+        facet_wrap(~group)+
+        labs(
+                title = "Cumulative prescrition changes is increased with higher variability"
+        )
+
+m <- sjPlot::plot_model(r7,
+                   title = "Cumulative Prescription changes adjusted for duration",
+                   show.p = TRUE,
+                   value.size = 3,digits = 3)
 
 #r2 is the winner
 
@@ -334,6 +383,30 @@ bp2 <- glm(bldtot ~ apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + gr
 #mb3 <- glm(bldtot ~ group + sex + age + apache + wkg + sigm + ecmod, data = dm, family = poisson(link="log"))
 #mb4 <- glm(bldtot ~ group + sex + age + apache + wkg + sigm + group:sigm + ecmod, data = dm, family = poisson(link="log"))
 #mb5 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ group:ttrg+ sigm + group:sigm + ecmod, data = dm, family = poisson(link="log"))
-#mb6 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ group:ttrg+ sigm + group:sigm + ecmod, data = dm, family = quasipoisson(link="log"))
+#mb6 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ groupgr:ttrg+ sigm + group:sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 
 
+# toth --------------------------------------------------------------------
+
+dh <- dm %>% select(-cudose)
+
+h0 <- glm (toth ~ age + sex + apache + wkg + rrt + ferritin_median + group + sigm, offset = log(ecmod), data= dh, family = quasipoisson(link="log"))
+
+
+h1 <- glm (toth ~ ttrg + group + sigm + ttrg:sigm + group:ttrg + group:sigm, offset = log(ecmod), data= dh, family = quasipoisson(link="log"))
+
+
+h2 <- glm (toth ~ ttrg + group + sigm + age + sex, offset = log(ecmod), data= dh, family = quasipoisson(link="log"))
+
+h2i <- glm (toth ~ ttrg + group + sigm + age + apache +sex, offset = log(ecmod), data= dh, family = poisson(link="log"))
+h2ii <- glm(toth ~ age + sex + apache + group + age:group + ttrg + group:ttrg + sigm + sigm:group + sigm:age, 
+            offset = log(ecmod),
+            family = poisson(link = "log"),
+            data = dh)
+
+ht <- glm(toth ~ ttrg, offset = log(ecmod),data= dh, family = poisson(link="log"))
+
+h <- sjPlot::plot_model(h2i,title = "Model Coefficients for Haemorrhagic Complications ")
+
+h<- h+ylim(0,1.5)
+anova(h0,h1,h2,h2i)

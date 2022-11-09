@@ -57,7 +57,8 @@ dm <- dfcore %>%
                 ecmod,
                 bmi,
                 ecmo_start,
-                cohort
+                cohort,
+                rrt
         )
 
 #254 * 13

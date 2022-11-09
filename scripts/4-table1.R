@@ -4,6 +4,7 @@ load(file="data/clean/finalout.RData")
 
 # LIBRARIES ---------------------------------------------------------------
 library("table1")
+library("tidyverse")
 
 
 
@@ -14,7 +15,7 @@ pvalue <- function(x,...){
         y <- unlist(x)
         g <- factor(rep(1:length(x), times=sapply(x, length)))
         if(is.numeric(y)){
-                p <- wilcox.test(y ~ g)$p.value
+                p <- kruskal.test(y ~ g)$p.value
         } else {
                 p <- chisq.test(table(y,g))$p.value
         }
@@ -336,8 +337,26 @@ dm4 %>%
                 two = quantile(bldtot_day,prob = c(0.75)))
 
 
-dm4 %>% 
-        select(group,toth) %>% 
+dm5 <- dm4 %>% 
+        select(group,toth,ecmod) %>% 
         group_by(group) %>% 
         summarise(
-                suth = sum(toth))
+                personday = sum(ecmod),
+                numbers = n(),
+                zeroc = sum(toth == 0),
+                onec = sum(toth == 1),
+                twoc = sum(toth == 2),
+                threc = sum(toth==3),
+                fourc = sum(toth==4)
+                )
+
+
+
+d6 <- dm4 %>% select(mrn,group,toth,ecmod)%>%
+        group_by(mrn) %>% 
+        mutate(tothpd = toth /ecmod)%>%
+        ungroup() 
+
+d6$hbin <- as.factor(ifelse(d6$toth == 0 , "no","yes"))
+
+

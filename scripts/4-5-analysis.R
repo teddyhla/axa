@@ -136,17 +136,24 @@ s1 <- coxph(Surv(t,value)~sigm + group + sigm:group, data= t2cmp)
 s2 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg, data= t2cmp)
 s3 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache, data= t2cmp)
 
-s4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_median + ferritin_median, data= t2cmp)
+s4 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache, data= t2cmp)
 
-s5 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + rrt + apache, data= t2cmp)
-
-s5i <- coxph(Surv(t,value)~sigm + ttrg + group  + age + group:sigm + sex + rrt + apache, data= t2cmp)
+s5 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + sigm:ttrg , data= t2cmp)
+s5i <- coxph(Surv(t,value)~sigm + ttrg + group  + age + sex + rrt + apache + group:sigm, data= t2cmp)
+s7 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:group , data= t2cmp)
+s8 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:group + sigm:ttrg + group:sigm , data= t2cmp)
 
 s6 <- coxph(Surv(t,value)~group + sigm + age + rrt + sex + apache  ,data= t2cmp)
+anova(s5,s5i,s7,s8)
+#s8 is useless
+#s5i and s7
 
-s7 <- coxph(Surv(t,value)~sigm + ttrg + group + ttrg:group + age + sex + rrt+ apache, data= t2cmp)
+anova(s4,s5i,s7)
 
 sfit <- survfit(Surv(t,value)~group, data= t2cmp)
+sjPlot::plot_model(s7,title = "Time to first ANY complication")
+
+#testing for cox's assumptions
 
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 

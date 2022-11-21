@@ -41,13 +41,20 @@ library(survminer)
 
 #all other vars need to satisfy this.
 
+#t1cmp is ANY COMP
+#oh1cmp IS ONLY BLEEDING COMP
+
+#basically in df - t1cmp - value is NA if there is no event, 
+#value is not NA if there is an event, and time is the time of that event.
+#duhr is time in that duration
+
 t2cmp <- t1cmp
 #the levels are both, only h, only t and no comp
-#both should be event and only h should be event and others are non events
+#all events are assigned as "1" and others "0"
 levels(t2cmp$value) <- c(1,1,1,0)
 t2cmp$value <- as.numeric(as.character(t2cmp$value))
 
-#na here is medianinfgul -- because na medians event does not happen.
+#na here is meaningful -- because na means event does not happen.
 
 t2cmp <- left_join(
         t2cmp,
@@ -70,6 +77,8 @@ t2cmp <- t2cmp %>%
 t2cmp$value[is.na(t2cmp$value)] <- 0
 
 t2cmp <- t2cmp %>% filter(!is.na(t) & t> 0)
+# t is the variable we want. 
+
 
 drrt <- t2cmp
 drrt <- left_join(
@@ -78,6 +87,9 @@ drrt <- left_join(
         by = "mrn"
 )
 
+#remember time is the time of the event, thus NA if no event, and not na if there is event.
+#thus if there is NO event - > time is NA - > thus we will capture down to ecmo fin
+#thus if there is an event !is.na - then the time of event will be used to subset.
 drrt <- drrt %>% 
         mutate(t2 = case_when(
                 is.na(time)~ ecmo_finish,
@@ -90,6 +102,7 @@ drrt <- left_join(
         by = "mrn"
 )
 
+#potentially could use the absolute number here to show days on aki
 drrt <- drrt %>%
         group_by(mrn) %>%
         filter(dates < t2) %>% 
@@ -151,11 +164,15 @@ s7 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:
 s8 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:group + sigm:ttrg + group:sigm , data= t2cmp)
 
 s6 <- coxph(Surv(t,value)~group + sigm + age + rrt + sex + apache  ,data= t2cmp)
+
 anova(s5,s5i,s7,s8)
 #s8 is useless
 #s5i and s7
 
 anova(s4,s5i,s7)
+
+s9 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:group + apache + ferritin_median , data= t2cmp)
+
 
 sfit <- survfit(Surv(t,value)~group, data= t2cmp)
 sjPlot::plot_model(s7,title = "Time to first ANY complication")
@@ -218,8 +235,8 @@ drrt <- drrt %>%
 
 drrt$rrt <- as.factor(drrt$rrt)
 
-t2cmp <- left_join(
-        t2cmp,
+oh2cmp <- left_join(
+        oh2cmp,
         drrt %>% select(mrn,rrt),
         by = "mrn"
 )
@@ -231,7 +248,7 @@ rm(drrt)
 # -------------------------------------------------------------------------
 
 
-oh2cmp <- oh2cmp %>% select(mrn,group,value,t)
+oh2cmp <- oh2cmp %>% select(mrn,group,value,t,rrt)
 oh2cmp <- left_join(
         oh2cmp,
         o1tr %>% select(mrn,ttrg),
@@ -263,14 +280,18 @@ oh2cmp <- left_join(
 # model fit only hemorrhagic ----------------------------------------------
 
 
+#there are 7 missing data in ttrg and sigm
 
+sh0 <- coxph(Surv(t,value)~1, data= oh2cmp)
 sh <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg,data= oh2cmp)
 sh1 <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg + age + sex + apache, data= oh2cmp)
 
 
 sh4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_median + ferritin_median, data= oh2cmp)
+sh5 <- coxph (Surv(t,value)~ group + ttrg + sigm:ttrg + ttrg:group + sigm:ttrg + age + sex + apache + rrt + ph_median + ferritin_median, data = oh2cmp)
 
-
+anova(sh,sh1,sh4,sh5)
+anova(sh0,sh5)
 # 7. Circuit change -------------------------------------------------------
 dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))
 

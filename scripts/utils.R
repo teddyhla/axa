@@ -325,7 +325,7 @@ ht <- function(x){
 
 
 
-####CUSTOM FUNCTION####
+####CUSTOM FUNCTIONS for shaping long form for bleeding and throm comps####
 
 
 

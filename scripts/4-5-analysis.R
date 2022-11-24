@@ -179,6 +179,11 @@ sjPlot::plot_model(s7,title = "Time to first ANY complication")
 
 #testing for cox's assumptions
 
+# plotting
+
+ftest <-cox.zph(s7)
+
+
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 
 oh2cmp <- oh1cmp
@@ -291,7 +296,7 @@ sh4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache 
 sh5 <- coxph (Surv(t,value)~ group + ttrg + sigm:ttrg + ttrg:group + sigm:ttrg + age + sex + apache + rrt + ph_median + ferritin_median, data = oh2cmp)
 
 anova(sh,sh1,sh4,sh5)
-anova(sh0,sh5)
+
 # 7. Circuit change -------------------------------------------------------
 dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))
 

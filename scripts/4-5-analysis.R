@@ -137,7 +137,7 @@ t2cmp <- left_join(
 
 t2cmp <- left_join(
         t2cmp,
-        dfcore %>% select(mrn,age,sex,apache),
+        dfcore %>% select(mrn,age,sex,apache,bmi),
         by = "mrn"
 )
 
@@ -147,8 +147,17 @@ t2cmp <- left_join(
         by = "mrn"
 )
 
+#249 by 12
+t2cmp <- t2cmp %>% filter(t<500)
+#198 by 12
+
+# need to examine 
+# 1061663N likely an extreme outlier
+#comp1 dtm is very wrong 2022-03-04
 
 # model fit for ANY complications -----------------------------------------
+
+
 
 
 so <- coxph(Surv(t,value)~ttrg + group , data= t2cmp)
@@ -173,16 +182,43 @@ anova(s4,s5i,s7)
 
 s9 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:group + apache + ferritin_median , data= t2cmp)
 
+sx <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + sigm, data = t2cmp )
+
+
+sxi <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + sigm, data = t2cmp )
+
 
 sfit <- survfit(Surv(t,value)~group, data= t2cmp)
-sjPlot::plot_model(s7,title = "Time to first ANY complication")
+sjPlot::plot_model(sx,title = "Time to first ANY complication")
 
 #testing for cox's assumptions
 
 # plotting
 
-ftest <-cox.zph(s7)
+ftest <-cox.zph(sx)
 
+ggcoxzph(ftest)
+ggcoxdiagnostics(sx,type = ,linear.predictions = TRUE)
+ggcoxdiagnostics(sx,type = "dfbeta" ,linear.predictions = TRUE)
+
+ggsurvplot(sfit,surv.median.line = "hv",pval=TRUE,conf.int = TRUE)
+
+sxtt <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + sigm + tt(ttrg),
+              data = t2cmp, tt=function(x,t,...)x*t)
+
+
+sxt2 <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + sigm 
+              +ph_median + tt(ttrg),
+              data = t2cmp, tt=function(x,t,...)x*t)
+
+TIME <- seq(8,400,10)
+BETA <- coef(sxtt)["ttrg"]
+BETAtt <- coef(sxtt)["tt(ttrg)"]
+AHR <- exp(BETA + BETAtt*TIME)
+
+plot(TIME,AHR,type = "l",main = "ttrg effects over time")
+abline(h = 1, lty = 2, col = "darkgray")
+abline(v = -1*BETA/BETAtt,lty= 2, col = "blue")
 
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 
@@ -268,7 +304,7 @@ oh2cmp <- left_join(
 
 oh2cmp <- left_join(
         oh2cmp,
-        dfcore %>% select(mrn,age,sex,apache),
+        dfcore %>% select(mrn,age,sex,apache,bmi),
         by = "mrn"
 )
 
@@ -283,7 +319,7 @@ oh2cmp <- left_join(
 
 
 # model fit only hemorrhagic ----------------------------------------------
-
+oh2cmp <- oh2cmp %>% filter(t<520)
 
 #there are 7 missing data in ttrg and sigm
 
@@ -292,10 +328,18 @@ sh <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg,data= oh2cmp)
 sh1 <- coxph(Surv(t,value)~group + sigm + ttrg + sigm:ttrg + age + sex + apache, data= oh2cmp)
 
 
-sh4 <- coxph(Surv(t,value)~sigm + ttrg + group + sigm:ttrg + age + sex + apache + ph_median + ferritin_median, data= oh2cmp)
+sh4 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + bmi + apache + ph_median + ferritin_median + rrt, data= oh2cmp)
+
 sh5 <- coxph (Surv(t,value)~ group + ttrg + sigm:ttrg + ttrg:group + sigm:ttrg + age + sex + apache + rrt + ph_median + ferritin_median, data = oh2cmp)
 
+
 anova(sh,sh1,sh4,sh5)
+
+
+szfit <- survfit(Surv(t,value)~group, data= oh2cmp)
+
+ggsurvplot(szfit,surv.median.line = "hv",pval=TRUE,conf.int = TRUE,title="restricted to bleeding complications only")
+
 
 # 7. Circuit change -------------------------------------------------------
 dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))

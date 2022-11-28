@@ -368,6 +368,13 @@ dxc2 <- dxc2 %>%
 #order of code running is important , this has to be run after above code
 dxc2$xc[is.na(dxc2$xc)] <- 0
 
+dxc2 <- dxc2 %>% filter(t<500)
+
 sx <- coxph(Surv(t,xc)~group, data= dxc2)
+
+sxc <- survfit(Surv(t,xc)~group, data= dxc2)
+
+ggsurvplot(sxc,surv.median.line = "hv",pval=TRUE,conf.int = TRUE,title="circuit changes only")
+
 ####
 

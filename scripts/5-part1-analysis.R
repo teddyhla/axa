@@ -116,6 +116,14 @@ summary(bm8)$pseudo.r.squared
 
 bm9 <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + rrt + group:ecmod + ferritin_median + ecmod, data= dm)
 
+bmx <- betareg::betareg(ttrgf ~ 
+                                age + sex + bmi + apache + group + rrt +ecmod + ph_median, 
+                        data =dm)
+
+bmxi <- betareg::betareg(ttrgf ~
+                                 age + sex + bmi + apache + group + rrt + ecmod + ph_median + ferritin_median,
+                         data= dm)
+
 lmtest::lrtest(bm6,bm7)
 
 lmtest::lrtest(bm6,bm8)
@@ -123,13 +131,13 @@ lmtest::lrtest(bm6,bm8)
 lmtest::lrtest(bm8,bm9)
 
 
-bmx <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + rrt + group:ecmod + ferritin_median + ecmod + ph_median, data= dm)
+bmxii <- betareg::betareg(ttrgf ~ age + sex + wkg + apache + group + rrt + group:ecmod + ferritin_median + ecmod + ph_median, data= dm)
 lmtest::lrtest(bm9,bmx)
 #plot(bm6) #not bad
 #better AIC 
 #lets plot for ferritin and ecmod
 
-ttr_finalmod <- bm9
+ttr_finalmod <- bmx
 
 bmu <- betareg::betareg(ttrgf ~ group, data= dm)
 
@@ -153,10 +161,18 @@ ttrpl3 <- ggplot(data = dm, aes(x=age,y=ttrgf))+
         geom_smooth(aes(y=predict(bm9,dm)))+
         facet_wrap(~group)
 
+dm$ttrgf2 <- 100 * dm$ttrgf
 ttrpl4 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = rrt))+
         geom_point(alpha = 0.3)+
-        geom_smooth(method = lm,aes(y=predict(bm9,dm)))+
-        facet_wrap(~sex)
+        geom_smooth(method = MASS::rlm,aes(y=predict(bmx,dm)))+
+        facet_grid(cols = vars(group))+
+        labs(
+                x = "Duration on ECMO (days)",
+                y = "Time in Therapeutic Range (TTR)",
+                title = "Variables affecting Time in Therapeutic Range",
+                subtitle = "5-part-1analysis:ttrpl4",
+                color = "Renal replacement"
+        ) 
 #should cap the outlier values!
 
 

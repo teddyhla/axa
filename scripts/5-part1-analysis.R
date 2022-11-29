@@ -137,9 +137,23 @@ lmtest::lrtest(bm9,bmx)
 #better AIC 
 #lets plot for ferritin and ecmod
 
-ttr_finalmod <- bmx
+bmr <- betareg::betareg(ttrgf ~ sex + rrt + ecmod , data= dm)
+bmxp <- betareg::betareg(ttrgf ~ 
+                                age + sex + bmi + group + rrt +ecmod + ph_median, 
+                        data =dm)
+bmxa <- betareg::betareg(ttrgf ~ 
+                                age + sex + bmi + apache + group + rrt +ecmod, 
+                        data =dm)
+
+bmxphi <- betareg::betareg(ttrgf ~ 
+                                 age + sex + bmi + apache + group + rrt +ecmod|ecmod, 
+                         data =dm)
+
+ttr_finalmod <- bmxphi
+
 
 bmu <- betareg::betareg(ttrgf ~ group, data= dm)
+
 
 
 car::vif(ttr_finalmod)
@@ -164,7 +178,7 @@ ttrpl3 <- ggplot(data = dm, aes(x=age,y=ttrgf))+
 dm$ttrgf2 <- 100 * dm$ttrgf
 ttrpl4 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = rrt))+
         geom_point(alpha = 0.3)+
-        geom_smooth(method = MASS::rlm,aes(y=predict(bmx,dm)))+
+        geom_smooth(method = MASS::rlm,aes(y=predict(bmxphi,dm)))+
         facet_grid(cols = vars(group))+
         labs(
                 x = "Duration on ECMO (days)",
@@ -189,6 +203,17 @@ dk2 <- dk %>%
         ))
 
 dkr <- dk[-c(1,8,60),]
+
+dk <- dk %>% mutate(
+        sigm2 = case_when(
+                sigm == 0 ~ 0.01,
+                sigm != 0  ~ sigm
+        )
+)
+
+dk$sigm2 <- log(dk$sigm2)
+
+
 
 ##
 
@@ -252,14 +277,44 @@ moxi <- lm(sigm ~ age + wkg + apache + sex + group + alb_median + lactate_median
 
 moxii <- lm(sigm ~ age + wkg + apache + sex + group + alb_median + lactate_median + group:alb_median + group:lactate_median + lactate_median:alb_median + rrt  + ecmod, data= dk)
 
+
+moxbmi <- lm(sigm ~ 
+                     age + bmi + apache + sex + group + alb_median + lactate_median + plt_median + rrt + ferritin_median + ecmod, data= dk)
+
+#bmi doesnt matter
+
+
+moxred <- lm(sigm ~ 
+                     group + alb_median + lactate_median, data = dk)
+
 AIC(moh,mox)
 anova(mop,mox,test="Chisq")
 anova(mox,moxi,moxii,test="Chisq")
 
-#thus mox is the winner 
-car::vif(mox)
+AIC(mox,moxred)
+anova(mox,moxred,test="Chisq")
+#this showed that reduced model was not significantly superior
 
-sigm_finalmod <- mox
+mox02 <- lm(sigm2~
+                    age + bmi + apache + sex + group + alb_median +lactate_median + plt_median + rrt
+            + ecmod, data= dk)
+
+mox02red <- lm(sigm2 ~
+                       group + ecmod + lactate_median + lactate_median:group,
+               data= dk )
+
+mox03 <- lm(sigm2 ~
+                    age + bmi + sex + apache + group + lactate_median + rrt + ecmod, data = dk)
+
+AIC(mox02,mox02red)
+
+lmtest::lrtest(mox02,mox03)
+
+#thus mox is the winner 
+
+car::vif(mox02)
+
+sigm_finalmod <- mox02
 #no vif 
 sigpl1 <- ggplot(data = dk, aes(x=lactate_median,y=sigm,color = sex))+
         geom_point()+

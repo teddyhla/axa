@@ -15,20 +15,152 @@ mainfont: "Source Sans Pro"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Study Objective
+# 1. Study Objective
 
-# Analysis Plan
+# 2. Analysis Plan
 
-# Source of Data
+# 3. Source of Data
 
-# Exploratory Descriptive Analysis
+# 4. Exploratory Descriptive Analysis
 
-# Assumptions
+# 5. Assumptions
 
-# Data Cleaning Process
+# 6. Data Cleaning Process
 
-# Analysis
+# 7. Analysis
 
-# Model
+# 8. Models
 
-# Summary
+## 8.1. Model 1 : Time-in-Therapeutic-Range (TTR) 
+
+### Beta regression assumptions
+
+Time in Therapeutic Range is an intuitive index of measure for measuring quality of anticoagulation.
+
+Several definitions of TTR is available :-  
+- Traditional 
+- Linear interpolation method by Rosendaal et al
+
+
+Traditional = no of tests in range divided by total no of tests. 
+This does not take into account duration. Thus, Rosendaal et al has calculated a linear interpolation method incorporating duration of measurements.
+
+Here, TTR(Rosendaal) is used.
+
+TTR is a value of range between 0 to 100%. Thus, beta-regression is used, using {betareg} package. 
+
+TTR includes values including 0 and 100%, whereas strictly beta-regression does not include values 0 or 100%. Thus, data-transformation y1 = y * n-1) + 0.5 / n  as per Smithson and Vekuilen was carried out.
+
+```{r ttr_mod_pre}
+#cor.test(dm$ttrgf,dm$ttrg)
+```
+
+Above findings confirmed that data transformation was appropriate.
+
+It was hypothesised that 
+1. age
+2. BMI
+3. sex
+4. apache II score
+5. monitoring group
+6. renal replacement therapy
+7. duration on ecmo
+8. admission period median pH value
+
+are likely to affect "time-in-therapeutic range"
+
+### Multi-variate model fitting
+
+Beta regression model using above 8 variables were fitted. 
+Step-wise variable selection was undertaken using Akaike Information Criteria.
+Likelihood ratio test {lmtest} using function "lrtest" was used to evaluate final model against a null model.
+
+Likelihood ratio test confirms that p-value of final model is 0.000171 compared to null model 
+
+```{r ttr_mod_lrtest}
+
+#lmtest::lrtest(bm0,bmx)
+
+```
+
+In this model, variables "sex, renal replacement therapy, and duration of ECMO" are the only variables that have statistical significant. Thus, a reduced model using only this 3 variables were fitted. 
+
+Reduced model and full models were compared using likelihood ratio test and there were not statistically significant differences.
+
+Reduced model AIC was lower than full model AIC by 5 points. As a result, we have selected a full variable model for its ability to infer effects of biologically plausible variables such as age, sex. 
+
+APACHE 2 score already includes pH value and APACHE 2 score was not known to be predictive of outcome in ECMO patients. Thus, sensitivity analysis was undertaken with both variables - APACHE 2 score and median pH value. Models were evaluated using AIC and likelihood ratio test. Likelihood ratio tests found that model including only APACHE score without pH variable has the lowest chi-square value and is statistically significant (p<0.0001).
+
+Thus, this model was evaluted further. 
+
+
+
+### Variable Dispersion
+
+In the final model, dispersion parameter - phi coefficient- was estimated at 2.27 and was statistically significant. The most likely variable contributing to dispersion was 'duration of ecmo'.
+
+Thus, final model was re-fitted with the same mean equation but now with duration of ECMO as additional regressor for the precision parameter - phi.
+
+https://cran.r-project.org/web/packages/betareg/vignettes/betareg.pdf
+
+The model including of ecmo duration as regressor for the precision parameter was statistically significant and improved a model fit, without significant difference in estimates of other paramters. AIC of this new model was significantly lower than model without precision parameter. 
+
+Thus, there was a statistically significant evidence for variable dispersion, and thus was chosen as a final model
+
+### Fit assessment
+
+Maximum likelihood estimation was used to calculate p-values. 
+
+Model assumptions were also evaluated using diagnostic plots; and was graphically satisfacotry for normal assumption, homeoskedasticity, and influential observations effects.
+
+Heteroskedasticity was also checked numerically using studentized Bresuch-Pagan test and demonstrated no evidence of heteroskedasticity. 
+
+Multicollinearity was assessed using variable inflation factors using {car} package function "vif". All variables have VIF score < 2 demonstrating no evidence of multi collinearity. 
+
+```{r ttr_mod_modelfit}
+
+```
+
+ttrpl4
+
+
+## 8.2. Model 2 : Variability of Anticoagulation
+
+Variability of anticoagulation is a measure of quality of anticoagulation. Fihn's method of variability was used for this study. 
+
+Lower Variability results in better control of anticoagulation 
+
+### Choice of model and assumptions
+
+Variability of anticoagulation was significantly right skewed thus, a natural logarithmic transformation was undertaken of dependent variable and then a linear model was fitted against.
+
+It was hypothesised that 
+1. age
+2. BMI
+3. sex
+4. apache II score
+5. monitoring group
+6. renal replacement therapy
+7. duration on ecmo
+
+were thought to be affecting variability of anticoagulation. 
+
+### Multi-variate modelling
+
+On a multi-variate modelling, as evaluated by AIC and likelihood ratio tests, monitoring group and lactate are the only two statistically significant variables. 
+
+Thus,a reduced model using only statistically significant model was evaluated against a full model - there were no improvement of a reduced model. And, due to ability to infer effects of other biologically plausible variables, age, bmi, apache etc are included in a final model.
+
+
+### Fit assessment
+
+Multiple R squared value of fitted model was 0.5 and model was statistically significant.
+
+Model assumptions were checked for normality, heteroskedasticity, effect of outlying values and distribution of residuals. 
+
+Numerical check of final model using Breusch-Godfrey test confirmed visual findings that model residuals are homoskedastic. 
+
+
+
+
+# 9. Summary

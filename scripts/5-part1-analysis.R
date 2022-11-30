@@ -19,6 +19,14 @@ library(lme4)
 #4. no of heparin prescription changes - in favour of axa and stats significance 
 #5. total blood products
 
+# Function
+
+r <- function (x) {
+        return ((exp(x)-1)*100) 
+}
+
+Vectorize(r)
+
 
 # MOULDING ----------------------------------------------------------------
 
@@ -43,7 +51,7 @@ labt <- dm %>%
         )
 
 
-plcor1 <- GGally::ggpairs(labt)
+#plcor1 <- GGally::ggpairs(labt)
 
 # TTR ---------------------------------------------------------------------
 #no missing values
@@ -157,6 +165,12 @@ bmu <- betareg::betareg(ttrgf ~ group, data= dm)
 
 
 car::vif(ttr_finalmod)
+
+exp(cbind(coef(bmu),confint(bmu)))
+
+exp(cbind(coef(bmxphi),confint(bmxphi)))
+
+broom::tidy(bmxphi)
 #no VIF
 
 ttrpl1 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = rrt))+
@@ -306,15 +320,41 @@ mox02red <- lm(sigm2 ~
 mox03 <- lm(sigm2 ~
                     age + bmi + sex + apache + group + lactate_median + rrt + ecmod, data = dk)
 
+mox04 <- lm(sigm2 ~
+                    age + sex + bmi + apache +rrt + ecmod + lactate_median + group , data = dk)
+
 AIC(mox02,mox02red)
 
+AIC(mox02,mox04)
+
 lmtest::lrtest(mox02,mox03)
+lmtest::lrtest(mox02,mox04)
 
 #thus mox02 is the winner 
 
 car::vif(mox02)
 
 sigm_finalmod <- mox02
+
+moxua <- lm(sigm2 ~ group, data = dk)
+#only indepdent variable is tranformed 
+#tuhs reported as 
+
+broom::tidy(moxua,conf.int=TRUE)
+
+rep_sig0 <- broom::tidy(mox04,conf.int=TRUE)
+
+rep_sig0 <- rep_sig0 %>%
+        mutate(
+                cl = (exp(conf.low)-1)*100,
+                cm = (exp(estimate)-1)*100,
+                ch = (exp(conf.high)-1)*100
+        )
+
+
+exp(cbind(coef(mox04),confint(mox04)))
+
+
 #no vif 
 sigpl1 <- ggplot(data = dk, aes(x=lactate_median,y=sigm,color = sex))+
         geom_point()+
@@ -370,6 +410,46 @@ hn2 <- lm(
         data = dm
 )
 
+lmtest::lrtest(hn,hn2)
+AIC(hn,hn2)
+
+#UNADJUSTED MODEL
+
+hn0.0 <- lm(cud2 ~ group, data = dm)
+hn0.1 <- lm(cud2 ~ ttrg , data = dm)
+hn0.2 <- lm(cud2 ~ sigm, data = dm)
+
+hn0.0u <- broom::tidy(hn0.0,conf.int=TRUE)
+hn0.1u <- broom::tidy(hn0.1,conf.int=TRUE)
+hn0.2u <- broom::tidy(hn0.2,conf.int = TRUE)
+
+hn0.0u <- hn0.0u %>% mutate(
+        c1 = r(conf.low),
+        cm = r(estimate),
+        c2 = r(conf.high)
+)
+
+hn0.1u <- hn0.1u %>% mutate(
+        c1 = r(conf.low),
+        cm = r(estimate),
+        c2 = r(conf.high)
+)
+
+hn0.2u <- hn0.2u %>% mutate(
+        c1 = r(conf.low),
+        cm = r(estimate),
+        c2 = r(conf.high)
+)
+
+#ADJUSTED MODEL
+
+hep_fm <- hn
+hep_fm <- broom::tidy(hep_fm,conf.int=TRUE)
+hep_fm <- hep_fm %>% mutate(
+        c1 = r(conf.low),
+        cm = r(estimate),
+        c2 = r(conf.high)
+)
 
 
 hpl1 <- ggplot(data = dk, aes(x=sigm,y=log(cudose)))+
@@ -435,6 +515,10 @@ r8 <- glm(runl2 ~ age + wkg + group + lactate_median + ttrg + sigm + (sigm*sigm)
 #doesnt make a huge difference. so let's just fit a normal
 
 r5 <- glm (runl ~ age + sex + wkg + group + lactate_median + ttrg + sigm + group:ttrg, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
+
+r50 <- glm (runl ~ age + sex + bmi + group + lactate_median + ttrg + sigm + group:ttrg, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
 
 
 

@@ -117,6 +117,8 @@ Heteroskedasticity was also checked numerically using studentized Bresuch-Pagan 
 
 Multicollinearity was assessed using variable inflation factors using {car} package function "vif". All variables have VIF score < 2 demonstrating no evidence of multi collinearity. 
 
+Link function of logit is used.
+
 ```{r ttr_mod_modelfit}
 
 ```
@@ -160,7 +162,23 @@ Model assumptions were checked for normality, heteroskedasticity, effect of outl
 
 Numerical check of final model using Breusch-Godfrey test confirmed visual findings that model residuals are homoskedastic. 
 
+### Reporting
+
+https://data.library.virginia.edu/interpreting-log-transformations-in-a-linear-model/
 
 
+## 8.3. Model 3 : Cumulative Dose of Heparin 
 
+### Model Choice
+
+- log transformed 
+
+### Multi-variate analysis
+interaction was checked ttrg:group
+AIC 
+lrtest
+
+### Fit assessment
+
+### Reporting
 # 9. Summary

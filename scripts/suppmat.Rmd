@@ -182,3 +182,18 @@ lrtest
 
 ### Reporting
 # 9. Summary
+
+# To Do
+1. when reading the manuscript, please consider if we fulfill STROBE guidelines
+2. please complete the "units" for measured variables in table-1(e.g., CRP, creatinine)
+3. please vote on which figures to include
+4. two-sentence take home message and 140-character tweet
+5. 250-word abstract and 3-5 keywords
+6. Agree on title
+7. Suggest list of reviewers -- Nunez, Schmidt, Alain V?
+
+# Next Steps
+- if we(us 4) are all happy, can we circulate to other relevant authors 
+- 
+
+https://www.springer.com/journal/134/submission-guidelines?detailsPage=pltci_1060748#Instructions%20for%20Authors_Authorship%20principles

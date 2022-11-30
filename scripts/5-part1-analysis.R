@@ -553,7 +553,11 @@ m <- sjPlot::plot_model(r7,
 
 bp1 <- glm(bldtot ~ age + apache + wkg + rrt + ferritin_median + ph_median + cudose , data= dm, family = quasipoisson(link = "log"))
 
-bp2 <- glm(bldtot ~ apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+bp2 <- glm(bldtot ~ 
+                   apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
+bp2 <- glm(bldtot ~ 
+                   age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
 #mb2 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 #mb1 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = poisson(link="log"))

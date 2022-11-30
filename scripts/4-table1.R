@@ -211,7 +211,7 @@ label(dm3$age) <- "Age"
 units(dm3$age) <- "Years"
 
 label(dm3$surv_ecmo) <- "Survival on ECMO"
-label(dm3$apache) <- "APACHE score"
+label(dm3$apache) <- "APACHE II score"
 label(dm3$sex) <- "Sex"
 label(dm3$wkg) <- "Weight"
 units(dm3$wkg) <- "kg"
@@ -222,8 +222,7 @@ units(dm3$bmi) <- "kg/m^2"
 label(dm3$ecmod) <- "Duration on ECMO"
 units(dm3$ecmod) <- "Days"
 
-
-
+label(dm3$surv_ecmo) <- "Survival on ECMO"
 
 # TABLE 3 -----------------------------------------------------------------
 
@@ -282,7 +281,9 @@ table1(~age + sex + apache + wkg + bmi + cohort + ecmod + tlow + ttrhi + ttrg + 
        topclass = "Rtable1-zebra",
        extra.col = list("P-value"=pvalue))
 
-table1(~age + sex + apache + wkg + bmi + cohort + ethnic2 + pmh +  aki  + ecmoconfig + pe + ecmod|group, data = dm3
+table1(~age + sex + apache + wkg + bmi + cohort + ethnic2 + pmh +  aki  + ecmoconfig + hb_median + plt_median + neut_median + fib_median + ldh_median + ferritin_median + ck_median + crp_median + pct_median +
+               bili_median + alb_median + creat_median +
+               corr_ca_median + bicarb_median + lactate_median + ph_median + ecmod + surv_ecmo|group, data = dm3
        ,overall = F,
        render.continuous = my.render.cont,
        render.categorical = my.render.cat,
@@ -295,14 +296,7 @@ table1( ~ hb_median + hb_min + hb_max + plt_median + neut_median +
         corr_ca_median + bicarb_median + bicarb_min + bicarb_max + lactate_median + lactate_min + lactate_max + ph_median | group, data = dm3
        ,overall = F, extra.col = list("P-value"=pvalue))
 
-table1( ~ hb_median + plt_median + neut_median + fib_median + ldh_median + ferritin_median + ck_median + crp_median + pct_median +
-                bili_median + alb_median + creat_median +
-                corr_ca_median + bicarb_median + lactate_median + ph_median | group, data = dm3
-        ,overall = F,
-        render.continuous = my.render.cont,
-        render.categorical = my.render.cat,
-        topclass = "Rtable1-zebra",
-        extra.col = list("P-value"=pvalue))
+
 
 dm3 %>% 
         select(group,ph_median) %>% 
@@ -337,19 +331,36 @@ dm4 %>%
                 two = quantile(bldtot_day,prob = c(0.75)))
 
 
-dm5 <- dm4 %>% 
-        select(group,toth,ecmod) %>% 
-        group_by(group) %>% 
-        summarise(
-                personday = sum(ecmod),
-                numbers = n(),
-                zeroc = sum(toth == 0),
-                onec = sum(toth == 1),
-                twoc = sum(toth == 2),
-                threc = sum(toth==3),
-                fourc = sum(toth==4)
-                )
+table1 (~  bldtot_day  | group, data = dm4,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
 
+dbl1 <- dm4 %>% select(group,bldtot_day)
+dbl1$any <- as.factor(ifelse(dbl1$bldtot_day == 0,"no","yes"))
+
+table1 (~  any  | group, data = dbl1,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
+
+# dm5 <- dm4 %>% 
+#         select(group,toth,ecmod) %>% 
+#         group_by(group) %>% 
+#         summarise(
+#                 personday = sum(ecmod),
+#                 numbers = n(),
+#                 zeroc = sum(toth == 0),
+#                 onec = sum(toth == 1),
+#                 twoc = sum(toth == 2),
+#                 threc = sum(toth==3),
+#                 fourc = sum(toth==4)
+#                 )
+# 
 
 
 d6 <- dm4 %>% select(mrn,group,toth,ecmod)%>%
@@ -360,3 +371,48 @@ d6 <- dm4 %>% select(mrn,group,toth,ecmod)%>%
 d6$hbin <- as.factor(ifelse(d6$toth == 0 , "no","yes"))
 
 
+ptwoprd <- dfcore %>% select(mrn,group) %>% filter(mrn %in% pt_without_bldproducts)
+ptwoprd$prd <- 0
+
+#patients without any hemorrhagic outcome, so we will use hboth
+
+dm %>% select(group,hboth) %>%group_by(group)%>% tally(hboth == 0)
+
+dh <- dm %>% select(group,hboth)
+dh$hemc <- as.factor(ifelse(dh$hboth == 0,"no","yes"))
+
+table1 (~  hemc  | group, data = dh,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
+
+
+#patient without any complication
+df3 <- left_join(df3,dfcore %>% select(mrn,group),by = "mrn")
+dh2 <- df3
+
+dh2$anyc <- as.factor(ifelse(dh2$toth == 0 & dh2$totthr == 0 & dh2$totboth == 0,"no","yes"))
+
+table1 (~  anyc  | group, data = dh2,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
+
+df3 %>% 
+        filter(toth == 0 & totthr == 0 & totboth == 0) %>%
+        group_by(group) %>%
+        tally()
+
+#ecmo circuit change
+
+dm$circ <- as.factor(ifelse(dm$totc == 0,"no","yes"))
+table1 (~  circ  | group, data = dm,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))

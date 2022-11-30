@@ -140,7 +140,7 @@ df3$hboth <- df3$toth + df3$totboth
 
 dm <- left_join(
         dm,
-        df3 %>% select(mrn,toth,hboth),
+        df3 %>% select(mrn,toth,hboth,totthr),
         by = "mrn"
 )
 
@@ -521,7 +521,8 @@ sl <- c(
         "d1sig",
         "o1tr",
         "o1sig",
-        "daki"
+        "daki",
+        "df3"
 )
 
 #l <- l[!l %in% frm]

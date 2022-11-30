@@ -310,7 +310,7 @@ AIC(mox02,mox02red)
 
 lmtest::lrtest(mox02,mox03)
 
-#thus mox is the winner 
+#thus mox02 is the winner 
 
 car::vif(mox02)
 
@@ -351,6 +351,27 @@ h10 <- lm(pw ~ age + sex + group + ecmod + lactate_median + ttrg + sigm , data= 
 #h9 showed us ecmod, ttrg 
 #need to think about sigm
 
+
+#really cudose is quite skewed
+hist(dm$cudose)
+#takign a log does solves it
+
+dm$cud2 <- log(dm$cudose)
+
+hn <- lm(
+        cud2 ~ 
+                age + sex + bmi + group + lactate_median + ecmod + ttrg + sigm,
+        data = dm
+)
+
+hn2 <- lm(
+        cud2 ~ 
+                age + sex + bmi + group + lactate_median + ecmod + ttrg + sigm + ttrg:group,
+        data = dm
+)
+
+
+
 hpl1 <- ggplot(data = dk, aes(x=sigm,y=log(cudose)))+
         geom_point()+
         geom_smooth(method = lm,aes(y=predict(h7,dk)))+
@@ -364,8 +385,9 @@ hpl2 <- ggplot(data = dm , aes(x = ttrg , y = pw,color = lactate_median))+
 
 hpl3 <- ggplot(data = dm, aes(x=lactate_median, y= pw))+
         geom_point()+
-        #geom_smooth(aes(y=predict(h3,dk)))+
-        facet_wrap(~group)
+        geom_smooth(aes(y=predict(h3,dm)))+
+        facet_wrap(~group)+
+        coord_cartesian(xlim = c(0,5))
 
 #looks like a gamma distribution
 
@@ -481,3 +503,78 @@ h <- sjPlot::plot_model(h2i,title = "Model Coefficients for Haemorrhagic Complic
 
 h<- h+ylim(0,1.5)
 anova(h0,h1,h2,h2i)
+
+
+#make graph 1
+
+# G1 ----------------------------------------------------------------------
+
+dz <- dm %>% select(group,ttrg,sigm)
+dz$ttrg <- 100 * dz$ttrg
+levels(dz$group) <- c("aPTTr monitoring group","Anti-Xa monitoring group")
+
+
+
+g1 <- ggplot(data = dz, aes(x = group, y = ttrg,color=group)) +
+        ggdist::stat_halfeye(
+                adjust = .5,
+                width = .6,
+                .width = 0,
+                justification = -.2,
+                point_colour = NA
+        )+
+        geom_boxplot(
+                width= .15,
+                outlier.shape = NA
+        )+ gghalves::geom_half_point(
+                side = "1",
+                range_scale = .4,
+               # alpha = .3
+        ) +
+        coord_cartesian(xlim= c(1.2,NA),clip = "off")+
+        scale_x_discrete()+
+        scale_y_continuous(breaks = seq(0,100,10))+
+        labs(
+                title = "Time in Therapeutic Ranges",
+                x = "\n Monitoring Group",
+                y = "\n Time in Therapeutic Range (%)"
+        )+
+        theme_minimal()+
+        theme(legend.position ="none",
+              text = element_text(size = 15))
+
+g2 <- ggplot(data = dz, aes(x = group, y = sigm,color=group)) +
+        ggdist::stat_halfeye(
+                adjust = .5,
+                width = .6,
+                .width = 0,
+                justification = -.2,
+                point_colour = NA
+        )+
+        geom_boxplot(
+                width= .15,
+                outlier.shape = NA
+        )+ gghalves::geom_half_point(
+                side = "1",
+                range_scale = .4,
+                #alpha = .3
+        ) +
+        coord_cartesian(xlim= c(1.2,NA),clip = "off")+
+        scale_x_discrete()+
+        scale_y_continuous(limits = c(0,2))+
+        labs(
+                title = "Variability of Anticoagulation",
+                x = "\n Monitoring Group",
+                y = "\n Variability of Anticoagulation"
+        )+
+        theme_minimal()+
+        theme(legend.position ="none",
+              text = element_text(size = 15))
+
+fig1 <- cowplot::plot_grid(g1,g2)
+
+
+ggsave("products/manuscript/fig1.eps",plot = fig1, device = "eps",dpi = 1200)
+
+
+#

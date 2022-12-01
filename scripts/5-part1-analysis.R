@@ -5,6 +5,7 @@ load(file="data/clean/finalout.RData")
 # LIBRARIES ---------------------------------------------------------------
 library(ggplot2)
 library(lme4)
+library(tidyverse)
 # NOTE --------------------------------------------------------------------
 
 #need to adjust for 
@@ -520,7 +521,19 @@ r5 <- glm (runl ~ age + sex + wkg + group + lactate_median + ttrg + sigm + group
 r50 <- glm (runl ~ age + sex + bmi + group + lactate_median + ttrg + sigm + group:ttrg, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
 
 
+r51 <- glm (runl ~ 
+                    age + sex + bmi + group + lactate_median + ttrg + sigm + group:ttrg + rrt, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
 
+
+
+r5r <- glm (runl ~ 
+                   group + lactate_median + ttrg + sigm + group:ttrg, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
+#unadjusted model
+r5ua <- glm(runl ~ group, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
+anova(r5,r50,r51,r5r)
+lmtest::lrtest(r5,r50,r51,r5r)
 
 dr %>% 
         select(group,runl) %>% 
@@ -551,13 +564,26 @@ m <- sjPlot::plot_model(r7,
 #age, apache, weight, bmi, median_platelets, fibrinogen , neutrophils, ferritin
 #ck,#crp #pct #albumin ,creat, eGFR, bicarb, ph,rrt
 
-bp1 <- glm(bldtot ~ age + apache + wkg + rrt + ferritin_median + ph_median + cudose , data= dm, family = quasipoisson(link = "log"))
+bp1 <- glm(bldtot ~ age + apache + bmi + rrt + ferritin_median + ph_median + cudose , data= dm, family = quasipoisson(link = "log"))
 
 bp2 <- glm(bldtot ~ 
                    apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
-bp2 <- glm(bldtot ~ 
+bp3 <- glm(bldtot ~ 
                    age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
+
+bp4 <- glm(bldtot ~ 
+                   age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
+
+bp41 <- glm(bldtot ~ 
+                   age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
+
+
+bpua <- glm(bldtot ~ 
+                     group, offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
 #mb2 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 #mb1 <- glm(bldtot ~ group + sex + age + apache + wkg + ttrg + sigm + ecmod, data = dm, family = poisson(link="log"))
@@ -566,6 +592,15 @@ bp2 <- glm(bldtot ~
 #mb5 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ group:ttrg+ sigm + group:sigm + ecmod, data = dm, family = poisson(link="log"))
 #mb6 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ groupgr:ttrg+ sigm + group:sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 
+anova(bp1,bp2,bp3)
+lmtest::lrtest(bp1,bp2,bp3)
+
+anova(bp4,bp41)
+lmtest::lrtest(bp4,bp41)
+#so bp41 is a full model
+
+sjPlot::tab_model(bpua)
+sjPlot::tab_model(bp41)
 
 # toth --------------------------------------------------------------------
 
@@ -580,20 +615,118 @@ h1 <- glm (toth ~ ttrg + group + sigm + ttrg:sigm + group:ttrg + group:sigm, off
 h2 <- glm (toth ~ ttrg + group + sigm + age + sex, offset = log(ecmod), data= dh, family = quasipoisson(link="log"))
 
 h2i <- glm (toth ~ ttrg + group + sigm + age + apache +sex, offset = log(ecmod), data= dh, family = poisson(link="log"))
-h2ii <- glm(toth ~ age + sex + apache + group + age:group + ttrg + group:ttrg + sigm + sigm:group + sigm:age, 
+h2ii <- glm(toth ~ age + sex + bmi+ apache + group + age:group + ttrg + group:ttrg + sigm + sigm:group + sigm:age + ttrg:sigm, 
             offset = log(ecmod),
             family = poisson(link = "log"),
             data = dh)
 
+h23 <- glm(toth ~ 
+                   age + sex + bmi + apache + group + ttrg + sigm + rrt , 
+                offset = log(ecmod),
+                family = poisson(link = "log"),
+                data = dh)
+
+
+h24 <- glm(toth ~ 
+                   age + sex + bmi + apache + group + ttrg + sigm + rrt +group:rrt, 
+           offset = log(ecmod),
+           family = poisson(link = "log"),
+           data = dh)
+
 ht <- glm(toth ~ ttrg, offset = log(ecmod),data= dh, family = poisson(link="log"))
 
-h <- sjPlot::plot_model(h2i,title = "Model Coefficients for Haemorrhagic Complications ")
+h <- sjPlot::plot_model(h23,title = "Model Coefficients for Haemorrhagic Complications ")
 
 h<- h+ylim(0,1.5)
-anova(h0,h1,h2,h2i)
 
+anova(h0,h1,h2,h2i,h2ii,ht)
+lmtest::lrtest(h0,h1,h2,h2i,h2ii,ht)
+
+anova(h0,h23)
+lmtest::lrtest(h0,h23)
+
+#i think h23 is good 
 
 #make graph 1
+
+
+# any BTE -----------------------------------------------------------------
+db <- dm
+
+hist(db$abte)
+mean(db$abte)
+
+b0 <- glm(abte ~ 1,
+           family = poisson(link = "log"),
+           data = db)
+
+br <- glm(abte ~ group , 
+           offset = log(ecmod),
+           family = poisson(link = "log"),
+           data = db)
+
+bf <- glm(abte ~ 
+                   age + sex + bmi + apache + group + ttrg + sigm +rrt , 
+           offset = log(ecmod),
+           family = poisson(link = "log"),
+           data = dh)
+
+anova(b0,br,bf)
+lmtest::lrtest(b0,br,bf)
+
+
+# thromb ------------------------------------------------------------------
+
+dc <- dm
+hist(dc$totthr)
+mean(dc$totthr)
+var(dc$totthr)
+#no dispersion
+
+c0 <- glm(totthr ~ 1,
+          family = poisson(link = "log"),
+          data = dc)
+
+cr <- glm(totthr ~ group , 
+          offset = log(ecmod),
+          family = poisson(link = "log"),
+          data = dc)
+
+cf <- glm(totthr ~ 
+                  age + sex + bmi + apache + group + ttrg + sigm +rrt , 
+          offset = log(ecmod),
+          family = poisson(link = "log"),
+          data = dc)
+
+anova(c0,cr,cf)
+lmtest::lrtest(c0,cr,cf)
+
+
+# ecmo circuit ------------------------------------------------------------
+
+dx <- dm
+hist(dx$totc)
+mean(dx$totc)
+var(dx$totc)
+
+x0 <- glm(totc ~ 1,
+          family = poisson(link = "log"),
+          data = dx)
+
+xr <- glm(totc ~ group , 
+          offset = log(ecmod),
+          family = poisson(link = "log"),
+          data = dx)
+
+xf <- glm(totc ~ 
+                  age + sex + bmi + apache + group + ttrg + sigm +rrt , 
+          offset = log(ecmod),
+          family = poisson(link = "log"),
+          data = dx)
+
+anova(x0,xr,xf)
+lmtest::lrtest(x0,xr,xf)
+
 
 # G1 ----------------------------------------------------------------------
 

@@ -136,11 +136,17 @@ dm <- left_join(
 
 ##adding haemorhhagic comps
 
+df3 <- df3 %>%
+        rowwise() %>%
+        mutate(
+                abte = sum(c(toth,totthr,totboth))
+        )
+        #any bte 
 df3$hboth <- df3$toth + df3$totboth
 
 dm <- left_join(
         dm,
-        df3 %>% select(mrn,toth,hboth,totthr),
+        df3 %>% select(mrn,toth,hboth,totthr,abte),
         by = "mrn"
 )
 

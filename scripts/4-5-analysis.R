@@ -190,7 +190,7 @@ sxi <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + sigm, data =
 
 sfit <- survfit(Surv(t,value)~group, data= t2cmp)
 sjPlot::plot_model(sx,title = "Time to first ANY complication")
-
+sjPlot::tab_model(sx,title = "Time to first ANY complication")
 #testing for cox's assumptions
 
 # plotting
@@ -340,6 +340,9 @@ szfit <- survfit(Surv(t,value)~group, data= oh2cmp)
 
 ggsurvplot(szfit,surv.median.line = "hv",pval=TRUE,conf.int = TRUE,title="restricted to bleeding complications only")
 
+
+sjPlot::plot_model(sh4,title = "Time to hemorrhagic  complication")
+sjPlot::tab_model(sh4,title = "Time to hemorrhagic  complication")
 
 # 7. Circuit change -------------------------------------------------------
 dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))

@@ -499,6 +499,223 @@ o1sig <- rbind(temp5,temp6)
 
 rm(temp1,temp2,temp3,temp4,temp5,temp6)
 
+
+
+# circuit change time and subset ------------------------------------------
+
+#dxc is a dataframe with ecmo circuit changes in long form.
+#lets find durations
+#we are interested in first circuit change so lets select only first xc's
+
+dx2 <- dxc %>% filter(xc == 1)
+
+length(unique(dx2$mrn))
+#this confirmed that they are all unique numbers
+
+#now we will use custom function drs to calculate elapsed time
+
+dx2 <- left_join(
+        dx2,
+        dfcore %>% select(mrn,ecmo_finish,ecmod,ecmoh),
+        by = "mrn"
+)
+#basically if it is NA it will be ecmo finish time,
+
+dx2 <- dx2 %>% 
+        mutate(
+                t2 = case_when(
+                        is.na(time) ~ ecmo_finish,
+                        !is.na(time)~ time
+                )
+        )
+
+dx2 <- dx2 %>% 
+        mutate(
+                cx = case_when(
+                        is.na(time) ~ "no",
+                        !is.na(time) ~ "yes"
+                )
+        )
+
+dx2$cx <- as.factor(dx2$cx)
+
+dx2 <- dx2 %>% 
+        select(-time) %>% 
+        mutate(time = t2) %>% 
+        select(-c(t2))
+
+#now all the time should be ecmo finish or ecmo 
+
+dx2 <- drs(dx2)
+#this looks good.
+#lets sense check : dud shoudl always be less than ecmod.
+
+dx2 %>% 
+        mutate(ecmod = as.numeric(ecmod)) %>%
+        filter(dud > ecmod)
+
+
+
+dx2 %>% 
+        mutate(ecmoh = as.numeric(ecmoh)) %>%
+        filter(duhr > ecmoh) 
+
+#this is now sorted because of the following solution
+
+#most of them dont have xc so thats fine
+#there are a few that have xc and need fixing
+# 
+# 5096268E - Id_124  - fixed
+# 6353987G - id_059 - fixed
+# 6573646P - id_062 - fixed
+# 6584394E - id_067 - fixed
+# 6968816C - id200 - fixed
+
+
+##some problems
+ # 6353987G - id_059 circuit change times not looking realistic
+# 6869333F - id_135
+# 8096857M - id_238
+
+
+dx2 <- dx2 %>% select(mrn,cx,time,duhr,dud)
+
+####NOW WE HAVE TO DO 3 THINGS, append ttr, sigm, and rrt stuff
+
+# TTR & sigm will share key data frame
+
+dxr <- left_join(
+        tco,
+        dx2 %>% select(mrn,time),
+        by = "mrn"
+)
+
+#visualised the problem
+dxr %>% 
+        group_by(mrn) %>% 
+        arrange(chart_t) %>% 
+        filter(chart_t >= time) %>% 
+        select(mrn,chart_t,time,axa,apttr,group) 
+
+dxr <- dxr %>% 
+        group_by(mrn) %>% 
+        arrange(chart_t) %>%
+        filter(chart_t >= ecmo_start & chart_t <= time) %>%
+        ungroup()
+
+
+
+# we will sepearte dxr into axa and apttr
+
+dxr1 <- dxr %>% 
+        select(mrn,chart_t,ecmo_start,time,axa,group)%>%
+        filter(group == "gaxa") %>%
+        group_by(mrn) %>%
+        drop_na(axa) %>%
+        mutate(tn = time) %>%
+        arrange(chart_t) %>%
+        group_split()
+
+dxr2 <- dxr %>% 
+        select(mrn,chart_t,ecmo_start,time,apttr,group)%>%
+        filter(group == "gapt") %>%
+        group_by(mrn) %>%
+        drop_na(apttr) %>%
+        mutate(tn = time) %>%
+        arrange(chart_t) %>%
+        group_split()
+
+length(dxr1)
+length(dxr2)
+#172 and 73 = fine we will live.
+
+
+#treatment for gaxa 
+temp1 <- map(dxr1,wz)
+temp1 <- map(temp1,lwg)
+temp3 <- map(temp1,mwt)
+temp3 <- map(temp3,rap)
+temp3 <- map(temp3,edd)
+
+temp3 <- plyr::ldply(temp3,data.frame)
+temp3 <- as.tibble(temp3)
+
+## treatment for gapt 
+
+temp2 <- map(dxr2,wz)
+temp2 <- map(temp2,lwg)
+temp4 <- map(temp2,mwt)
+temp4 <- map(temp4,rap)
+temp4 <- map(temp4,edd)
+
+temp4 <- plyr::ldply(temp4,data.frame)
+temp4 <- as.tibble(temp4)
+
+dxtr <- rbind(temp3,temp4)
+
+##
+
+### Fihns variability
+
+temp5 <- map(temp1,mwtv)
+temp5 <- map(temp5,fnm)
+
+temp6 <- map(temp2,mwtv)
+temp6 <- map(temp6,fnm)
+
+temp5 <- plyr::ldply(temp5,data.frame)
+temp5 <- as.tibble(temp5)
+temp6 <- plyr::ldply(temp6,data.frame)
+temp6 <- as.tibble(temp6)
+
+dxsig <- rbind(temp5,temp6)
+
+rm(temp1,temp2,temp3,temp4,temp5,temp6)
+
+#looks right
+
+dx2 <- left_join(
+        dx2, 
+        dxsig,
+        by = "mrn"
+)
+
+dx2 <- left_join(
+        dx2,
+        dxtr %>% select(-group),
+        by = "mrn"
+)
+
+#lets do aki stuff
+
+dxk <- left_join(
+        daki,
+        dx2 %>% select(mrn,time),
+        by = "mrn"
+)
+
+dxk <- dxk %>% 
+        group_by(mrn) %>%
+        filter(dates < time) %>%
+        summarise(aki = sum(RRT)) %>%
+        mutate(rrt = case_when(
+                aki >0 ~ "yes",
+                aki == 0 ~ "no"
+        )) %>%
+        ungroup()
+
+dxk$rrt <- as.factor(dxk$rrt)
+
+dx2 <- left_join(
+        dx2,
+        dxk %>% select(mrn,rrt),
+        by = "mrn"
+)
+        
+        
+
+
+
 # EXPORTAGE ---------------------------------------------------------------
 
 
@@ -528,7 +745,8 @@ sl <- c(
         "o1tr",
         "o1sig",
         "daki",
-        "df3"
+        "df3",
+        "dx2"
 )
 
 #l <- l[!l %in% frm]

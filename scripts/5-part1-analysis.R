@@ -22,7 +22,9 @@ library(tidyverse)
 
 # Function
 
-r <- function (x) {
+#custom function to help report log transformed y values.
+
+rcalc <- function (x) {
         return ((exp(x)-1)*100) 
 }
 
@@ -43,6 +45,8 @@ dm <- left_join(
         by = "mrn"
 )
 
+uvm <- list()
+mvm <- list()
 
 # CORRELATED VALUES -------------------------------------------------------
 labt <- dm %>% 
@@ -172,6 +176,10 @@ exp(cbind(coef(bmu),confint(bmu)))
 exp(cbind(coef(bmxphi),confint(bmxphi)))
 
 broom::tidy(bmxphi)
+
+uvm <- list(ttr = bmu)
+mvm <- list(ttr = bmxphi)
+
 #no VIF
 
 ttrpl1 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = rrt))+
@@ -203,7 +211,10 @@ ttrpl4 <- ggplot(data = dm, aes(x=ecmod,y=ttrgf,color = rrt))+
                 color = "Renal replacement"
         ) 
 #should cap the outlier values!
-
+sjPlot::tab_model(bmxphi)
+#ggstatsplot::ggbetweenstats(dttr,x = group , y = ttrg)
+sjPlot::tab_model(bmu,bmxphi)
+sjPlot::plot_model(bmxphi)
 
 # 2. VARIABILITY ----------------------------------------------------------
 
@@ -225,7 +236,7 @@ dk <- dk %>% mutate(
                 sigm != 0  ~ sigm
         )
 )
-
+##log transformation
 dk$sigm2 <- log(dk$sigm2)
 
 
@@ -343,8 +354,14 @@ moxua <- lm(sigm2 ~ group, data = dk)
 
 broom::tidy(moxua,conf.int=TRUE)
 
-rep_sig0 <- broom::tidy(mox04,conf.int=TRUE)
+uvm <- c(uvm,list(sigm = moxua))
 
+sjPlot::tab_model(moxua,mox02)
+rep_sig0 <- broom::tidy(mox04,conf.int=TRUE)
+# why ?
+# this is why
+# log transformed y 
+#https://data.library.virginia.edu/interpreting-log-transformations-in-a-linear-model/
 rep_sig0 <- rep_sig0 %>%
         mutate(
                 cl = (exp(conf.low)-1)*100,
@@ -364,6 +381,8 @@ sigpl1 <- ggplot(data = dk, aes(x=lactate_median,y=sigm,color = sex))+
         facet_wrap(~group)
 
 
+sjPlot::plot_model(mox02)
+sjPlot::tab_model(moxua,mox02)
 
 # 3. HEPARIN  -------------------------------------------------------------
 h0 <- lm(cudose ~ ., data= dk2)
@@ -411,6 +430,7 @@ hn2 <- lm(
         data = dm
 )
 
+performance::compare_performance(hn,hn2)
 lmtest::lrtest(hn,hn2)
 AIC(hn,hn2)
 
@@ -447,11 +467,13 @@ hn0.2u <- hn0.2u %>% mutate(
 hep_fm <- hn
 hep_fm <- broom::tidy(hep_fm,conf.int=TRUE)
 hep_fm <- hep_fm %>% mutate(
-        c1 = r(conf.low),
-        cm = r(estimate),
-        c2 = r(conf.high)
+        c1 = rcalc(conf.low),
+        cm = rcalc(estimate),
+        c2 = rcalc(conf.high)
 )
 
+
+sjPlot::tab_model(hn0.0,hn0.1,hn0.2,hn)
 
 hpl1 <- ggplot(data = dk, aes(x=sigm,y=log(cudose)))+
         geom_point()+
@@ -459,7 +481,7 @@ hpl1 <- ggplot(data = dk, aes(x=sigm,y=log(cudose)))+
         #coord_cartesian(ylim = c(0,10),xlim=c(15,25))+
         facet_wrap(~group)
 
-hpl2 <- ggplot(data = dm , aes(x = ttrg , y = pw,color = lactate_median))+
+hpl2 <- ggplot(data = dm , aes(x = ttrg , y = cudose,color = lactate_median))+
         geom_point()+
         geom_smooth(method = lm)+
         facet_wrap(~group)
@@ -472,8 +494,13 @@ hpl3 <- ggplot(data = dm, aes(x=lactate_median, y= pw))+
 
 #looks like a gamma distribution
 
-h4 <- glm(cudose ~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , family = Gamma, data= dm)
+h4 <- glm(cudose ~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , family = Gamma(link="log"), data= dm)
 
+sjPlot::plot_model(hn)
+sjPlot::tab_model(hn)
+
+#https://www.ahajournals.org/doi/10.1161/CIRCINTERVENTIONS.110.957381?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
+#here they just use logistic regresion
 
 # 4. PRESCRIPTION CHANGES -------------------------------------------------
 
@@ -535,6 +562,7 @@ r5ua <- glm(runl ~ group, offset = log(ecmod), family = quasipoisson(link = "log
 anova(r5,r50,r51,r5r)
 lmtest::lrtest(r5,r50,r51,r5r)
 
+sjPlot::tab_model(r5ua,r51)
 dr %>% 
         select(group,runl) %>% 
         group_by(group) %>% 
@@ -601,7 +629,7 @@ lmtest::lrtest(bp4,bp41)
 
 sjPlot::tab_model(bpua)
 sjPlot::tab_model(bp41)
-
+sjPlot::tab_model(bpua,bp41)
 # toth --------------------------------------------------------------------
 
 dh <- dm %>% select(-cudose)
@@ -633,7 +661,7 @@ h24 <- glm(toth ~
            family = poisson(link = "log"),
            data = dh)
 
-ht <- glm(toth ~ ttrg, offset = log(ecmod),data= dh, family = poisson(link="log"))
+ht <- glm(toth ~ group, offset = log(ecmod),data= dh, family = poisson(link="log"))
 
 h <- sjPlot::plot_model(h23,title = "Model Coefficients for Haemorrhagic Complications ")
 
@@ -646,7 +674,7 @@ anova(h0,h23)
 lmtest::lrtest(h0,h23)
 
 #i think h23 is good 
-
+sjPlot::tab_model(ht,h23)
 #make graph 1
 
 
@@ -674,6 +702,8 @@ bf <- glm(abte ~
 anova(b0,br,bf)
 lmtest::lrtest(b0,br,bf)
 
+sjPlot::tab_model(br,bf)
+
 
 # thromb ------------------------------------------------------------------
 
@@ -700,8 +730,7 @@ cf <- glm(totthr ~
 
 anova(c0,cr,cf)
 lmtest::lrtest(c0,cr,cf)
-
-
+sjPlot::tab_model(cr,cf)
 # ecmo circuit ------------------------------------------------------------
 
 dx <- dm
@@ -724,8 +753,25 @@ xf <- glm(totc ~
           family = poisson(link = "log"),
           data = dx)
 
+xfl <- glm(totc ~ 
+                  age + sex + bmi + cohort + ecmosb + crp_median +
+                   lactate_median + cudose + apache + group + ttrg + sigm +rrt , 
+          offset = log(ecmod),
+          family = poisson(link = "log"),
+          data = dx)
+
+xd <- glm(totc ~  ecmosb  , 
+           offset = log(ecmod),
+           family = poisson(link = "log"),
+           data = dx)
+
 anova(x0,xr,xf)
 lmtest::lrtest(x0,xr,xf)
+
+
+#anova(xf,xfl)
+lmtest::lrtest(xf,xfl)
+sjPlot::tab_model(xr,xf)
 
 
 # G1 ----------------------------------------------------------------------
@@ -798,4 +844,34 @@ fig1 <- cowplot::plot_grid(g1,g2)
 ggsave("products/manuscript/fig1.eps",plot = fig1, device = "eps",dpi = 1200)
 
 
-#
+# Scaling variability unit ------------------------------------------------
+
+
+# scale(x,center = 200,scale= TRUE)
+dsix <- dsig %>% 
+        filter(group == "gaxa") %>%
+        mutate(sigs = scale(sigm, center= TRUE, scale = FALSE)[,1]) %>%
+        mutate(sig2 = scale(sigm, center = 0.65, scale = FALSE)[,1])
+
+dp <- dsig %>%
+        filter(group == "gapt") %>%
+        mutate(sigs = scale(sigm, center = TRUE,scale = FALSE)[,1])%>% 
+        mutate(sig2 = scale(sigm,center= 1.75,scale = FALSE)[,1])
+
+dstd <- rbind(dsix,dp)
+
+#lets change to long form
+
+dstd <- dstd %>%
+        pivot_longer(
+                !c(mrn,group), 
+                names_to = "var_m", 
+                values_to = "values"
+        )
+
+ggplot(data = dstd, aes(x= group, y= values)) +
+        geom_boxplot()+
+        facet_wrap(~var_m)+
+        coord_cartesian(ylim = c(-5, 5))
+        
+

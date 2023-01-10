@@ -156,7 +156,7 @@ t2cmp <- t2cmp %>% filter(t<500)
 #comp1 dtm is very wrong 2022-03-04
 
 # model fit for ANY complications -----------------------------------------
-
+it <- survdiff(Surv(t,value) ~ group, data = t2cmp)
 
 
 
@@ -220,6 +220,7 @@ plot(TIME,AHR,type = "l",main = "ttrg effects over time")
 abline(h = 1, lty = 2, col = "darkgray")
 abline(v = -1*BETA/BETAtt,lty= 2, col = "blue")
 
+#winner is 
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 
 oh2cmp <- oh1cmp
@@ -344,40 +345,77 @@ ggsurvplot(szfit,surv.median.line = "hv",pval=TRUE,conf.int = TRUE,title="restri
 sjPlot::plot_model(sh4,title = "Time to hemorrhagic  complication")
 sjPlot::tab_model(sh4,title = "Time to hemorrhagic  complication")
 
+it2 <- survdiff(Surv(t,value) ~ group, data = oh2cmp)
+
 # 7. Circuit change -------------------------------------------------------
-dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))
 
-sum(duplicated(dxc2$mrn))
-#code works
-
-dxc2 <- left_join(
-        dfcore %>% select(mrn,group,ecmo_start,ecmoh),
-        dxc2,
+dx2 <- left_join(
+        dx2,
+        dfcore %>% select(mrn,age,sex,apache,bmi),
         by = "mrn"
 )
 
-dxc2$ecmoh <- as.numeric(dxc2$ecmoh)
+dx2 <- left_join(
+        dx2,
+        dm %>% select(mrn,ph_median,ferritin_median),
+        by = "mrn"
+)
 
-#lets calc time interval
-dxc2$duhr <- difftime(dxc2$time,dxc2$ecmo_start,units = "hours")
-dxc2$duhr <- round(as.numeric(dxc2$duhr),2)
+#there are some problem with left hand censoring.
 
-dxc2 <- dxc2 %>% 
-        mutate(t = case_when(
-                is.na(xc) ~ ecmoh,
-                !is.na(xc) ~ duhr
-        ))
+dx2 <- dx2 %>% filter(duhr >0)
 
-#order of code running is important , this has to be run after above code
-dxc2$xc[is.na(dxc2$xc)] <- 0
+dx2$cx <- ifelse(dx2$cx == "yes",1,0)
 
-dxc2 <- dxc2 %>% filter(t<500)
+xt <- survdiff(Surv(dud,cx) ~ group, data = dx2)
 
-sx <- coxph(Surv(t,xc)~group, data= dxc2)
+#dxc2 <- dxc %>% filter(xc == 1 & !is.na(time))
+#
+#sum(duplicated(dxc2$mrn))
+##code works
+#
+#dxc2 <- left_join(
+#        dfcore %>% select(mrn,group,ecmo_start,ecmoh),
+#        dxc2,
+#        by = "mrn"
+#)
+#
+#dxc2$ecmoh <- as.numeric(dxc2$ecmoh)
+#
+##lets calc time interval
+#dxc2$duhr <- difftime(dxc2$time,dxc2$ecmo_start,units = "hours")
+#dxc2$duhr <- round(as.numeric(dxc2$duhr),2)
+#
+#dxc2 <- dxc2 %>% 
+#        mutate(t = case_when(
+#                is.na(xc) ~ ecmoh,
+#                !is.na(xc) ~ duhr
+#        ))
+#
+##order of code running is important , this has to be run after above code
+#dxc2$xc[is.na(dxc2$xc)] <- 0
+#
+#dxc2 <- dxc2 %>% filter(t<500)
+#
+x0 <- coxph(Surv(duhr,cx)~group, data= dx2 )
 
-sxc <- survfit(Surv(t,xc)~group, data= dxc2)
+#xf <- coxph(Surv(duhr,cx)~ age + sex + bmi + apache + ph_median + ferritin_median + ttrg + sigm 
+#              +ph_median + tt(ttrg),
+#              data = t2cmp, tt=function(x,t,...)x*t)
+#
+x1 <- survfit(Surv(duhr,cx)~group, data=dx2 )
 
-ggsurvplot(sxc,surv.median.line = "hv",pval=TRUE,conf.int = TRUE,title="circuit changes only")
+
+x2 <- coxph(Surv(duhr,cx)~
+                    age + sex + rrt + bmi + group + apache + ttrg + sigm, data = dx2 )
+
+
+x3 <- coxph(Surv(duhr,cx)~
+                    age + sex + rrt + bmi + group + apache + ttrg + sigm + ph_median + ferritin_median, data = dx2 )
+
+xtest <-cox.zph(x3)
+
+ggsurvplot(x1,surv.median.line = "hv",pval=TRUE,conf.int = FALSE,title="circuit changes only")
 
 ####
 

@@ -416,3 +416,21 @@ table1 (~  circ  | group, data = dm,
         render.categorical = my.render.cat,
         topclass = "Rtable1-zebra",
         extra.col = list("P-value"=pvalue))
+
+## blood products per day
+
+table1 (~ bldtot_day | group, data = dm,extra.col = list("P-value"=pvalue))
+table1 (~  bldtot  | group, data = dm,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
+
+table1 (~  bldtot_day  | group, data = dm,
+        overall = F,
+        render.continuous = my.render.cont,
+        render.categorical = my.render.cat,
+        topclass = "Rtable1-zebra",
+        extra.col = list("P-value"=pvalue))
+#

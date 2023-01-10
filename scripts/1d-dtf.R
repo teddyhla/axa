@@ -181,7 +181,7 @@ tco <- tco %>%
 ## 3.5. DFHEP ------------------------------------------------------------
 
 pt_without_heparin <- as.data.frame(pt_without_heparin)
-names(pt_without_heparin)<-
+names(pt_without_heparin)<-"mrn"
 
 pt_without_heparin <- left_join(
         pt_without_heparin,

@@ -27,6 +27,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # 6. Data Cleaning Process
 
+
+## 6. Circuit Change data
+- first time circuit change happened is subsetted.
+- checked that circuit change happen between the ecmo start and ecmo end time
+- no circuit change 
 # 7. Analysis
 
 # 8. Models
@@ -76,6 +81,18 @@ Step-wise variable selection was undertaken using Akaike Information Criteria.
 Likelihood ratio test {lmtest} using function "lrtest" was used to evaluate final model against a null model.
 
 Likelihood ratio test confirms that p-value of final model is 0.000171 compared to null model 
+
+```{r test_lm}
+g <- lm(Sepal.Length ~ . ,data= iris)
+#summary(g)
+
+h <- sjPlot::tab_model(g)
+
+#sjPlot::print_md
+```
+
+
+ut
 
 ```{r ttr_mod_lrtest}
 

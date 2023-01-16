@@ -28,7 +28,7 @@ rcalc <- function (x) {
         return ((exp(x)-1)*100) 
 }
 
-Vectorize(r)
+Vectorize(rcalc)
 
 
 # MOULDING ----------------------------------------------------------------
@@ -58,7 +58,7 @@ labt <- dm %>%
 
 #plcor1 <- GGally::ggpairs(labt)
 
-# TTR ---------------------------------------------------------------------
+# 1. TTR ---------------------------------------------------------------------
 #no missing values
 #ttr between the two is the same.
 #should include no of tests as feature.
@@ -445,21 +445,21 @@ hn0.1u <- broom::tidy(hn0.1,conf.int=TRUE)
 hn0.2u <- broom::tidy(hn0.2,conf.int = TRUE)
 
 hn0.0u <- hn0.0u %>% mutate(
-        c1 = r(conf.low),
-        cm = r(estimate),
-        c2 = r(conf.high)
+        cm = rcalc(estimate),
+        c1 = rcalc(conf.low),
+        c2 = rcalc(conf.high)
 )
 
 hn0.1u <- hn0.1u %>% mutate(
-        c1 = r(conf.low),
-        cm = r(estimate),
-        c2 = r(conf.high)
+        c1 = rcalc(conf.low),
+        cm = rcalc(estimate),
+        c2 = rcalc(conf.high)
 )
 
 hn0.2u <- hn0.2u %>% mutate(
-        c1 = r(conf.low),
-        cm = r(estimate),
-        c2 = r(conf.high)
+        c1 = rcalc(conf.low),
+        cm = rcalc(estimate),
+        c2 = rcalc(conf.high)
 )
 
 #ADJUSTED MODEL
@@ -501,6 +501,11 @@ sjPlot::tab_model(hn)
 
 #https://www.ahajournals.org/doi/10.1161/CIRCINTERVENTIONS.110.957381?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
 #here they just use logistic regresion
+
+
+hep_fm %>% 
+        select(term,c1,cm,c2,p.value) %>% 
+        mutate(sig = ifelse(p.value<0.05,"yes","no"))
 
 # 4. PRESCRIPTION CHANGES -------------------------------------------------
 

@@ -25,6 +25,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # 5. Assumptions
 
+## 5.1. Assumptions
+
+## 5.2. Definitions
+
 # 6. Data Cleaning Process
 
 
@@ -32,11 +36,25 @@ knitr::opts_chunk$set(echo = TRUE)
 - first time circuit change happened is subsetted.
 - checked that circuit change happen between the ecmo start and ecmo end time
 - no circuit change 
+
+
 # 7. Analysis
 
 # 8. Models
 
 ## 8.1. Model 1 : Time-in-Therapeutic-Range (TTR) 
+
+### Model used: 5-part1-analysis.R 
+### bmxphi 
+
+### Interpretation
+
+Membership of anti-Xa group decreases by 0.95 the odds of having a larger TTR. 
+Each additional day on ECMO increases the odds of having a larger TTR by 1.01.
+Receipt of renal replacement therapy decreases the odds of having a large TTR by 0.6.
+
+## https://journals.sagepub.com/doi/10.1177/0962280217690413?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed
+for interpretation
 
 ### Beta regression assumptions
 
@@ -145,6 +163,12 @@ ttrpl4
 
 ## 8.2. Model 2 : Variability of Anticoagulation
 
+
+## Model chosen : mox02
+
+## Interpretation :
+for 1 unit increase in lactate, our variability increases by 10.6% 
+membership in anti Xa decreases variability by 86%. 
 Variability of anticoagulation is a measure of quality of anticoagulation. Fihn's method of variability was used for this study. 
 
 Lower Variability results in better control of anticoagulation 
@@ -184,11 +208,17 @@ Numerical check of final model using Breusch-Godfrey test confirmed visual findi
 https://data.library.virginia.edu/interpreting-log-transformations-in-a-linear-model/
 
 
-## 8.3. Model 3 : Cumulative Dose of Heparin 
+## 8.3. 
+## 8.4. 
+
+## 8.5. 
+## 8.6. 
+
+## 8.7. Model 7 : Cumulative Dose of Heparin 
 
 ### Model Choice
 
-- log transformed 
+- log transformed so interpret as per above 
 
 ### Multi-variate analysis
 interaction was checked ttrg:group
@@ -198,6 +228,7 @@ lrtest
 ### Fit assessment
 
 ### Reporting
+
 # 9. Summary
 
 # To Do

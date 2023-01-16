@@ -434,3 +434,11 @@ table1 (~  bldtot_day  | group, data = dm,
         topclass = "Rtable1-zebra",
         extra.col = list("P-value"=pvalue))
 #
+
+
+# single queries ----------------------------------------------------------
+
+dttr %>% group_by(group) %>% group_map(~summary(.x))
+
+dsig %>% group_by(group) %>% group_map(~summary(.x))
+#

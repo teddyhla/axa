@@ -220,7 +220,11 @@ plot(TIME,AHR,type = "l",main = "ttrg effects over time")
 abline(h = 1, lty = 2, col = "darkgray")
 abline(v = -1*BETA/BETAtt,lty= 2, col = "blue")
 
-#winner is 
+# 
+fm <- survfit(Surv(t,value)~ group, data = t2cmp)
+
+
+#winner is sx
 # 6.1. 1st Haemorrhagic complication --------------------------------------
 
 oh2cmp <- oh1cmp
@@ -336,6 +340,8 @@ sh5 <- coxph (Surv(t,value)~ group + ttrg + sigm:ttrg + ttrg:group + sigm:ttrg +
 
 anova(sh,sh1,sh4,sh5)
 
+otest <- cox.zph(sh4)
+ggcoxzph(otest)
 
 szfit <- survfit(Surv(t,value)~group, data= oh2cmp)
 
@@ -414,8 +420,10 @@ x3 <- coxph(Surv(duhr,cx)~
                     age + sex + rrt + bmi + group + apache + ttrg + sigm + ph_median + ferritin_median, data = dx2 )
 
 xtest <-cox.zph(x3)
+ggcoxzph(xtest)
 
 ggsurvplot(x1,surv.median.line = "hv",pval=TRUE,conf.int = FALSE,title="circuit changes only")
+
 
 ####
 

@@ -384,7 +384,7 @@ sigpl1 <- ggplot(data = dk, aes(x=lactate_median,y=sigm,color = sex))+
 sjPlot::plot_model(mox02)
 sjPlot::tab_model(moxua,mox02)
 
-# 3. HEPARIN  -------------------------------------------------------------
+# 3. CUMULATIVE HEPARIN  -------------------------------------------------------------
 h0 <- lm(cudose ~ ., data= dk2)
 ho2 <- lm(cudose ~ 1,data= dk2)
 
@@ -430,9 +430,21 @@ hn2 <- lm(
         data = dm
 )
 
-performance::compare_performance(hn,hn2)
-lmtest::lrtest(hn,hn2)
-AIC(hn,hn2)
+hn3 <- lm(
+        cud2 ~ 
+                age + sex + bmi + group + lactate_median + ecmod + ttrg + sigm + ttrg:ecmod,
+        data = dm
+)
+
+hn4 <- lm(
+        cud2 ~ 
+                age + sex + bmi + group + lactate_median + ecmod + ttrg + sigm + ttrg:ecmod + sigm:ecmod,
+        data = dm
+)
+
+performance::compare_performance(hn,hn2,hn3)
+lmtest::lrtest(hn,hn2,hn3,hn4)
+AIC(hn,hn2,hn3,hn4)
 
 #UNADJUSTED MODEL
 
@@ -497,7 +509,7 @@ hpl3 <- ggplot(data = dm, aes(x=lactate_median, y= pw))+
 h4 <- glm(cudose ~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , family = Gamma(link="log"), data= dm)
 
 sjPlot::plot_model(hn)
-sjPlot::tab_model(hn)
+sjPlot::tab_model(hn,hn3,hn4)
 
 #https://www.ahajournals.org/doi/10.1161/CIRCINTERVENTIONS.110.957381?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
 #here they just use logistic regresion
@@ -507,7 +519,7 @@ hep_fm %>%
         select(term,c1,cm,c2,p.value) %>% 
         mutate(sig = ifelse(p.value<0.05,"yes","no"))
 
-# 4. PRESCRIPTION CHANGES -------------------------------------------------
+# 4. HEPARIN PRESCRIPTION CHANGES -------------------------------------------------
 
 dr <- dm
 
@@ -558,6 +570,11 @@ r51 <- glm (runl ~
 
 
 
+r52 <- glm (runl ~ 
+                    age + sex + bmi + group + lactate_median + ttrg + sigm + group:ttrg + ttrg:ecmod + rrt, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
+
+
 r5r <- glm (runl ~ 
                    group + lactate_median + ttrg + sigm + group:ttrg, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
 
@@ -567,7 +584,8 @@ r5ua <- glm(runl ~ group, offset = log(ecmod), family = quasipoisson(link = "log
 anova(r5,r50,r51,r5r)
 lmtest::lrtest(r5,r50,r51,r5r)
 
-sjPlot::tab_model(r5ua,r51)
+sjPlot::tab_model(r5ua,r51,r52)
+
 dr %>% 
         select(group,runl) %>% 
         group_by(group) %>% 
@@ -625,6 +643,11 @@ bpua <- glm(bldtot ~
 #mb5 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ group:ttrg+ sigm + group:sigm + ecmod, data = dm, family = poisson(link="log"))
 #mb6 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ groupgr:ttrg+ sigm + group:sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 
+
+
+bpza <- glm(bldtot ~ 
+                    sigm, offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
 anova(bp1,bp2,bp3)
 lmtest::lrtest(bp1,bp2,bp3)
 
@@ -635,7 +658,7 @@ lmtest::lrtest(bp4,bp41)
 sjPlot::tab_model(bpua)
 sjPlot::tab_model(bp41)
 sjPlot::tab_model(bpua,bp41)
-# toth --------------------------------------------------------------------
+# 6. TOTAL HEMORRHAGIC OUTCOMES --------------------------------------------------------------------
 
 dh <- dm %>% select(-cudose)
 
@@ -683,7 +706,7 @@ sjPlot::tab_model(ht,h23)
 #make graph 1
 
 
-# any BTE -----------------------------------------------------------------
+# 7.ANY complication : i.e., any BTE -----------------------------------------------------------------
 db <- dm
 
 hist(db$abte)
@@ -710,7 +733,7 @@ lmtest::lrtest(b0,br,bf)
 sjPlot::tab_model(br,bf)
 
 
-# thromb ------------------------------------------------------------------
+# 8. THROM ONLY ------------------------------------------------------------------
 
 dc <- dm
 hist(dc$totthr)
@@ -775,7 +798,7 @@ lmtest::lrtest(x0,xr,xf)
 
 
 #anova(xf,xfl)
-lmtest::lrtest(xf,xfl)
+
 sjPlot::tab_model(xr,xf)
 
 

@@ -1,0 +1,633 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{lmodern}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math}
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+  \setmainfont[]{Source Sans Pro}
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\IfFileExists{bookmark.sty}{\usepackage{bookmark}}{\usepackage{hyperref}}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same} % disable monospaced font for URLs
+\hypersetup{
+  pdftitle={Supplementary Material for analysis of Anti-Xa and APTTr anticoagulation on VV-ECMO patients},
+  pdfauthor={Teddy Tun Win HLA on behalf of the study group},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Supplementary Material for analysis of Anti-Xa and APTTr
+anticoagulation on VV-ECMO patients}
+\author{\href{https://github.com/teddyhla}{Teddy Tun Win HLA} on behalf
+of the study group}
+\date{`r Sys.Date()'}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+\hypertarget{objective}{%
+\section{1. OBJECTIVE}\label{objective}}
+
+\hypertarget{outcome-variables}{%
+\subsection{Outcome variables}\label{outcome-variables}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Bleeding or thrombotic events(BTE) 1a. any BTE 1b. only hemorrhagic
+  complications 1c. only thrombotic compications
+\item
+  ECMO circuit changes
+\item
+  Heparin Prescription 3a. cumulative dose of heparin 3b. heparin
+  prescription changes
+\item
+  Blood products consumption
+\end{enumerate}
+
+\hypertarget{calculated-variables}{%
+\subsection{Calculated variables}\label{calculated-variables}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Time in Therapeutic Range (Rosendaal Method)
+\item
+  Variability in Anticoagulation (Fihn's method)
+\end{enumerate}
+
+\hypertarget{section}{%
+\section{}\label{section}}
+
+\hypertarget{data-source}{%
+\section{3. DATA SOURCE}\label{data-source}}
+
+{[}refer to Barnie's{]}
+
+\begin{itemize}
+\tightlist
+\item
+  Electronic health records data extraction from GSTT systems using ECMO
+  pump speed as defintion of cases.
+\item
+  Complications individually reviewered where relevant.
+\item
+  Electronic health records accessed through GDPR compliant system and
+  saved in encrypted work spaces.
+\item
+  All investigation results (CT imagings, blood results) in between ECMO
+  run times are extracted.
+\end{itemize}
+
+\hypertarget{truths}{%
+\section{3. TRUTHS}\label{truths}}
+
+\hypertarget{assumptions}{%
+\subsection{3.1. Assumptions}\label{assumptions}}
+
+\hypertarget{assumption-1-each-patients-receive-only-1-ecmo-run}{%
+\subsubsection{Assumption 1 : each patients receive only 1 ECMO
+run}\label{assumption-1-each-patients-receive-only-1-ecmo-run}}
+
+\begin{itemize}
+\tightlist
+\item
+  verified through discussion with clinicians at regular mortality and
+  morbidity meeting
+\end{itemize}
+
+\hypertarget{assumption-2-all-ecmo-pump-speed-run-times-are-accurate-with-automatic-entry-to-ehr-system}{%
+\subsubsection{Assumption 2: all ECMO pump speed run times are accurate
+with automatic entry to EHR
+system}\label{assumption-2-all-ecmo-pump-speed-run-times-are-accurate-with-automatic-entry-to-ehr-system}}
+
+\begin{itemize}
+\tightlist
+\item
+  verified through daily clinical use
+\item
+  Thus, this time period is used as a basis to calculate other times in
+  relation.
+\end{itemize}
+
+\hypertarget{assumption-3-as-mandated-legally-by-nhs-blood-and-transfusion-all-blood-products-transfusion-are-documented.}{%
+\subsubsection{Assumption 3: As mandated legally by NHS Blood and
+Transfusion, all blood products transfusion are
+documented.}\label{assumption-3-as-mandated-legally-by-nhs-blood-and-transfusion-all-blood-products-transfusion-are-documented.}}
+
+\begin{itemize}
+\tightlist
+\item
+  This was used to verify and cross-check ECMO run times and related
+  complications.
+\end{itemize}
+
+\hypertarget{definitions}{%
+\subsection{3.2. Definitions}\label{definitions}}
+
+\hypertarget{outcome-variables-1}{%
+\subsubsection{Outcome variables}\label{outcome-variables-1}}
+
+\hypertarget{bleeding-and-thrombotic-complications}{%
+\subsubsection{Bleeding and Thrombotic
+Complications}\label{bleeding-and-thrombotic-complications}}
+
+Any relevant bleeding and thrombotic complications are recorded and
+nearest most accurate time period extracted.
+
+This does not include complications sustained through ECMO cannulation
+process nor incurred through retrieval process.
+
+In addition, relevant complications identified incidentally through
+cross sectional imaging are also supplemented.
+
+EOLIA definition of bleeding complications restrict to bleeding events
+requiring transfusion of blood products.
+
+Our definition of bleeding complication is more broad. This is to allow
+analysis at granular scale.
+
+We separately analyse blood products transfusion.
+
+\hypertarget{ecmo-circuit-changes}{%
+\subsubsection{ECMO circuit changes}\label{ecmo-circuit-changes}}
+
+Similarly, documentation of ECMO circuit changes and rationales were
+extracted.
+
+\hypertarget{heparin-administrations}{%
+\subsubsection{Heparin administrations}\label{heparin-administrations}}
+
+All administration of heparin prescribed under different regimes were
+extracted and relevant units obtained.
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.1250}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4722}}
+  >{\raggedright\arraybackslash}p{(\columnwidth - 4\tabcolsep) * \real{0.4028}}@{}}
+\toprule()
+\begin{minipage}[b]{\linewidth}\raggedright
+Regimes
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Description
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Units
+\end{minipage} \\
+\midrule()
+\endhead
+1 & Heparin & units per hour \\
+2 & Heparin ECMO Xa IV Infusion & units per kilogram per hour \\
+3 & Heparin IV injection & units \\
+4 & Heparin RR INF 20000 IU & units \\
+5 & Heparin systemic Inf 20000 Units & units per hour \\
+\bottomrule()
+\end{longtable}
+
+\hypertarget{height-and-weight}{%
+\subsubsection{Height and Weight}\label{height-and-weight}}
+
+Original documentaion of height and weight on ECMO cannulation were used
+due to likely later variation of patients through out their critical
+illness.
+
+\hypertarget{time-in-therapeutic-range-rosendaal-method}{%
+\subsubsection{Time in Therapeutic Range (Rosendaal
+method)}\label{time-in-therapeutic-range-rosendaal-method}}
+
+Linear interpolation method by Rosendaal was used.
+
+\$\$\begin{equation}
+
+Time\ in\ Therapeutic\ Range\ _{Rosendaal} = \frac{Time\ in\ range}{Total\ Time }
+\end{equation}\$\$
+
+No of anticoagulation blood tests per day was calculated to detect
+anomalous results. When outlier values were noted and duplicate record
+with non outlier value was found, this was chosen and randomly verified
+manually.
+
+Time interval between each anticoagulation result were calculated and
+TTR value for that period calculated. Total TTR of all time intervals in
+between ECMO start and end times were calculated.
+
+\hypertarget{variability-of-anticoagulation-fihns-method-of-variance-growth-rate}{%
+\subsubsection{Variability of Anticoagulation (Fihn's method of Variance
+Growth
+rate)}\label{variability-of-anticoagulation-fihns-method-of-variance-growth-rate}}
+
+\$\$\begin{equation}
+
+\sigma ^{2} = \tfrac{1}{n}\tfrac{}{} \sum_{i = 1}^{n} \frac{(value_{i} - target)^{2}}{\tau _{i}}
+
+\end{equation}\$\$
+
+\hypertarget{data-cleaning-process}{%
+\section{5. Data Cleaning Process}\label{data-cleaning-process}}
+
+All relevant variables and time-stamps are cor
+
+\hypertarget{exploratory-descriptive-analysis}{%
+\section{6. Exploratory Descriptive
+Analysis}\label{exploratory-descriptive-analysis}}
+
+\hypertarget{analysis}{%
+\section{7. Analysis}\label{analysis}}
+
+\hypertarget{models}{%
+\section{8. Models}\label{models}}
+
+\hypertarget{model-1-time-in-therapeutic-range-ttr}{%
+\subsection{8.1. Model 1 : Time-in-Therapeutic-Range
+(TTR)}\label{model-1-time-in-therapeutic-range-ttr}}
+
+\hypertarget{model-used-5-part1-analysis.r}{%
+\subsubsection{Model used:
+5-part1-analysis.R}\label{model-used-5-part1-analysis.r}}
+
+\hypertarget{bmxphi}{%
+\subsubsection{bmxphi}\label{bmxphi}}
+
+\hypertarget{interpretation}{%
+\subsubsection{Interpretation}\label{interpretation}}
+
+Membership of anti-Xa group decreases by 0.95 the odds of having a
+larger TTR. Each additional day on ECMO increases the odds of having a
+larger TTR by 1.01. Receipt of renal replacement therapy decreases the
+odds of having a large TTR by 0.6.
+
+\hypertarget{httpsjournals.sagepub.comdoi10.11770962280217690413url_verz39.88-2003rfr_idori3arid3acrossref.orgrfr_datcr_pub0pubmed}{%
+\subsection{\texorpdfstring{\url{https://journals.sagepub.com/doi/10.1177/0962280217690413?url_ver=Z39.88-2003\&rfr_id=ori\%3Arid\%3Acrossref.org\&rfr_dat=cr_pub++0pubmed}}{https://journals.sagepub.com/doi/10.1177/0962280217690413?url\_ver=Z39.88-2003\&rfr\_id=ori\%3Arid\%3Acrossref.org\&rfr\_dat=cr\_pub++0pubmed}}\label{httpsjournals.sagepub.comdoi10.11770962280217690413url_verz39.88-2003rfr_idori3arid3acrossref.orgrfr_datcr_pub0pubmed}}
+
+for interpretation
+
+\hypertarget{beta-regression-assumptions}{%
+\subsubsection{Beta regression
+assumptions}\label{beta-regression-assumptions}}
+
+Time in Therapeutic Range is an intuitive index of measure for measuring
+quality of anticoagulation.
+
+Several definitions of TTR is available :-\\
+- Traditional - Linear interpolation method by Rosendaal et al
+
+Traditional = no of tests in range divided by total no of tests. This
+does not take into account duration. Thus, Rosendaal et al has
+calculated a linear interpolation method incorporating duration of
+measurements.
+
+Here, TTR(Rosendaal) is used.
+
+TTR is a value of range between 0 to 100\%. Thus, beta-regression is
+used, using \{betareg\} package.
+
+TTR includes values including 0 and 100\%, whereas strictly
+beta-regression does not include values 0 or 100\%. Thus,
+data-transformation y1 = y * n-1) + 0.5 / n as per Smithson and Vekuilen
+was carried out.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#cor.test(dm$ttrgf,dm$ttrg)}
+\end{Highlighting}
+\end{Shaded}
+
+Above findings confirmed that data transformation was appropriate.
+
+It was hypothesised that 1. age 2. BMI 3. sex 4. apache II score 5.
+monitoring group 6. renal replacement therapy 7. duration on ecmo 8.
+admission period median pH value
+
+are likely to affect ``time-in-therapeutic range''
+
+\hypertarget{multi-variate-model-fitting}{%
+\subsubsection{Multi-variate model
+fitting}\label{multi-variate-model-fitting}}
+
+Beta regression model using above 8 variables were fitted. Step-wise
+variable selection was undertaken using Akaike Information Criteria.
+Likelihood ratio test \{lmtest\} using function ``lrtest'' was used to
+evaluate final model against a null model.
+
+Likelihood ratio test confirms that p-value of final model is 0.000171
+compared to null model
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{g }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(Sepal.Length }\SpecialCharTok{\textasciitilde{}}\NormalTok{ . ,}\AttributeTok{data=}\NormalTok{ iris)}
+\CommentTok{\#summary(g)}
+
+\NormalTok{h }\OtherTok{\textless{}{-}}\NormalTok{ sjPlot}\SpecialCharTok{::}\FunctionTok{tab\_model}\NormalTok{(g)}
+
+\CommentTok{\#sjPlot::print\_md}
+\end{Highlighting}
+\end{Shaded}
+
+ut
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#lmtest::lrtest(bm0,bmx)}
+\end{Highlighting}
+\end{Shaded}
+
+In this model, variables ``sex, renal replacement therapy, and duration
+of ECMO'' are the only variables that have statistical significant.
+Thus, a reduced model using only this 3 variables were fitted.
+
+Reduced model and full models were compared using likelihood ratio test
+and there were not statistically significant differences.
+
+Reduced model AIC was lower than full model AIC by 5 points. As a
+result, we have selected a full variable model for its ability to infer
+effects of biologically plausible variables such as age, sex.
+
+APACHE 2 score already includes pH value and APACHE 2 score was not
+known to be predictive of outcome in ECMO patients. Thus, sensitivity
+analysis was undertaken with both variables - APACHE 2 score and median
+pH value. Models were evaluated using AIC and likelihood ratio test.
+Likelihood ratio tests found that model including only APACHE score
+without pH variable has the lowest chi-square value and is statistically
+significant (p\textless0.0001).
+
+Thus, this model was evaluted further.
+
+\hypertarget{variable-dispersion}{%
+\subsubsection{Variable Dispersion}\label{variable-dispersion}}
+
+In the final model, dispersion parameter - phi coefficient- was
+estimated at 2.27 and was statistically significant. The most likely
+variable contributing to dispersion was `duration of ecmo'.
+
+Thus, final model was re-fitted with the same mean equation but now with
+duration of ECMO as additional regressor for the precision parameter -
+phi.
+
+\url{https://cran.r-project.org/web/packages/betareg/vignettes/betareg.pdf}
+
+The model including of ecmo duration as regressor for the precision
+parameter was statistically significant and improved a model fit,
+without significant difference in estimates of other paramters. AIC of
+this new model was significantly lower than model without precision
+parameter.
+
+Thus, there was a statistically significant evidence for variable
+dispersion, and thus was chosen as a final model
+
+\hypertarget{fit-assessment}{%
+\subsubsection{Fit assessment}\label{fit-assessment}}
+
+Maximum likelihood estimation was used to calculate p-values.
+
+Model assumptions were also evaluated using diagnostic plots; and was
+graphically satisfacotry for normal assumption, homeoskedasticity, and
+influential observations effects.
+
+Heteroskedasticity was also checked numerically using studentized
+Bresuch-Pagan test and demonstrated no evidence of heteroskedasticity.
+
+Multicollinearity was assessed using variable inflation factors using
+\{car\} package function ``vif''. All variables have VIF score
+\textless{} 2 demonstrating no evidence of multi collinearity.
+
+Link function of logit is used.
+
+ttrpl4
+
+\hypertarget{model-2-variability-of-anticoagulation}{%
+\subsection{8.2. Model 2 : Variability of
+Anticoagulation}\label{model-2-variability-of-anticoagulation}}
+
+\hypertarget{model-chosen-mox02}{%
+\subsection{Model chosen : mox02}\label{model-chosen-mox02}}
+
+\hypertarget{interpretation-1}{%
+\subsection{Interpretation :}\label{interpretation-1}}
+
+for 1 unit increase in lactate, our variability increases by 10.6\%
+membership in anti Xa decreases variability by 86\%. Variability of
+anticoagulation is a measure of quality of anticoagulation. Fihn's
+method of variability was used for this study.
+
+Lower Variability results in better control of anticoagulation
+
+\hypertarget{choice-of-model-and-assumptions}{%
+\subsubsection{Choice of model and
+assumptions}\label{choice-of-model-and-assumptions}}
+
+Variability of anticoagulation was significantly right skewed thus, a
+natural logarithmic transformation was undertaken of dependent variable
+and then a linear model was fitted against.
+
+It was hypothesised that 1. age 2. BMI 3. sex 4. apache II score 5.
+monitoring group 6. renal replacement therapy 7. duration on ecmo
+
+were thought to be affecting variability of anticoagulation.
+
+\hypertarget{multi-variate-modelling}{%
+\subsubsection{Multi-variate modelling}\label{multi-variate-modelling}}
+
+On a multi-variate modelling, as evaluated by AIC and likelihood ratio
+tests, monitoring group and lactate are the only two statistically
+significant variables.
+
+Thus,a reduced model using only statistically significant model was
+evaluated against a full model - there were no improvement of a reduced
+model. And, due to ability to infer effects of other biologically
+plausible variables, age, bmi, apache etc are included in a final model.
+
+\hypertarget{fit-assessment-1}{%
+\subsubsection{Fit assessment}\label{fit-assessment-1}}
+
+Multiple R squared value of fitted model was 0.5 and model was
+statistically significant.
+
+Model assumptions were checked for normality, heteroskedasticity, effect
+of outlying values and distribution of residuals.
+
+Numerical check of final model using Breusch-Godfrey test confirmed
+visual findings that model residuals are homoskedastic.
+
+\hypertarget{reporting}{%
+\subsubsection{Reporting}\label{reporting}}
+
+\url{https://data.library.virginia.edu/interpreting-log-transformations-in-a-linear-model/}
+
+\hypertarget{section-1}{%
+\subsection{8.3.}\label{section-1}}
+
+\hypertarget{section-2}{%
+\subsection{8.4.}\label{section-2}}
+
+\hypertarget{section-3}{%
+\subsection{8.5.}\label{section-3}}
+
+\hypertarget{section-4}{%
+\subsection{8.6.}\label{section-4}}
+
+\hypertarget{model-7-cumulative-dose-of-heparin}{%
+\subsection{8.7. Model 7 : Cumulative Dose of
+Heparin}\label{model-7-cumulative-dose-of-heparin}}
+
+\hypertarget{model-choice}{%
+\subsubsection{Model Choice}\label{model-choice}}
+
+\begin{itemize}
+\tightlist
+\item
+  log transformed so interpret as per above
+\end{itemize}
+
+\hypertarget{multi-variate-analysis}{%
+\subsubsection{Multi-variate analysis}\label{multi-variate-analysis}}
+
+interaction was checked ttrg:group AIC lrtest
+
+\hypertarget{fit-assessment-2}{%
+\subsubsection{Fit assessment}\label{fit-assessment-2}}
+
+\hypertarget{reporting-1}{%
+\subsubsection{Reporting}\label{reporting-1}}
+
+\hypertarget{summary}{%
+\section{9. Summary}\label{summary}}
+
+\hypertarget{to-do}{%
+\section{To Do}\label{to-do}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  when reading the manuscript, please consider if we fulfill STROBE
+  guidelines
+\item
+  please complete the ``units'' for measured variables in table-1(e.g.,
+  CRP, creatinine)
+\item
+  please vote on which figures to include
+\item
+  two-sentence take home message and 140-character tweet
+\item
+  250-word abstract and 3-5 keywords
+\item
+  Agree on title
+\item
+  Suggest list of reviewers -- Nunez, Schmidt, Alain V?
+\end{enumerate}
+
+\hypertarget{next-steps}{%
+\section{Next Steps}\label{next-steps}}
+
+\begin{itemize}
+\tightlist
+\item
+  if we(us 4) are all happy, can we circulate to other relevant authors
+\item
+\end{itemize}
+
+\url{https://www.springer.com/journal/134/submission-guidelines?detailsPage=pltci_1060748\#Instructions\%20for\%20Authors_Authorship\%20principles}
+
+\end{document}

@@ -1,19 +1,14 @@
 ---
 title: "Supplementary Material for analysis of Anti-Xa and APTTr anticoagulation on VV-ECMO patients"
 author: "[Teddy Tun Win HLA](https://github.com/teddyhla) on behalf of the study group" 
-date: "'r Sys.Date()'"
-output: 
-        pdf_document:
-         latex_engine: xelatex
-         toc : yes
-         toc_depth : 3
-         df_print : paged
-mainfont: "Source Sans Pro"
+format:
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
+    mainfont: Source Sans Pro
+    monofont: Fira Code
 ---
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
 # 1. OBJECTIVE
 
@@ -21,6 +16,17 @@ knitr::opts_chunk$set(echo = TRUE)
 
 1.  Bleeding or thrombotic events(BTE) 1a. any BTE 1b. only hemorrhagic complications 1c. only thrombotic compications
 
+```{r}
+#| label: fig-airquality
+#| fig-cap: Temperature and ozone level.
+#| warning: false
+
+library(ggplot2)
+
+ggplot(airquality, aes(Temp, Ozone)) + 
+  geom_point() + 
+  geom_smooth(method = "loess")
+```
 2.  ECMO circuit changes
 
 3.  Heparin Prescription 3a. cumulative dose of heparin 3b. heparin prescription changes
@@ -103,10 +109,9 @@ Original documentaion of height and weight on ECMO cannulation were used due to 
 Linear interpolation method by Rosendaal was used.
 
 
-$$\begin{equation}
-
+$$
 Time\ in\ Therapeutic\ Range\ _{Rosendaal} = \frac{Time\ in\ range}{Total\ Time }
-\end{equation}\$$
+$$
 
 No of anticoagulation blood tests per day was calculated to detect anomalous results. When outlier values were noted and duplicate record with non outlier value was found, this was chosen and randomly verified manually.
 
@@ -114,11 +119,9 @@ Time interval between each anticoagulation result were calculated and TTR value 
 
 ### Variability of Anticoagulation (Fihn's method of Variance Growth rate)
 
-$$\begin{equation}
-
+$$
 \sigma ^{2} = \tfrac{1}{n}\tfrac{}{} \sum_{i = 1}^{n} \frac{(value_{i} - target)^{2}}{\tau _{i}}
-
-\end{equation}\$$
+$$
 
 # 5. Data Cleaning Process
 

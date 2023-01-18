@@ -677,6 +677,63 @@ sjPlot::tab_model(bp41)
 sjPlot::tab_model(bpua,bp41)
 
 sjPlot::plot_model(bp41)
+
+## some issue of interaction TTR and AXA 
+# so lets visualise individually TTR , AXA and then combined faceted by group
+#lets bin TTR so its easier to see.
+
+dl <- dm
+brk <- rep(1:10)
+brk <- brk/10
+dl <- dl %>%
+        mutate(
+                t_bin = cut(ttrg,breaks = quantile(ttrg) )
+        )
+dl$t_bin <- as.factor(dl$t_bin)
+
+dl <- left_join(
+        dl,
+        dstd %>% select(mrn,sigs),
+        by = "mrn"
+)
+
+dl$tsq <- ((dl$ttrg)^2)*-1
+dl$lgs <- log(dl$sigm)
+
+ggplot(data=dl, aes(x=lgs, y= bldtot)) + 
+        geom_point()+
+        geom_smooth(method = loess)+
+        coord_cartesian(ylim=c(0,20))+
+        facet_wrap(~group)+
+        labs(
+                y = "Blood products transfused / units",
+                x = "Time in Therapeutic Range 0 to 1.0",
+                title = "Relation between TTR and Total Blood products",
+                subtitle = "note more data points on higher TTR in AXA"
+                
+        )
+
+ggplot(data=dl, aes(x=, y= bldtot,color = group)) + 
+        geom_boxplot()+
+        geom_smooth()+
+        coord_cartesian(ylim=c(0,20))+
+        facet_wrap(~group)+
+        labs(
+                y = "Blood products transfused / units",
+                x = "Time in Therapeutic Range 0 to 1.0",
+                title = "Relation between TTR and Total Blood products",
+                subtitle = "note more data points on higher TTR in AXA"
+                
+        )
+
+dl2 <- dl %>% filter(bldtot >0)
+
+ggplot(data=dl2, aes(x=tsq, y= bldtot)) + 
+        geom_point()+
+        geom_smooth(method = loess)+
+        coord_cartesian(ylim=c(0,20))+
+        facet_wrap(~group)
+        
 # 6. TOTAL HEMORRHAGIC OUTCOMES --------------------------------------------------------------------
 
 dh <- dm %>% select(-cudose)

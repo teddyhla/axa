@@ -632,6 +632,19 @@ bp41 <- glm(bldtot ~
                    age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
 
+bpx <- glm(bldtot ~ 
+                    age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group  + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
+
+
+bp4qp <- glm(bldtot ~ 
+                    age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group  + group:ttrg + offset(log(ecmod)), data= dm, family = quasipoisson(link="log"))
+
+
+b4m <- MASS::glm.nb(bldtot ~ 
+                     age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group  + group:ttrg + offset(log(ecmod)), data= dm, link=log)
+
+
 
 bpua <- glm(bldtot ~ 
                      group, offset(log(ecmod)), data= dm, family = poisson(link="log"))
@@ -655,9 +668,15 @@ anova(bp4,bp41)
 lmtest::lrtest(bp4,bp41)
 #so bp41 is a full model
 
+x <- performance::check_model(bp41)
+x2 <- performance::check_model(bpx)
+cp <- cowplot::plot_grid(x,x2)
+
 sjPlot::tab_model(bpua)
 sjPlot::tab_model(bp41)
 sjPlot::tab_model(bpua,bp41)
+
+sjPlot::plot_model(bp41)
 # 6. TOTAL HEMORRHAGIC OUTCOMES --------------------------------------------------------------------
 
 dh <- dm %>% select(-cudose)
@@ -810,16 +829,17 @@ levels(dz$group) <- c("aPTTr monitoring group","Anti-Xa monitoring group")
 
 
 
-g1 <- ggplot(data = dz, aes(x = group, y = ttrg,color=group)) +
+g1 <- ggplot(data = dz, aes(x = group, y = ttrg,color=group,fill = group)) +
         ggdist::stat_halfeye(
                 adjust = .5,
                 width = .6,
                 .width = 0,
                 justification = -.2,
-                point_colour = NA
+                #point_color = NA
         )+
         geom_boxplot(
                 width= .15,
+                fill = NA,
                 outlier.shape = NA
         )+ gghalves::geom_half_point(
                 side = "1",
@@ -836,23 +856,24 @@ g1 <- ggplot(data = dz, aes(x = group, y = ttrg,color=group)) +
         )+
         theme_minimal()+
         theme(legend.position ="none",
-              text = element_text(size = 15))
+              text = element_text(size = 12))
 
-g2 <- ggplot(data = dz, aes(x = group, y = sigm,color=group)) +
+g2 <- ggplot(data = dz, aes(x = group, y = sigm,color=group, fill = group)) +
         ggdist::stat_halfeye(
                 adjust = .5,
                 width = .6,
                 .width = 0,
                 justification = -.2,
-                point_colour = NA
+                #point_colour = NA
         )+
         geom_boxplot(
+                fill = NA,
                 width= .15,
                 outlier.shape = NA
         )+ gghalves::geom_half_point(
                 side = "1",
                 range_scale = .4,
-                #alpha = .3
+                alpha = .3
         ) +
         coord_cartesian(xlim= c(1.2,NA),clip = "off")+
         scale_x_discrete()+
@@ -864,12 +885,12 @@ g2 <- ggplot(data = dz, aes(x = group, y = sigm,color=group)) +
         )+
         theme_minimal()+
         theme(legend.position ="none",
-              text = element_text(size = 15))
-
-fig1 <- cowplot::plot_grid(g1,g2)
+              text = element_text(size = 12))
 
 
-ggsave("products/manuscript/fig1.eps",plot = fig1, device = "eps",dpi = 1200)
+
+
+#ggsave("products/manuscript/fig1.eps",plot = fig1, device = "eps",dpi = 1200)
 
 
 # Scaling variability unit ------------------------------------------------
@@ -890,16 +911,69 @@ dstd <- rbind(dsix,dp)
 
 #lets change to long form
 
-dstd <- dstd %>%
+d2std <- dstd %>%
         pivot_longer(
                 !c(mrn,group), 
                 names_to = "var_m", 
                 values_to = "values"
         )
 
-ggplot(data = dstd, aes(x= group, y= values)) +
+ggplot(data = d2std, aes(x= group, y= values)) +
         geom_boxplot()+
         facet_wrap(~var_m)+
-        coord_cartesian(ylim = c(-5, 5))
-        
+        coord_cartesian(ylim = c(-6, 5))
 
+
+g3 <- ggplot(data = dstd, aes(x = group, y = sigs,color=group, fill = group)) +
+        geom_boxplot(
+                fill = NA,
+                width= .30
+        )+
+        gghalves::geom_half_point(
+                side = "1",
+                range_scale = .4,
+                alpha = .3
+        )+
+        coord_cartesian(xlim= c(1.2,NA),clip = "off")+
+        scale_x_discrete()+
+        scale_y_continuous(limits = c(-5,2))+
+        labs(
+                title = "Standardised Variance Growth Rates of Anticoagulation",
+                x = "\n Monitoring Group",
+                y = "\n standardised Variance Growth Rate"
+        )+
+        theme_minimal()+
+        theme(legend.position ="none",
+              text = element_text(size = 12))    
+
+
+g4 <- ggplot(data = dz, aes( x= sigm, y= ttrg, color = group))+
+        geom_point(
+                alpha = .4,
+        )+
+        scale_x_continuous(limits = c(0,5))+
+        labs(
+                title = "Correlation between TTR and VGR",
+                subtitle = "Pearson's product-moment = -0.10, p = 0.09",
+                x = "Time in Therapeutic Range",
+                y = "Variance Growth Rate"
+        ) +
+        theme_minimal()+
+        theme(
+                text = element_text(size=12)
+        )
+
+fig1 <- cowplot::plot_grid(
+        g1,g2,g3,g4,
+        labels = "AUTO",
+        label_size = 12
+)
+
+
+ggsave("products/manuscript/fig1.eps",plot = fig1, device = "eps",dpi = 1200)
+
+###g3 <- 
+        
+        
+        
+        

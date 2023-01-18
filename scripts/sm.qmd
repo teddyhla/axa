@@ -123,6 +123,7 @@ $$
 \sigma ^{2} = \tfrac{1}{n}\tfrac{}{} \sum_{i = 1}^{n} \frac{(value_{i} - target)^{2}}{\tau _{i}}
 $$
 
+https://onlinelibrary.wiley.com/doi/10.1111/jth.12322
 # 5. Data Cleaning Process
 
 All relevant variables and time-stamps are cor

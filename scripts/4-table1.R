@@ -440,5 +440,43 @@ table1 (~  bldtot_day  | group, data = dm,
 
 dttr %>% group_by(group) %>% group_map(~summary(.x))
 
+
+
+
+# if adding 
+
+#add <- data.frame(
+#        mrn = c("5277619S","6852899A","6860416Y"),
+#        group = c("gaxa","gaxa","gaxa"),
+#        sigm = c(0,0,0)
+#)
+#
+#dsig <- rbind(dsig,add)
+
 dsig %>% group_by(group) %>% group_map(~summary(.x))
+
+dsix <- dsig %>% 
+        filter(group == "gaxa") %>%
+        mutate(sigs = scale(sigm, center= TRUE, scale = FALSE)[,1]) %>%
+        mutate(sig2 = scale(sigm, center = 0.65, scale = FALSE)[,1])
+
+dp <- dsig %>%
+        filter(group == "gapt") %>%
+        mutate(sigs = scale(sigm, center = TRUE,scale = FALSE)[,1])%>% 
+        mutate(sig2 = scale(sigm,center= 1.75,scale = FALSE)[,1])
+
+dstd <- rbind(dsix,dp)
+
+dstd %>% group_by(group) %>% group_map(~summary(.x))
+
+
+
+t.test(sigm~group,data= dstd)
+wilcox.test(sigm ~ group, data= dstd)
+
+t.test(sigs~group,data= dstd)
+wilcox.test(sigs ~ group, data= dstd)
+
+t.test(sig2~group,data= dstd)
+wilcox.test(sig2 ~ group, data= dstd)
 #

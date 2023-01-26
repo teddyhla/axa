@@ -624,10 +624,6 @@ bp3 <- glm(bldtot ~
                    age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm + group:sigm + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
 
-bp4 <- glm(bldtot ~ 
-                   age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group + ttrg:sigm  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
-
-
 bp41 <- glm(bldtot ~ 
                    age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
@@ -657,6 +653,11 @@ bpua <- glm(bldtot ~
 #mb6 <- glm(bldtot ~ group + sex + age + apache + wkg +ttrg+ groupgr:ttrg+ sigm + group:sigm + ecmod, data = dm, family = quasipoisson(link="log"))
 
 
+bpfour <- glm(bldtot ~ 
+                    age + sex + bmi + apache + rrt + cudose + ttrg + log(sigm) + group  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
+
+
 
 bpza <- glm(bldtot ~ 
                     sigm, offset(log(ecmod)), data= dm, family = poisson(link="log"))
@@ -664,8 +665,8 @@ bpza <- glm(bldtot ~
 anova(bp1,bp2,bp3)
 lmtest::lrtest(bp1,bp2,bp3)
 
-anova(bp4,bp41)
-lmtest::lrtest(bp4,bp41)
+#anova(bp4,bp41)
+#lmtest::lrtest(bp4,bp41)
 #so bp41 is a full model
 
 x <- performance::check_model(bp41)
@@ -691,41 +692,41 @@ dl <- dl %>%
         )
 dl$t_bin <- as.factor(dl$t_bin)
 
-dl <- left_join(
-        dl,
-        dstd %>% select(mrn,sigs),
-        by = "mrn"
-)
+#dl <- left_join(
+#        dl,
+#        dstd %>% select(mrn,sigs),
+#        by = "mrn"
+#)
 
 dl$tsq <- ((dl$ttrg)^2)*-1
 dl$lgs <- log(dl$sigm)
 
-ggplot(data=dl, aes(x=lgs, y= bldtot)) + 
-        geom_point()+
-        geom_smooth(method = loess)+
-        coord_cartesian(ylim=c(0,20))+
-        facet_wrap(~group)+
-        labs(
-                y = "Blood products transfused / units",
-                x = "Time in Therapeutic Range 0 to 1.0",
-                title = "Relation between TTR and Total Blood products",
-                subtitle = "note more data points on higher TTR in AXA"
-                
-        )
-
-ggplot(data=dl, aes(x=, y= bldtot,color = group)) + 
-        geom_boxplot()+
-        geom_smooth()+
-        coord_cartesian(ylim=c(0,20))+
-        facet_wrap(~group)+
-        labs(
-                y = "Blood products transfused / units",
-                x = "Time in Therapeutic Range 0 to 1.0",
-                title = "Relation between TTR and Total Blood products",
-                subtitle = "note more data points on higher TTR in AXA"
-                
-        )
-
+#ggplot(data=dl, aes(x=lgs, y= bldtot)) + 
+#        geom_point()+
+#        geom_smooth(method = loess)+
+#        coord_cartesian(ylim=c(0,20))+
+#        facet_wrap(~group)+
+#        labs(
+#                y = "Blood products transfused / units",
+#                x = "Time in Therapeutic Range 0 to 1.0",
+#                title = "Relation between TTR and Total Blood products",
+#                subtitle = "note more data points on higher TTR in AXA"
+#                
+#        )
+#
+#ggplot(data=dl, aes(x=, y= bldtot,color = group)) + 
+#        geom_boxplot()+
+#        geom_smooth()+
+#        coord_cartesian(ylim=c(0,20))+
+#        facet_wrap(~group)+
+#        labs(
+#                y = "Blood products transfused / units",
+#                x = "Time in Therapeutic Range 0 to 1.0",
+#                title = "Relation between TTR and Total Blood products",
+#                subtitle = "note more data points on higher TTR in AXA"
+#                
+#        )
+#
 dl2 <- dl %>% filter(bldtot >0)
 
 ggplot(data=dl2, aes(x=tsq, y= bldtot)) + 
@@ -886,13 +887,14 @@ levels(dz$group) <- c("aPTTr monitoring group","Anti-Xa monitoring group")
 
 
 
-g1 <- ggplot(data = dz, aes(x = group, y = ttrg,color=group,fill = group)) +
+g1 <- ggplot(data = dz, aes(x = group, y = ttrg, group = group)) +
         ggdist::stat_halfeye(
                 adjust = .5,
                 width = .6,
                 .width = 0,
                 justification = -.2,
-                #point_color = NA
+                #point_color = NA,
+                
         )+
         geom_boxplot(
                 width= .15,
@@ -902,6 +904,7 @@ g1 <- ggplot(data = dz, aes(x = group, y = ttrg,color=group,fill = group)) +
                 side = "1",
                 range_scale = .4,
                # alpha = .3
+               
         ) +
         coord_cartesian(xlim= c(1.2,NA),clip = "off")+
         scale_x_discrete()+
@@ -911,11 +914,11 @@ g1 <- ggplot(data = dz, aes(x = group, y = ttrg,color=group,fill = group)) +
                 x = "\n Monitoring Group",
                 y = "\n Time in Therapeutic Range (%)"
         )+
-        theme_minimal()+
+        theme_bw()+
         theme(legend.position ="none",
-              text = element_text(size = 12))
+              text = element_text(size = 10.5))
 
-g2 <- ggplot(data = dz, aes(x = group, y = sigm,color=group, fill = group)) +
+g2 <- ggplot(data = dz, aes(x = group, y = sigm,group = group)) +
         ggdist::stat_halfeye(
                 adjust = .5,
                 width = .6,
@@ -930,7 +933,7 @@ g2 <- ggplot(data = dz, aes(x = group, y = sigm,color=group, fill = group)) +
         )+ gghalves::geom_half_point(
                 side = "1",
                 range_scale = .4,
-                alpha = .3
+                #alpha = .3
         ) +
         coord_cartesian(xlim= c(1.2,NA),clip = "off")+
         scale_x_discrete()+
@@ -940,9 +943,9 @@ g2 <- ggplot(data = dz, aes(x = group, y = sigm,color=group, fill = group)) +
                 x = "\n Monitoring Group",
                 y = "\n Variability of Anticoagulation"
         )+
-        theme_minimal()+
+        theme_bw()+
         theme(legend.position ="none",
-              text = element_text(size = 12))
+              text = element_text(size = 10.5))
 
 
 
@@ -981,15 +984,18 @@ ggplot(data = d2std, aes(x= group, y= values)) +
         coord_cartesian(ylim = c(-6, 5))
 
 
-g3 <- ggplot(data = dstd, aes(x = group, y = sigs,color=group, fill = group)) +
+levels(dstd$group) <- c("aPTTr monitoring group","Anti-Xa monitoring group")
+
+
+g3 <- ggplot(data = dstd, aes(x = group, y = sigs)) +
         geom_boxplot(
                 fill = NA,
-                width= .30
+                width= .15
         )+
         gghalves::geom_half_point(
                 side = "1",
                 range_scale = .4,
-                alpha = .3
+                #alpha = .3
         )+
         coord_cartesian(xlim= c(1.2,NA),clip = "off")+
         scale_x_discrete()+
@@ -999,38 +1005,49 @@ g3 <- ggplot(data = dstd, aes(x = group, y = sigs,color=group, fill = group)) +
                 x = "\n Monitoring Group",
                 y = "\n standardised Variance Growth Rate"
         )+
-        theme_minimal()+
+        theme_bw()+
         theme(legend.position ="none",
-              text = element_text(size = 12))    
+              text = element_text(size = 10.5))    
 
 
-g4 <- ggplot(data = dz, aes( x= sigm, y= ttrg, color = group))+
+g4 <- ggplot(data = dz, aes( x= sigm, y= ttrg,shape = group))+
         geom_point(
-                alpha = .4,
+                #alpha = .4,
         )+
         scale_x_continuous(limits = c(0,5))+
+        scale_shape_manual(values= c(3,16))+
         labs(
                 title = "Correlation between TTR and VGR",
                 subtitle = "Pearson's product-moment = -0.10, p = 0.09",
-                x = "Time in Therapeutic Range",
-                y = "Variance Growth Rate"
+                x = "Variance Growth Rate",
+                y = "Time in Therapeutic Range"
         ) +
-        theme_minimal()+
+        theme_bw()+
         theme(
-                text = element_text(size=12)
+                text = element_text(size=10.5),
+                legend.position = "bottom"
         )
 
 fig1 <- cowplot::plot_grid(
         g1,g2,g3,g4,
-        labels = "AUTO",
-        label_size = 12
+        labels = c("a.","b.","c.","d."),
+        label_size = 11
 )
 
 
-ggsave("products/manuscript/fig1.eps",plot = fig1, device = "eps",dpi = 1200)
+ggsave("products/manuscript/fig1.eps",
+       plot = fig1, 
+       device = "eps", dpi = 1200)
 
 ###g3 <- 
-        
-        
+   
+dsca <- dm
+dsca <- dsca %>% 
+        mutate(across(where(is.numeric),scale))     
+
+xt <- glm(formula = exp(bldtot) ~ age + sex + bmi + apache + rrt + cudose +
+                  ttrg + sigm + group + group:ttrg + offset(log(ecmod)),
+          family = poisson(link = "log"),data= dsca)
+###        
         
         

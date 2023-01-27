@@ -894,16 +894,19 @@ g1 <- ggplot(data = dz, aes(x = group, y = ttrg, group = group)) +
                 .width = 0,
                 justification = -.2,
                 #point_color = NA,
+                aes(fill=group)
                 
         )+
         geom_boxplot(
                 width= .15,
-                fill = NA,
+                #aes(fill=group),
                 outlier.shape = NA
         )+ gghalves::geom_half_point(
                 side = "1",
                 range_scale = .4,
-               # alpha = .3
+               alpha = .8,
+               aes(shape = group),
+               inherit.aes = TRUE
                
         ) +
         coord_cartesian(xlim= c(1.2,NA),clip = "off")+
@@ -915,8 +918,9 @@ g1 <- ggplot(data = dz, aes(x = group, y = ttrg, group = group)) +
                 y = "\n Time in Therapeutic Range (%)"
         )+
         theme_bw()+
+        scale_fill_grey(start = .3,end =.7)+
         theme(legend.position ="none",
-              text = element_text(size = 10.5))
+              text = element_text(size = 8))
 
 g2 <- ggplot(data = dz, aes(x = group, y = sigm,group = group)) +
         ggdist::stat_halfeye(
@@ -924,6 +928,7 @@ g2 <- ggplot(data = dz, aes(x = group, y = sigm,group = group)) +
                 width = .6,
                 .width = 0,
                 justification = -.2,
+                aes(fill = group)
                 #point_colour = NA
         )+
         geom_boxplot(
@@ -933,19 +938,22 @@ g2 <- ggplot(data = dz, aes(x = group, y = sigm,group = group)) +
         )+ gghalves::geom_half_point(
                 side = "1",
                 range_scale = .4,
-                #alpha = .3
+                alpha = .8,
+                aes(shape = group),
+                inherit.aes = TRUE
         ) +
         coord_cartesian(xlim= c(1.2,NA),clip = "off")+
         scale_x_discrete()+
+        scale_fill_grey(start = .3,end =.7)+
         scale_y_continuous(limits = c(0,2))+
         labs(
                 title = "Variability of Anticoagulation",
                 x = "\n Monitoring Group",
-                y = "\n Variability of Anticoagulation"
+                y = "\n Variance Growth Rate"
         )+
         theme_bw()+
         theme(legend.position ="none",
-              text = element_text(size = 10.5))
+              text = element_text(size = 8))
 
 
 
@@ -987,15 +995,17 @@ ggplot(data = d2std, aes(x= group, y= values)) +
 levels(dstd$group) <- c("aPTTr monitoring group","Anti-Xa monitoring group")
 
 
-g3 <- ggplot(data = dstd, aes(x = group, y = sigs)) +
+g3 <- ggplot(data = dstd, aes(x = group, y = sigs,group = group)) +
         geom_boxplot(
                 fill = NA,
-                width= .15
+                width= .15,
+                outlier.shape = 23
         )+
         gghalves::geom_half_point(
                 side = "1",
                 range_scale = .4,
-                #alpha = .3
+                alpha = .8,
+                aes(shape=group)
         )+
         coord_cartesian(xlim= c(1.2,NA),clip = "off")+
         scale_x_discrete()+
@@ -1007,7 +1017,7 @@ g3 <- ggplot(data = dstd, aes(x = group, y = sigs)) +
         )+
         theme_bw()+
         theme(legend.position ="none",
-              text = element_text(size = 10.5))    
+              text = element_text(size = 8))    
 
 
 g4 <- ggplot(data = dz, aes( x= sigm, y= ttrg,shape = group))+
@@ -1024,7 +1034,7 @@ g4 <- ggplot(data = dz, aes( x= sigm, y= ttrg,shape = group))+
         ) +
         theme_bw()+
         theme(
-                text = element_text(size=10.5),
+                text = element_text(size=8),
                 legend.position = "bottom"
         )
 
@@ -1034,10 +1044,14 @@ fig1 <- cowplot::plot_grid(
         label_size = 11
 )
 
+ggsave(filename = "products/manuscript/fig1.png", 
+       plot = fig1, 
+       #width = 12, height = 10, 
+       dpi = 1200, units = "cm")
 
 ggsave("products/manuscript/fig1.eps",
        plot = fig1, 
-       device = "eps", dpi = 1200)
+       device = cairo_eps, dpi = 1200)
 
 ###g3 <- 
    

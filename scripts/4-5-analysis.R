@@ -185,7 +185,7 @@ s9 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:
 sx <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + sigm, data = t2cmp )
 
 
-sxi <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + sigm, data = t2cmp )
+sxi <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + exp(sigm), data = t2cmp )
 
 
 sfit <- survfit(Surv(t,value)~group, data= t2cmp)
@@ -211,12 +211,12 @@ sxt2 <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + sig
               +ph_median + tt(ttrg),
               data = t2cmp, tt=function(x,t,...)x*t)
 
-TIME <- seq(8,400,10)
+TIME <- seq(50,500,10)
 BETA <- coef(sxtt)["ttrg"]
 BETAtt <- coef(sxtt)["tt(ttrg)"]
 AHR <- exp(BETA + BETAtt*TIME)
 
-plot(TIME,AHR,type = "l",main = "ttrg effects over time")
+plot(TIME,AHR,type = "l",main = "Effects of TTR over time", xlab = "Time in hours", ylab = "adjusted Hazards Ratio")
 abline(h = 1, lty = 2, col = "darkgray")
 abline(v = -1*BETA/BETAtt,lty= 2, col = "blue")
 

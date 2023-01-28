@@ -105,78 +105,79 @@ label(dm3$hb_min) <- "Minimum Haemoglobin"
 units(dm3$hb_min) <- "g/L"
 
 label(dm3$plt_median) <- "Median Platelets"
-units(dm3$plt_median) <- "needed"
+units(dm3$plt_median) <- "10^9/L"
 
 label(dm3$neut_median) <- "Median Neutrophils"
-units(dm3$neut_median) <- "needed"
+units(dm3$neut_median) <- "10^9/L"
 
 label(dm3$neut_min) <- "Minimum neutrophils"
-units(dm3$neut_min) <- "needed"
+units(dm3$neut_min) <- "10^9/L"
 
 label(dm3$neut_max) <- "Maximum neutrophils"
-units(dm3$neut_max) <- "needed"
+units(dm3$neut_max) <- "10^9/L"
 
 label(dm3$fib_median) <- "Median Fibrinogen levels"
-units(dm3$fib_median) <- "unit needed"
+units(dm3$fib_median) <- "g/L"
 
 label(dm3$ck_median) <- "Median Creatinine Kinase levels"
-units(dm3$ck_median) <- "unit needed"
+units(dm3$ck_median) <- "umol/L"
 
 label(dm3$crp_median) <- "Median C-Reactive Protein"
-units(dm3$crp_median) <- "unit needed"
+units(dm3$crp_median) <- "mg/L"
 
 label(dm3$pct_median) <- "Median Procalcitonin"
-units(dm3$pct_median) <- "unit needed"
+units(dm3$pct_median) <- "ug/L"
 
 label(dm3$bili_median) <- "Median Bilirubin"
-units(dm3$bili_median) <- "unit needed"
+units(dm3$bili_median) <- "umol/L"
 
 label(dm3$alb_max) <- "Max Albumin"
-units(dm3$alb_max) <- "needed"
+units(dm3$alb_max) <- "g/L"
 
 label(dm3$alb_median) <- "Median Albumin"
-units(dm3$alb_median) <- "needed"
+units(dm3$alb_median) <- "g/L"
 
 label(dm3$alb_min) <- "Min Albumin"
-units(dm3$alb_min) <- "needed"
+units(dm3$alb_min) <- "g/L"
 
 label(dm3$creat_median) <- "Median Creatinine"
-units(dm3$creat_median) <- "needed"
+units(dm3$creat_median) <- "umol/L"
 
 label(dm3$creat_max) <- "Maximum Creatinine"
-units(dm3$creat_max) <- "needed"
+units(dm3$creat_max) <- "umol/L"
 
 label(dm3$creat_min) <- "Minimum Creatinine"
-units(dm3$creat_min) <- "needed"
+units(dm3$creat_min) <- "umol/L"
 
 label(dm3$gfr_median) <- "median eGFR"
 units(dm3$gfr_median) <- "needed"
 
 label(dm3$ca_median) <- "median Calcium"
-units(dm3$ca_median) <- "needed"
+units(dm3$ca_median) <- "umol/L"
 
 label(dm3$corr_ca_median) <- "Median Corrected Calcium"
-units(dm3$corr_ca_median) <- "needed"
+units(dm3$corr_ca_median) <- "umol/L"
 
 label(dm3$bicarb_max) <- "Max Bicarb "
-units(dm3$bicarb_max) <- "needed"
+units(dm3$bicarb_max) <- "mmol/L"
 
 label(dm3$bicarb_median) <- "Median Bicarb"
-units(dm3$bicarb_median) <- "needed"
+units(dm3$bicarb_median) <- "mmol/L"
 
 label(dm3$bicarb_min) <- "Minimum Bicarb"
-units(dm3$bicarb_min) <- "needed"
+units(dm3$bicarb_min) <- "mmo/L"
 
 label(dm3$lactate_max) <- "Maximum Lactate"
-units(dm3$lactate_max) <- "needed"
+units(dm3$lactate_max) <- "mmol/L"
 
 label(dm3$lactate_median) <- "Median Lactate"
-units(dm3$lactate_median) <- "needed"
+units(dm3$lactate_median) <- "mmol/L"
 
 label(dm3$lactate_min) <- "Minimum Lactate"
-units(dm3$lactate_min) <- "needed"
+units(dm3$lactate_min) <- "mmol/L"
 
 label(dm3$ldh_median) <- "Median Lactatedehydrogenase levels(units)"
+units(dm3$ldh_median) <- "U/L"
 
 label(dm3$ph_median) <- "Median pH"
 
@@ -205,7 +206,8 @@ label(dm3$ecmoconfig) <- "ECMO Cannula configuration"
 
 label(dm3$pe) <- "Pulmonary Embolism on admission"
 
-label(dm3$ferritin_median) <- "Median Ferritin(unit needed)"
+label(dm3$ferritin_median) <- "Median Ferritin"
+units(dm3$ferritin_median) <- "ug/L"
 
 label(dm3$age) <- "Age"
 units(dm3$age) <- "Years"
@@ -224,6 +226,25 @@ units(dm3$ecmod) <- "Days"
 
 label(dm3$surv_ecmo) <- "Survival on ECMO"
 
+dmz <- dm3
+
+label(dmz$hb_median) <- "Haemoglobin"
+label(dmz$plt_median) <- "Platelets"
+label(dmz$neut_median) <- "Neutrophils"
+label(dmz$fib_median) <- "Fibrinogen"
+label(dmz$ldh_median) <- "Lactate dehydrogenase"
+label(dmz$ferritin_median) <- "Ferritin"
+label(dmz$ck_median) <- "Creatinine Kinase"
+label(dmz$crp_median) <- "C-reactive protein"
+label(dmz$pct_median) <- "Procalcitonin"
+label(dmz$bili_median) <- "Bilirubin"
+label(dmz$alb_median) <- "Albumin"
+label(dmz$creat_median) <- "Creatinine"
+label(dmz$gfr_median) <- "eGFR"
+label(dmz$corr_ca_median) <- "Corrected Calcium"
+label(dmz$bicarb_median) <- "Bicarbonate"
+label(dmz$lactate_median) <- "Lactate"
+label(dmz$ph_median) <- "pH"
 # TABLE 3 -----------------------------------------------------------------
 
 dm4 <- dfcore %>% select(mrn,group,ecmod)
@@ -296,6 +317,10 @@ table1( ~ hb_median + hb_min + hb_max + plt_median + neut_median +
         corr_ca_median + bicarb_median + bicarb_min + bicarb_max + lactate_median + lactate_min + lactate_max + ph_median | group, data = dm3
        ,overall = F, extra.col = list("P-value"=pvalue))
 
+t1e <- table1( ~ hb_median + plt_median + neut_median + fib_median + ldh_median + ferritin_median + ck_median + crp_median + pct_median +
+                       bili_median + alb_median + creat_median + gfr_median +
+                       corr_ca_median + bicarb_median + lactate_median + ph_median | group, data = dmz
+               ,overall = F, extra.col = list("P-value"=pvalue))
 
 
 dm3 %>% 
@@ -479,4 +504,7 @@ wilcox.test(sigs ~ group, data= dstd)
 
 t.test(sig2~group,data= dstd)
 wilcox.test(sig2 ~ group, data= dstd)
+
+t1e <- as.data.frame(t1e)
+save(t1e,file = "data/clean/t1e.RData")
 #

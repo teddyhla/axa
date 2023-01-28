@@ -1,22 +1,27 @@
 ---
 title: "Supplementary Material for analysis of Anti-Xa and APTTr anticoagulation on VV-ECMO patients"
 author: "[Teddy Tun Win HLA](https://github.com/teddyhla) on behalf of the study group" 
+bibliography: references.bib
 execute: 
   eval: true
   echo: false
+  warnings : false
 format:
   pdf:
     toc: true
+    cite-method: biblatex
     number-sections: true
     colorlinks: true
     mainfont: Source Sans Pro
     monofont: Fira Code
+    
 ---
 
 ```{r source_t1}
-setwd("/Users/tunwinhla/axa")
-load(file="data/clean/t1e.RData")
-load(file="data/clean/mout.RData")
+#setwd("/Users/tunwinhla/axa")
+load(here::here("data/clean/t1e.RData"))
+load(here::here("data/clean/mout.RData"))
+library(sjPlot)
 ```
 
 # VARIABLES and DEFINITIONS 
@@ -126,7 +131,7 @@ All administration of heparin prescribed under different regimes were extracted 
 | 3       | Heparin IV injection             | units                       |
 | 4       | Heparin RR INF 20000 IU          | units                       |
 | 5       | Heparin systemic Inf 20000 Units | units per hour              |
-
+Table of heparin administration types.
 
 ### Independent Variables
 
@@ -145,7 +150,7 @@ TTR is a value of range between 0 to 100%.
 Each individual time period between each anticoagulation blood test was calculated to the nearest hour. 
 
 Then Time in Range for that period was calculated.
-Finally, for each patient and their ECMO duration, the cumulative TTR was calculated. 
+Finally, for each patient and their ECMO duration, the cumulative TTR was calculated.[@rosendaal_method_1993] 
 
 
 $$
@@ -174,6 +179,8 @@ For anti-Xa : target range xxx is , and mid point xxx is chosen as target value
 - All blood related variables are extracted and first 24 hour blood values summarised. 
 
 https://onlinelibrary.wiley.com/doi/10.1111/jth.12322
+
+
 # DATA CLEANING PROCESS
 
 All relevant variables and time-stamps are verified to be within ECMO run times.
@@ -186,7 +193,7 @@ Count data is visualised and modeled as poisson / quasi-poisson distribution.
 
 # DESCRIPTIVE ANALYSIS 
 
-Supplementary Table 1 of the first 24-hour admission blood results variables
+Supplementary Table of the first 24-hour admission blood results variables
 
 ```{r}
 t1e$`P-value` <- stringr::str_replace_all(t1e$`P-value`,"&lt;","<")
@@ -213,7 +220,7 @@ sjPlot::tab_model(bmxphi,title = "TTR multivariable analysis")
 
 Membership of anti-Xa group decreases by 0.95 the odds of having a larger TTR. Each additional day on ECMO increases the odds of having a larger TTR by 1.01. Receipt of renal replacement therapy decreases the odds of having a large TTR by 0.6.
 
-## <https://journals.sagepub.com/doi/10.1177/0962280217690413?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed>
+<https://journals.sagepub.com/doi/10.1177/0962280217690413?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed>
 
 ### Beta regression assumptions
 
@@ -229,12 +236,6 @@ Beta regression model using above 8 variables were fitted. Step-wise variable se
 
 Likelihood ratio test confirms that p-value of final model is 0.000171 compared to null model.
 
-```{r ttr_mod_lrtest}
-
-#lmtest::lrtest(bm0,bmx)
-
-```
-
 In this model, variables "sex, renal replacement therapy, and duration of ECMO" are the only variables that have statistical significant. Thus, a reduced model using only this 3 variables were fitted.
 
 Reduced model and full models were compared using likelihood ratio test and there were not statistically significant differences.
@@ -243,7 +244,7 @@ Reduced model AIC was lower than full model AIC by 5 points. As a result, we hav
 
 APACHE 2 score already includes pH value and APACHE 2 score was not known to be predictive of outcome in ECMO patients. Thus, sensitivity analysis was undertaken with both variables - APACHE 2 score and median pH value. Models were evaluated using AIC and likelihood ratio test. Likelihood ratio tests found that model including only APACHE score without pH variable has the lowest chi-square value and is statistically significant (p\<0.0001).
 
-Thus, this model was evaluted further.
+Thus, this model was selected further.
 
 ### Variable Dispersion
 
@@ -255,7 +256,7 @@ Thus, final model was re-fitted with the same mean equation but now with duratio
 
 The model including of ecmo duration as regressor for the precision parameter was statistically significant and improved a model fit, without significant difference in estimates of other paramters. AIC of this new model was significantly lower than model without precision parameter.
 
-Thus, there was a statistically significant evidence for variable dispersion, and thus was chosen as a final model
+Thus, there was a statistically significant evidence for variable dispersion, and thus was chosen as a final model.
 
 ### Fit assessment
 
@@ -269,21 +270,16 @@ Multicollinearity was assessed using variable inflation factors using {car} pack
 
 Link function of logit is used.
 
-```{r ttr_mod_modelfit}
 
+## Outcome 1b : Variability of Anticoagulation as VGR
+
+```{r}
+sjPlot::tab_model(mox02, title = "Multivariable analysis of VGR")
 ```
 
-ttrpl4
+### Interpretation
 
-## 8.2. Model 2 : Variability of Anticoagulation
-
-## Model chosen : mox02
-
-## Interpretation :
-
-for 1 unit increase in lactate, our variability increases by 10.6% membership in anti Xa decreases variability by 86%. Variability of anticoagulation is a measure of quality of anticoagulation. Fihn's method of variability was used for this study.
-
-Lower Variability results in better control of anticoagulation
+Variability of anticoagulation is a measure of quality of anticoagulation, with lower Variability results in better control of anticoagulation. For 1 unit increase in lactate, our variability increases by 10.6% membership in anti Xa decreases variability by 86%.
 
 ### Choice of model and assumptions
 
@@ -293,56 +289,126 @@ It was hypothesised that 1. age 2. BMI 3. sex 4. apache II score 5. monitoring g
 
 were thought to be affecting variability of anticoagulation.
 
-### Multi-variate modelling
-
 On a multi-variate modelling, as evaluated by AIC and likelihood ratio tests, monitoring group and lactate are the only two statistically significant variables.
 
 Thus,a reduced model using only statistically significant model was evaluated against a full model - there were no improvement of a reduced model. And, due to ability to infer effects of other biologically plausible variables, age, bmi, apache etc are included in a final model.
 
 ### Fit assessment
 
-Multiple R squared value of fitted model was 0.5 and model was statistically significant.
+Multiple R squared value of fitted model was 0.5 and model was statistically significant, whilst R squared value is not encouraging, it offers a bility to infer the reduction in variability in anti-Xa group whilst adjusting for other varibles. 
 
 Model assumptions were checked for normality, heteroskedasticity, effect of outlying values and distribution of residuals.
 
 Numerical check of final model using Breusch-Godfrey test confirmed visual findings that model residuals are homoskedastic.
 
-### Reporting
-
 <https://data.library.virginia.edu/interpreting-log-transformations-in-a-linear-model/>
 
-## 8.3.
+## Outcome 2a : Rate of bleeding and thrombotic events
 
-## 8.4.
+Dependent variable is selected for "any" bleeding and thrombotic events.
+Each event is considered as seperate event, thus discrete count.
 
-## 8.5.
+```{r}
+sjPlot::tab_model(bf, title = "Rate of any bleeding or thrombotic events")
+```
 
-## 8.6.
+Given the count nature of "events" data, a dependent variable is visualised and found to conform to poisson distribution. Thus, this is modeled as multivariable poisson regression using a standard "log" link function.
 
-## 8.7. Model 7 : Cumulative Dose of Heparin
+However, it is important to note that there are statistically significant differences and variation of ECMO duration between two different study groups.
+The longer duration on ECMO, the longer the duration of anticoagulation and the potential risk of any complication is higher. 
+
+This is taken into account by using an "offset" of ecmo duration.
+
+As per above, model assumptions checked. 
+
+## Outcome 2b : Rate of only bleeding events
+
+```{r}
+tab_model(h23, title = "Only haemorrhagic complication events")
+```
+
+As per above but restricted to analysis of only "haemorrhagic complications".
+Similar treatment was followed.
+
+## Outcome 2c : Rate of only thrombotic events
+
+```{r}
+sjPlot::tab_model(cf, title = "Thrombotic Complications only")
+```
+
+As per above, but for only thrombotic complications.
+
+## Outcome 2d : Rate of ECMO circuit change
+
+```{r}
+sjPlot::tab_model(xf,title = "ECMO circuit change analysis")
+```
+
+The next or first ECMO circuit change after cannulation on VV ECMO first are modelled against independent variables.
+
+The ECMO circuit change events are modelled as count data - poisson regression- is used again using ecmo duration as an offset. 
+
+## Outcome 2e : Cumulative Dose of Heparin
+
+```{r}
+sjPlot::tab_model(hn5, title = "Cumulative dose of heparin - log transformed")
+```
 
 ### Model Choice
 
--   log transformed so interpret as per above
-
-### Multi-variate analysis
-
-interaction was checked ttrg:group AIC lrtest
+-  log transformed of heparin dose given a significantly skewed distribution of heparin. 
+- Given the likely interaction of duration of ecmo, interaction between ecmo duration and TTR & ecmo duration and VGR are included in an extended model.
+- The model fit is not improved and the interactions are not statistically significant.
+- Thus, the reduced model without interaction effects are chosen. 
 
 ### Fit assessment
+- Linear regression fit assessment as per AIC, and likelihood ratio tests.
 
-### Reporting
+### Interpretation
 
-# 9. Summary
+Given log transformation of dependent variable, the effect size is interpreted as a percentage change. 
+
+
+## Outcome 2f : Rate of change of heparin prescriotion
+
+```{r}
+sjPlot::tab_model(r51, title = "Analysis of heparin prescription changes")
+```
+
+Rate of change of heparin prescription is modelled as count data, poisson generalised model, with an offset for ecmo duration. 
+
+The interaction between TTR and monitoring is found. It is stastically significant with p\<0.001 and thus included.
+
+## Outcome 2g : Rate of blood products transfused per ECMO duration 
+
+Our definition of BTE is more relaxed than ELSO definition since we count all documented and imaged BTEs. The ELSO definition of bleeding event is defined as that requiring blood product transfusion.
+
+Given the predominance of red blood cell transfusion over other blood products and given we are looking at overall effect on coagulation, we have modelled all blood together summatively. 
+
+```{r}
+sjPlot::tab_model(bp42, title = "Total blood products transfused")
+```
+
+Blood products consumption were modelled as a count data using multivariate poisson regression. 
+
+The interaction were found between time in therapeutic range and monitoring group and was statistically significant.
+
+## Outcome 2h : Time to any bleeding or thrombotic complication
+
+
+# Summary
+
+# References
+
+::: {#refs}
+:::
 
 # To Do
 
 1.  when reading the manuscript, please consider if we fulfill STROBE guidelines
-2.  please complete the "units" for measured variables in table-1(e.g., CRP, creatinine)
-3.  please vote on which figures to include
-4.  two-sentence take home message and 140-character tweet
-5.  250-word abstract and 3-5 keywords
-6.  Agree on title
+2. references need sort out
+3. update some more of the table
+4. answer andy doyles answers
 7.  Suggest list of reviewers -- Nunez, Schmidt, Alain V?
 
 <https://www.springer.com/journal/134/submission-guidelines?detailsPage=pltci_1060748#Instructions%20for%20Authors_Authorship%20principles>

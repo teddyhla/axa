@@ -442,6 +442,12 @@ hn4 <- lm(
         data = dm
 )
 
+hn5 <- lm(
+        cud2 ~ 
+                age + sex + bmi + group + lactate_median + ecmod + ttrg + log(sigm),
+        data= dm
+)
+
 performance::compare_performance(hn,hn2,hn3)
 lmtest::lrtest(hn,hn2,hn3,hn4)
 AIC(hn,hn2,hn3,hn4)
@@ -510,7 +516,7 @@ h4 <- glm(cudose ~ age + wkg + group + ecmod + lactate_median + ttrg + sigm , fa
 
 sjPlot::plot_model(hn)
 sjPlot::tab_model(hn,hn3,hn4)
-
+sjPlot::tab_model(hn4,hn5)
 #https://www.ahajournals.org/doi/10.1161/CIRCINTERVENTIONS.110.957381?url_ver=Z39.88-2003&rfr_id=ori:rid:crossref.org&rfr_dat=cr_pub%20%200pubmed
 #here they just use logistic regresion
 
@@ -574,6 +580,9 @@ r52 <- glm (runl ~
                     age + sex + bmi + group + lactate_median + ttrg + sigm + group:ttrg + ttrg:ecmod + rrt, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
 
 
+r53 <- glm (runl ~ 
+                    age + sex + bmi + group + lactate_median + ttrg + exp(sigm) + group:ttrg + ttrg:ecmod + rrt, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
 
 r5r <- glm (runl ~ 
                    group + lactate_median + ttrg + sigm + group:ttrg, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
@@ -584,7 +593,7 @@ r5ua <- glm(runl ~ group, offset = log(ecmod), family = quasipoisson(link = "log
 anova(r5,r50,r51,r5r)
 lmtest::lrtest(r5,r50,r51,r5r)
 
-sjPlot::tab_model(r5ua,r51,r52)
+sjPlot::tab_model(r5ua,r51,r52,r53)
 
 dr %>% 
         select(group,runl) %>% 
@@ -626,6 +635,10 @@ bp3 <- glm(bldtot ~
 
 bp41 <- glm(bldtot ~ 
                    age + sex + bmi + apache + rrt + cudose + ttrg + sigm + group  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
+
+
+bp42 <- glm(bldtot ~ 
+                    age + sex + bmi + apache + rrt + cudose + ttrg + log(sigm) + group  + group:ttrg + offset(log(ecmod)), data= dm, family = poisson(link="log"))
 
 
 bpx <- glm(bldtot ~ 
@@ -766,6 +779,12 @@ h24 <- glm(toth ~
            family = poisson(link = "log"),
            data = dh)
 
+h25 <- glm(toth ~ 
+                   age + sex + bmi + apache + group + ttrg + scale(sigm) + rrt , 
+           offset = log(ecmod),
+           family = poisson(link = "log"),
+           data = dh)
+
 ht <- glm(toth ~ group, offset = log(ecmod),data= dh, family = poisson(link="log"))
 
 h <- sjPlot::plot_model(h23,title = "Model Coefficients for Haemorrhagic Complications ")
@@ -804,6 +823,13 @@ bf <- glm(abte ~
            family = poisson(link = "log"),
            data = dh)
 
+bk <- glm(abte ~ 
+                  age + sex + bmi + apache + group + ttrg + sqrt(sigm) +rrt , 
+          offset = log(ecmod),
+          family = poisson(link = "log"),
+          data = dh)
+
+
 anova(b0,br,bf)
 lmtest::lrtest(b0,br,bf)
 
@@ -821,6 +847,11 @@ var(dc$totthr)
 c0 <- glm(totthr ~ 1,
           family = poisson(link = "log"),
           data = dc)
+
+c1 <- glm(totthr ~ exp(sigm) + ttrg + sex,
+          family = poisson(link = "log"),
+          data = dc)
+
 
 cr <- glm(totthr ~ group , 
           offset = log(ecmod),
@@ -858,6 +889,12 @@ xf <- glm(totc ~
           family = poisson(link = "log"),
           data = dx)
 
+xf2 <- glm(totc ~ 
+                  age + sex + bmi + apache + group + ttrg + exp(sigm) +rrt , 
+          offset = log(ecmod),
+          family = poisson(link = "log"),
+          data = dx)
+
 xfl <- glm(totc ~ 
                   age + sex + bmi + cohort + ecmosb + crp_median +
                    lactate_median + cudose + apache + group + ttrg + sigm +rrt , 
@@ -871,7 +908,7 @@ xd <- glm(totc ~  ecmosb  ,
            data = dx)
 
 anova(x0,xr,xf)
-lmtest::lrtest(x0,xr,xf)
+lmtest::lrtest(x0,xr,xf,xfl)
 
 
 #anova(xf,xfl)
@@ -1063,5 +1100,32 @@ xt <- glm(formula = exp(bldtot) ~ age + sex + bmi + apache + rrt + cudose +
                   ttrg + sigm + group + group:ttrg + offset(log(ecmod)),
           family = poisson(link = "log"),data= dsca)
 ###        
-        
+
+exp <- c(
+        "bmu",
+        "bmxphi",
+        "moxua",
+        "mox02",
+        "hn",
+        "hn4",
+        "hn5",
+        "r5ua",
+        "r51",
+        "r52",
+        "r53",
+        "bpua",
+        "bp41",
+        "bp42",
+        "h23",
+        "h25",
+        "br",
+        "bf",
+        "cr",
+        "cf",
+        "xr",
+        "xf"
+)
+##
+save(list = exp,file = "data/clean/mout.RData")
+##
         

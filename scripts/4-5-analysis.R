@@ -188,6 +188,8 @@ sx <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + sigm, 
 sxi <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + exp(sigm), data = t2cmp )
 
 
+s7ii <- coxph(Surv(t,value)~ log(sigm) + ttrg + group + age + sex + rrt + apache + ttrg:group , data= t2cmp)
+
 sfit <- survfit(Surv(t,value)~group, data= t2cmp)
 sjPlot::plot_model(sx,title = "Time to first ANY complication")
 sjPlot::tab_model(sx,title = "Time to first ANY complication")
@@ -201,9 +203,12 @@ ggcoxzph(ftest)
 ggcoxdiagnostics(sx,type = ,linear.predictions = TRUE)
 ggcoxdiagnostics(sx,type = "dfbeta" ,linear.predictions = TRUE)
 
-ggsurvplot(sfit,surv.median.line = "hv",pval=TRUE,conf.int = TRUE)
+sp1 <- ggsurvplot(sfit,surv.median.line = "hv",pval=TRUE,conf.int = TRUE,title = "Time to first any BTE")
 
 sxtt <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + sigm + tt(ttrg),
+              data = t2cmp, tt=function(x,t,...)x*t)
+
+sxt3 <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + tt(sigm) + tt(ttrg),
               data = t2cmp, tt=function(x,t,...)x*t)
 
 
@@ -216,10 +221,11 @@ BETA <- coef(sxtt)["ttrg"]
 BETAtt <- coef(sxtt)["tt(ttrg)"]
 AHR <- exp(BETA + BETAtt*TIME)
 
+
 plot(TIME,AHR,type = "l",main = "Effects of TTR over time", xlab = "Time in hours", ylab = "adjusted Hazards Ratio")
 abline(h = 1, lty = 2, col = "darkgray")
 abline(v = -1*BETA/BETAtt,lty= 2, col = "blue")
-
+plt1 <- recordPlot()
 # 
 fm <- survfit(Surv(t,value)~ group, data = t2cmp)
 
@@ -419,11 +425,29 @@ x2 <- coxph(Surv(duhr,cx)~
 x3 <- coxph(Surv(duhr,cx)~
                     age + sex + rrt + bmi + group + apache + ttrg + sigm + ph_median + ferritin_median, data = dx2 )
 
+
+x4 <- coxph(Surv(duhr,cx)~
+                    age + sex + rrt + group + apache + ttrg + sigm, data = dx2 )
+
 xtest <-cox.zph(x3)
 ggcoxzph(xtest)
 
 ggsurvplot(x1,surv.median.line = "hv",pval=TRUE,conf.int = FALSE,title="circuit changes only")
 
+anova(x0,x2,x3)
 
 ####
+
+exp <- c(
+        "fm",
+        "plt1",
+        "s7",
+        "sp1",
+        "sx"
+      
+)
+##
+save(list = exp,file = "data/clean/cout.RData")
+##
+##
 

@@ -5,7 +5,9 @@ bibliography: references.bib
 execute: 
   eval: true
   echo: false
-  warnings : false
+  warnings: false
+  error: false
+  message: false
 format:
   pdf:
     toc: true
@@ -14,25 +16,28 @@ format:
     colorlinks: true
     mainfont: Source Sans Pro
     monofont: Fira Code
-    
 ---
 
 ```{r source_t1}
 #setwd("/Users/tunwinhla/axa")
 load(here::here("data/clean/t1e.RData"))
 load(here::here("data/clean/mout.RData"))
-library(sjPlot)
+load(here::here("data/clean/cout.RData"))
 ```
 
-# VARIABLES and DEFINITIONS 
+# VARIABLES  
 
 ## Outcome variables
 
 1.  Bleeding or thrombotic events(BTE) 
 
-1a. no BTE - 
+
+1a. no BTE
+
 1b. only haemorrhagic complications 
+
 1c. only thrombotic complications
+
 1d. both BTE 
 
 2.  ECMO circuit changes
@@ -70,7 +75,7 @@ library(sjPlot)
 -   All investigation results (CT imagings, blood results) in between ECMO run times are extracted.
 - All prescription related data ( e.g., heparin infusions are extracted to the nearest hour)
 
-# GROUND TRUTHS & DEFINITIONS
+# DEFINITIONS & ASSUMPTIONS
 
 ## Assumptions
 
@@ -83,8 +88,9 @@ library(sjPlot)
 -   verified through daily clinical use
 -   Thus, this time period is used as a basis to calculate other times in relation.
 
-### Assumption 3: As mandated legally by NHS Blood and Transfusion, all blood products transfusion are documented.
+### Assumption 3: All blood products transfusion are documented.
 
+- Mandated by NHS Blood transfusion all blood product transfusions are explicitly documented.
 - This was used to verify and cross-check ECMO run times and related complications.
 - all blood products prescribed and given are checked and confirmed if there are discrepancies.
 - Assumed that the blood product is given in whole -- e.g., if 1 unit Packed Red blood cells are prescribed, it is assumed the whole unit is given. 
@@ -93,7 +99,7 @@ library(sjPlot)
 
 ### Outcome variables
 
-### Bleeding and Thrombotic Complications
+#### Bleeding and Thrombotic Complications
 
 Any relevant bleeding and thrombotic complications simultaneously occuring and documented in medical notes are recorded and nearest most accurate time period extracted.
 
@@ -107,7 +113,7 @@ Our definition of bleeding complication is more broad. This is to allow analysis
 
 We separately analyse blood products transfusion as a proxy marker of complications.
 
-### Time to events
+#### Time to events
 
 Our analysis is to answer the question of the impact of monitoring tool after being established on anticoagulation for VV ECMO.
 
@@ -116,11 +122,11 @@ As a result, our time to "first" BTE is defined as the first BTE after having es
 Similarly, the ECMO circuit change is counted as the first circuit change after being established on VV ECMO.
 
 
-### ECMO circuit changes
+#### ECMO circuit changes
 
 Similarly, documentation of ECMO circuit changes and rationales were extracted.
 
-### Heparin administrations
+#### Heparin administrations
 
 All administration of heparin prescribed under different regimes were extracted and relevant units obtained. 
 
@@ -135,11 +141,11 @@ Table of heparin administration types.
 
 ### Independent Variables
 
-### Height and Weight
+#### Height and Weight
 
 Original documentaion of height and weight on ECMO cannulation were used due to likely later variation of patients through out their critical illness.
 
-### Time in Therapeutic Range (Rosendaal method)
+#### Time in Therapeutic Range (Rosendaal method)
 
 Time in Therapeutic Range is an intuitive measure for evaluating the quality of anticoagulation. Multiple definitions exist. 
 
@@ -159,12 +165,12 @@ $$
 
 No of anticoagulation blood tests per day was calculated to detect anomalous results. When outlier values were noted and duplicate record with non outlier value was found, this was chosen and randomly verified manually.
 
-### Variability of Anticoagulation (Fihn's method of Variance Growth rate)
+#### Variability of Anticoagulation (Fihn's method of Variance Growth rate)
 
 $$
 \sigma ^{2} = \tfrac{1}{n}\tfrac{}{} \sum_{i = 1}^{n} \frac{(value_{i} - target)^{2}}{\tau _{i}}
 $$
-Variance Growth Rate is a derivation of a statistical measure "variance" adjusted for each individual time period.
+Variance Growth Rate is a derivation of a statistical measure "variance" adjusted for each individual time period.[@fihn_comparison_2003]
 
 For each value of anti-coagulation test result, this was subtracted from target and squared, then divided by time period. Summary of all of this for the entire duration of ECMO was then calculated to generate a final value of VGR for each patient.
 
@@ -172,13 +178,14 @@ The benefit of Variance Growth Rate is that this does not assume the patient to 
 
 ### Targets of anticogulation
 
-For aPTTr : target range xxx  is thus, target value xxx is chosen as midpoint and 
+For aPTTr : target range 1.5 to 2.0  is thus, target value 1.75 is chosen as midpoint and 
 
-For anti-Xa : target range xxx is , and mid point xxx is chosen as target value 
+For anti-Xa : target range 0.3 to 1.0 is , and mid point 0.65 is chosen as target value 
+
+
 ### Blood related variables
-- All blood related variables are extracted and first 24 hour blood values summarised. 
 
-https://onlinelibrary.wiley.com/doi/10.1111/jth.12322
+- All blood related variables are extracted and first 24 hour blood values summarised. 
 
 
 # DATA CLEANING PROCESS
@@ -190,6 +197,8 @@ Categorical variables are summarised and visualised. Numeric variables are summa
 If data is transformed (e.g., log transformation), post transformation distribution is visualised
 
 Count data is visualised and modeled as poisson / quasi-poisson distribution. 
+
+Correlation between numerical values are visualised with correlograms and pearson coefficients calculated.
 
 # DESCRIPTIVE ANALYSIS 
 
@@ -220,13 +229,12 @@ sjPlot::tab_model(bmxphi,title = "TTR multivariable analysis")
 
 Membership of anti-Xa group decreases by 0.95 the odds of having a larger TTR. Each additional day on ECMO increases the odds of having a larger TTR by 1.01. Receipt of renal replacement therapy decreases the odds of having a large TTR by 0.6.
 
-<https://journals.sagepub.com/doi/10.1177/0962280217690413?url_ver=Z39.88-2003&rfr_id=ori%3Arid%3Acrossref.org&rfr_dat=cr_pub++0pubmed>
 
 ### Beta regression assumptions
 
 TTR is a value of range between 0 to 100%. Thus, beta-regression is used, using {betareg} package.
 
-TTR includes values including 0 and 100%, whereas strictly beta-regression does not include values 0 or 100%. Thus, data-transformation y1 = y \* n-1) + 0.5 /  as per Smithson and Vekuilen was carried out.
+TTR includes values including 0 and 100%, whereas strictly beta-regression does not include values 0 or 100%. Thus, data-transformation y1 = y \* n-1) + 0.5 /  as per Smithson and Vekuilen was carried out.[@smithson_better_2006]
 
 It was hypothesised that 1. age 2. BMI 3. sex 4. apache II score 5. monitoring group 6. renal replacement therapy 7. duration on ecmo 8. admission period median pH value
 
@@ -252,7 +260,6 @@ In the final model, dispersion parameter - phi coefficient- was estimated at 2.2
 
 Thus, final model was re-fitted with the same mean equation but now with duration of ECMO as additional regressor for the precision parameter - phi.
 
-<https://cran.r-project.org/web/packages/betareg/vignettes/betareg.pdf>
 
 The model including of ecmo duration as regressor for the precision parameter was statistically significant and improved a model fit, without significant difference in estimates of other paramters. AIC of this new model was significantly lower than model without precision parameter.
 
@@ -279,7 +286,7 @@ sjPlot::tab_model(mox02, title = "Multivariable analysis of VGR")
 
 ### Interpretation
 
-Variability of anticoagulation is a measure of quality of anticoagulation, with lower Variability results in better control of anticoagulation. For 1 unit increase in lactate, our variability increases by 10.6% membership in anti Xa decreases variability by 86%.
+Variability of anticoagulation is a measure of quality of anticoagulation, with lower Variability results in better control of anticoagulation. For 1 unit increase in lactate, our variability increases by 10.6% membership in anti Xa decreases variability by 86%.[@noauthor_interpreting_nodate]
 
 ### Choice of model and assumptions
 
@@ -301,7 +308,7 @@ Model assumptions were checked for normality, heteroskedasticity, effect of outl
 
 Numerical check of final model using Breusch-Godfrey test confirmed visual findings that model residuals are homoskedastic.
 
-<https://data.library.virginia.edu/interpreting-log-transformations-in-a-linear-model/>
+
 
 ## Outcome 2a : Rate of bleeding and thrombotic events
 
@@ -323,8 +330,8 @@ As per above, model assumptions checked.
 
 ## Outcome 2b : Rate of only bleeding events
 
-```{r}
-tab_model(h23, title = "Only haemorrhagic complication events")
+```{r,warnings=FALSE,message = FALSE,error=FALSE}
+suppressWarnings(sjPlot::tab_model(h23, title = "Only haemorrhagic complication events"))
 ```
 
 As per above but restricted to analysis of only "haemorrhagic complications".
@@ -395,10 +402,29 @@ The interaction were found between time in therapeutic range and monitoring grou
 
 ## Outcome 2h : Time to any bleeding or thrombotic complication
 
+Given the frequency of BTEs in any ECMO population and clinicians tendency to change "anticoagulation targets" after a BTE event (e.g., a thrombotic event may warrant a higher therapeutic target and a bleeding event may warrant a pause in anticoagulation or a lowering of anticoagulation target). 
 
-# Summary
+As a result, we have analysed the time to first BTE, this is because it is likely that after the first BTE, anticoagulation targets are likely to be adjusted and thus affecting on TTR and VGR by clinical team. 
 
-# References
+The BTE detected through admission CT scan are not counted as this is likely to be due to pre ECMO or cannulation related events whether anticoagulation may not have been started.
+
+With this assumptions, we explored time to BTE using multivariable cox proportional hazards model.
+
+```{r}
+suppressWarnings(sjPlot::tab_model(sx, title = "Cox model for time to first any BTE")
+```
+
+
+The major findings from our model are that age is associated with higher risk of bleeding and thrombotic outcome (adjusted Hazard Ratio 1.03, p = 0.042), and higher value of time in therapeutic range is protective against having BTE in the initial period (adjusted HR 0.17, p<0.001).
+
+However, TTR has an statistically significant (p = 0.0261)interaction with time and the initial protective effect of high TTR changes after a certain period on ECMO.
+
+
+
+```{r}
+plt1
+```
+
 
 ::: {#refs}
 :::
@@ -411,4 +437,3 @@ The interaction were found between time in therapeutic range and monitoring grou
 4. answer andy doyles answers
 7.  Suggest list of reviewers -- Nunez, Schmidt, Alain V?
 
-<https://www.springer.com/journal/134/submission-guidelines?detailsPage=pltci_1060748#Instructions%20for%20Authors_Authorship%20principles>

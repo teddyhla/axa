@@ -590,6 +590,13 @@ r5r <- glm (runl ~
 #unadjusted model
 r5ua <- glm(runl ~ group, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
 
+
+## rlog
+
+rlog <- glm (runl ~ 
+                    age + sex + bmi + group + lactate_median + ttrg + log(sigm) + group:ttrg + rrt, offset = log(ecmod), family = quasipoisson(link = "log"),data=dr)
+
+
 anova(r5,r50,r51,r5r)
 lmtest::lrtest(r5,r50,r51,r5r)
 

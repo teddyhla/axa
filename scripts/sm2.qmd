@@ -23,6 +23,7 @@ format:
 load(here::here("data/clean/t1e.RData"))
 load(here::here("data/clean/mout.RData"))
 load(here::here("data/clean/cout.RData"))
+#for time to first in range, mgo to file gstt_p1.Rmd, 1-eda.R, sptf using dfg2p object.
 ```
 
 # VARIABLES  
@@ -222,7 +223,7 @@ ft1
 ## Outcome 1a : Time-in-Therapeutic-Range (TTR)
 
 ```{r}
-sjPlot::tab_model(bmxphi,title = "TTR multivariable analysis")
+sjPlot::tab_model(bmxphi,title = "TTR multivariable analysis",string.ci = "95% CI",string.p = "p Value",digits.p = 2)
 ```
 
 ### Interpretation
@@ -281,7 +282,7 @@ Link function of logit is used.
 ## Outcome 1b : Variability of Anticoagulation as VGR
 
 ```{r}
-sjPlot::tab_model(mox02, title = "Multivariable analysis of VGR")
+sjPlot::tab_model(mox02, title = "Multivariable analysis of VGR",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
 ### Interpretation
@@ -316,7 +317,7 @@ Dependent variable is selected for "any" bleeding and thrombotic events.
 Each event is considered as seperate event, thus discrete count.
 
 ```{r}
-sjPlot::tab_model(bf, title = "Rate of any bleeding or thrombotic events")
+sjPlot::tab_model(bf, title = "Rate of any bleeding or thrombotic events",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
 Given the count nature of "events" data, a dependent variable is visualised and found to conform to poisson distribution. Thus, this is modeled as multivariable poisson regression using a standard "log" link function.
@@ -331,7 +332,7 @@ As per above, model assumptions checked.
 ## Outcome 2b : Rate of only bleeding events
 
 ```{r,warnings=FALSE,message = FALSE,error=FALSE}
-suppressWarnings(sjPlot::tab_model(h23, title = "Only haemorrhagic complication events"))
+suppressWarnings(sjPlot::tab_model(h23, title = "Only haemorrhagic complication events",string.ci = "95% CI", string.p = "p Value",digits.p = 2))
 ```
 
 As per above but restricted to analysis of only "haemorrhagic complications".
@@ -340,7 +341,7 @@ Similar treatment was followed.
 ## Outcome 2c : Rate of only thrombotic events
 
 ```{r}
-sjPlot::tab_model(cf, title = "Thrombotic Complications only")
+sjPlot::tab_model(cf, title = "Thrombotic Complications only",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
 As per above, but for only thrombotic complications.
@@ -348,7 +349,7 @@ As per above, but for only thrombotic complications.
 ## Outcome 2d : Rate of ECMO circuit change
 
 ```{r}
-sjPlot::tab_model(xf,title = "ECMO circuit change analysis")
+sjPlot::tab_model(xf,title = "ECMO circuit change analysis",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
 The next or first ECMO circuit change after cannulation on VV ECMO first are modelled against independent variables.
@@ -358,7 +359,7 @@ The ECMO circuit change events are modelled as count data - poisson regression- 
 ## Outcome 2e : Cumulative Dose of Heparin
 
 ```{r}
-sjPlot::tab_model(hn5, title = "Cumulative dose of heparin - log transformed")
+sjPlot::tab_model(hn5, title = "Cumulative dose of heparin - log transformed",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
 ### Model Choice
@@ -379,7 +380,7 @@ Given log transformation of dependent variable, the effect size is interpreted a
 ## Outcome 2f : Rate of change of heparin prescriotion
 
 ```{r}
-sjPlot::tab_model(r51, title = "Analysis of heparin prescription changes")
+sjPlot::tab_model(r51, title = "Analysis of heparin prescription changes",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
 Rate of change of heparin prescription is modelled as count data, poisson generalised model, with an offset for ecmo duration. 
@@ -393,7 +394,7 @@ Our definition of BTE is more relaxed than ELSO definition since we count all do
 Given the predominance of red blood cell transfusion over other blood products and given we are looking at overall effect on coagulation, we have modelled all blood together summatively. 
 
 ```{r}
-sjPlot::tab_model(bp42, title = "Total blood products transfused")
+sjPlot::tab_model(bp42, title = "Total blood products transfused",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
 Blood products consumption were modelled as a count data using multivariate poisson regression. 
@@ -408,12 +409,23 @@ As a result, we have analysed the time to first BTE, this is because it is likel
 
 The BTE detected through admission CT scan are not counted as this is likely to be due to pre ECMO or cannulation related events whether anticoagulation may not have been started.
 
+Similar rationale is discussed in the literature to delineate BTE associated with ECMO from other concurrent events such as procedures, surgery or initial cannulation period.[@olson_thrombosis_2021]
+
 With this assumptions, we explored time to BTE using multivariable cox proportional hazards model.
 
 ```{r}
-suppressWarnings(sjPlot::tab_model(sx, title = "Cox model for time to first any BTE")
+suppressWarnings(sjPlot::tab_model(sx, title = "Cox model for time to first any BTE",string.ci = "95% CI", string.p = "p Value",digits.p = 2))
 ```
 
+The duration on ECMO is one of the major factors influencing the analysis of time to "first" BTE in ECMO. 
+
+Duration on ECMO is highly variable with significant outliers with long tail distribution where some patients surviving ECMO after over 50 days. COVID pneumonitis patients in our population would also be over-represented given their higher absolute numbers and longer duration of ECMO time.
+
+Our median time on ECMO is 11 and 17 days respectively for aPTTr and AXA groups. This is consistent with a large multi-centre international study evaluating ECMO in COVID-19 pneumonitis with over 844 ECMO patients reporting a median time on ECMO as 13 days.[@urner_venovenous_2022]
+
+As a result, we have undertaken a pragmatic cut off of 20.8 days ( 500 hours ).
+
+This results in 192 patients who have 92 BTE events within this period.
 
 The major findings from our model are that age is associated with higher risk of bleeding and thrombotic outcome (adjusted Hazard Ratio 1.03, p = 0.042), and higher value of time in therapeutic range is protective against having BTE in the initial period (adjusted HR 0.17, p<0.001).
 
@@ -426,9 +438,17 @@ plt1
 ```
 
 
+
 ::: {#refs}
 :::
 
+## On modelling VGR
+
+Variance Growth Rate is a summary value with ranges including 0 and is significantly skewed. The statistical methods used in modelling skewed distribution is commonly to undertake "log transformation". Hence, most of the literature that analyses VGR uses log-transformed i.e., log VGR. [@ibrahim_clinical_2013] [razouki_improving_2014] [van_miert_effect_2020].
+
+Whilst this is a successful statistical treatment for vitamin K antagonists, where target range is usually > 1 this does not always apply to our data where our target range has values < 1. 
+
+Given the minimal impact of VGR in this study and given the ease of interpretability of non-transformed VGR, we have only performed log transformation where relevant as an acceptable trade off to overall assess the impact of VGR and TTR. 
 # To Do
 
 1.  when reading the manuscript, please consider if we fulfill STROBE guidelines

@@ -147,6 +147,9 @@ t2cmp <- left_join(
         by = "mrn"
 )
 
+t3 <- t2cmp
+# identical(t3,t2cmp)
+
 #249 by 12
 t2cmp <- t2cmp %>% filter(t<500)
 #198 by 12
@@ -185,6 +188,9 @@ s9 <- coxph(Surv(t,value)~sigm + ttrg + group + age + sex + rrt + apache + ttrg:
 sx <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + sigm, data = t2cmp )
 
 
+sx03 <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + sigm, data = t3 )
+
+
 sxi <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + exp(sigm), data = t2cmp )
 
 
@@ -198,6 +204,8 @@ sjPlot::tab_model(sx,title = "Time to first ANY complication")
 # plotting
 
 ftest <-cox.zph(sx)
+
+
 
 ggcoxzph(ftest)
 ggcoxdiagnostics(sx,type = ,linear.predictions = TRUE)
@@ -228,6 +236,26 @@ abline(v = -1*BETA/BETAtt,lty= 2, col = "blue")
 plt1 <- recordPlot()
 # 
 fm <- survfit(Surv(t,value)~ group, data = t2cmp)
+
+
+##
+gtest <- cox.zph(sx03)
+ggcoxzph(gtest)
+
+ggcoxdiagnostics(sx03,type = ,linear.predictions = TRUE)
+ggcoxdiagnostics(sx03,type = "dfbeta" ,linear.predictions = TRUE)
+
+sxtt3 <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + sigm + tt(ttrg),
+              data = t3, tt=function(x,t,...)x*t)
+
+#t2 <- seq(50,1100,10)
+b2 <- coef(sxtt3)["ttrg"]
+bt2 <- coef(sxtt3)["tt(ttrg)"]
+ahr3 <- exp(b2 + bt2*t2)
+
+plot(t2,ahr3)
+abline(h= 1)
+
 
 
 #winner is sx

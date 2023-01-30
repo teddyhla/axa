@@ -76,7 +76,7 @@ load(here::here("data/clean/cout.RData"))
 -   All investigation results (CT imagings, blood results) in between ECMO run times are extracted.
 - All prescription related data ( e.g., heparin infusions are extracted to the nearest hour)
 
-# DEFINITIONS & ASSUMPTIONS
+# ASSUMPTIONS & DEFINITIONS
 
 ## Assumptions
 
@@ -226,6 +226,9 @@ ft1
 sjPlot::tab_model(bmxphi,title = "TTR multivariable analysis",string.ci = "95% CI",string.p = "p Value",digits.p = 2)
 ```
 
+
+### Model : multi-variate beta regression (family of generalised linear models)
+
 ### Interpretation
 
 Membership of anti-Xa group decreases by 0.95 the odds of having a larger TTR. Each additional day on ECMO increases the odds of having a larger TTR by 1.01. Receipt of renal replacement therapy decreases the odds of having a large TTR by 0.6.
@@ -285,6 +288,8 @@ Link function of logit is used.
 sjPlot::tab_model(mox02, title = "Multivariable analysis of VGR",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
 
+
+### Model : Multivariable linear regression with outcomoe log transformed and interpreted accordingly
 ### Interpretation
 
 Variability of anticoagulation is a measure of quality of anticoagulation, with lower Variability results in better control of anticoagulation. For 1 unit increase in lactate, our variability increases by 10.6% membership in anti Xa decreases variability by 86%.[@noauthor_interpreting_nodate]
@@ -313,6 +318,9 @@ Numerical check of final model using Breusch-Godfrey test confirmed visual findi
 
 ## Outcome 2a : Rate of bleeding and thrombotic events
 
+
+### Model : Multivariate Poisson distribution using ecmo duration as offset 
+
 Dependent variable is selected for "any" bleeding and thrombotic events.
 Each event is considered as seperate event, thus discrete count.
 
@@ -331,6 +339,8 @@ As per above, model assumptions checked.
 
 ## Outcome 2b : Rate of only bleeding events
 
+### Model : Multivariate Poisson distribution using ecmo duration as offset 
+
 ```{r,warnings=FALSE,message = FALSE,error=FALSE}
 suppressWarnings(sjPlot::tab_model(h23, title = "Only haemorrhagic complication events",string.ci = "95% CI", string.p = "p Value",digits.p = 2))
 ```
@@ -340,6 +350,8 @@ Similar treatment was followed.
 
 ## Outcome 2c : Rate of only thrombotic events
 
+### Model : Multivariate Poisson distribution using ecmo duration as offset 
+
 ```{r}
 sjPlot::tab_model(cf, title = "Thrombotic Complications only",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
@@ -347,6 +359,8 @@ sjPlot::tab_model(cf, title = "Thrombotic Complications only",string.ci = "95% C
 As per above, but for only thrombotic complications.
 
 ## Outcome 2d : Rate of ECMO circuit change
+
+### Model : Multivariate Poisson distribution using ecmo duration as offset 
 
 ```{r}
 sjPlot::tab_model(xf,title = "ECMO circuit change analysis",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
@@ -357,6 +371,9 @@ The next or first ECMO circuit change after cannulation on VV ECMO first are mod
 The ECMO circuit change events are modelled as count data - poisson regression- is used again using ecmo duration as an offset. 
 
 ## Outcome 2e : Cumulative Dose of Heparin
+
+
+### Model : Multivariate linear regression with log transformed outcome and interpreted accordingly
 
 ```{r}
 sjPlot::tab_model(hn5, title = "Cumulative dose of heparin - log transformed",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
@@ -379,6 +396,8 @@ Given log transformation of dependent variable, the effect size is interpreted a
 
 ## Outcome 2f : Rate of change of heparin prescriotion
 
+### Model : Multivariate Poisson distribution using ecmo duration as offset 
+
 ```{r}
 sjPlot::tab_model(r51, title = "Analysis of heparin prescription changes",string.ci = "95% CI", string.p = "p Value",digits.p = 2)
 ```
@@ -388,6 +407,8 @@ Rate of change of heparin prescription is modelled as count data, poisson genera
 The interaction between TTR and monitoring is found. It is stastically significant with p\<0.001 and thus included.
 
 ## Outcome 2g : Rate of blood products transfused per ECMO duration 
+
+### Model : Multivariate Poisson distribution using ecmo duration as offset 
 
 Our definition of BTE is more relaxed than ELSO definition since we count all documented and imaged BTEs. The ELSO definition of bleeding event is defined as that requiring blood product transfusion.
 
@@ -402,6 +423,8 @@ Blood products consumption were modelled as a count data using multivariate pois
 The interaction were found between time in therapeutic range and monitoring group and was statistically significant.
 
 ## Outcome 2h : Time to any bleeding or thrombotic complication
+
+### Model : Multivariate Cox proportional hazards model
 
 Given the frequency of BTEs in any ECMO population and clinicians tendency to change "anticoagulation targets" after a BTE event (e.g., a thrombotic event may warrant a higher therapeutic target and a bleeding event may warrant a pause in anticoagulation or a lowering of anticoagulation target). 
 
@@ -449,11 +472,14 @@ Variance Growth Rate is a summary value with ranges including 0 and is significa
 Whilst this is a successful statistical treatment for vitamin K antagonists, where target range is usually > 1 this does not always apply to our data where our target range has values < 1. 
 
 Given the minimal impact of VGR in this study and given the ease of interpretability of non-transformed VGR, we have only performed log transformation where relevant as an acceptable trade off to overall assess the impact of VGR and TTR. 
-# To Do
 
-1.  when reading the manuscript, please consider if we fulfill STROBE guidelines
-2. references need sort out
-3. update some more of the table
-4. answer andy doyles answers
-7.  Suggest list of reviewers -- Nunez, Schmidt, Alain V?
+## On Using Poisson models with offset
+
+Given a significant differences in median duration of ECMO between two population, it is prudent to adjust for this effect whilst analysing events ("counts")
+
+An intuitive treatment would be a simply using ECMO duration as a denominator to the events, however, a simple division assumes linearity (e.g., if 1 circuit change or 1 transfusion of red cells in 3 days, then would expect a 2nd circuit change or 2nd transfuion by day 6)
+
+Therefore, we have modeled using a ECMO duration as *"offset"* in Poisson models. This is a commonly accepted approach and routinely used in analysis of similar circumstances. For example, Nijman (2022) using poisson modes to calculate emergency room attendances during COVID 19 pandemic whilst using population as "offset" to adjust for case-mix differences. [@nijman_presentations_2022]  Kanankege(2022) used a human population as offset in Poisson model of high risk areas for dog-mediated rabies.[@kanankege_identifying_2022]
+
+
 

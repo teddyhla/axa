@@ -4,7 +4,7 @@ load(file="data/clean/finalout.RData")
 
 # LIBRARIES ---------------------------------------------------------------
 library(ggplot2)
-library(lme4)
+
 library(tidyverse)
 # NOTE --------------------------------------------------------------------
 
@@ -808,6 +808,17 @@ lmtest::lrtest(h0,h23)
 sjPlot::tab_model(ht,h23)
 #make graph 1
 
+h2qp <- glm(toth ~ 
+                   age + sex + bmi + apache + group + ttrg + sigm + rrt , 
+           offset = log(ecmod),
+           family = quasipoisson(link = "log"),
+           data = dh)
+h2zp <- pscl::zeroinfl(toth ~ 
+                   age + sex + bmi + apache + group + ttrg + sigm + rrt , 
+           offset = log(ecmod),
+           data = dh)
+
+pscl::vuong(h23,h2zp)
 
 # 7.ANY complication : i.e., any BTE -----------------------------------------------------------------
 db <- dm
@@ -842,6 +853,18 @@ lmtest::lrtest(b0,br,bf)
 
 sjPlot::tab_model(br,bf)
 
+bfqp <- glm(abte ~ 
+                  age + sex + bmi + apache + group + ttrg + sigm +rrt , 
+          offset = log(ecmod),
+          family = quasipoisson(link = "log"),
+          data = dh)
+
+bfzip <- pscl::zeroinfl(abte ~ 
+                  age + sex + bmi + apache + group + ttrg + sigm +rrt , 
+          offset = log(ecmod),
+          data = dh)
+
+pscl::vuong(bf,bfzip)
 
 # 8. THROM ONLY ------------------------------------------------------------------
 

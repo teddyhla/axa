@@ -1,5 +1,5 @@
 ---
-title: "Supplementary Material for analysis of Anti-Xa and APTTr anticoagulation on VV-ECMO patients"
+title: "Supplementary Material : Accuracy and Precision of anticoaguation tests and impact on bleeding and thrombotic events during ECMP" 
 author: "[Teddy Tun Win HLA](https://github.com/teddyhla) on behalf of the study group" 
 bibliography: references.bib
 execute: 
@@ -240,11 +240,7 @@ TTR is a value of range between 0 to 100%. Thus, beta-regression is used, using 
 
 TTR includes values including 0 and 100%, whereas strictly beta-regression does not include values 0 or 100%. Thus, data-transformation y1 = y \* n-1) + 0.5 /  as per Smithson and Vekuilen was carried out.[@smithson_better_2006]
 
-It was hypothesised that 1. age 2. BMI 3. sex 4. apache II score 5. monitoring group 6. renal replacement therapy 7. duration on ecmo 8. admission period median pH value
-
-are likely to affect "time-in-therapeutic range"
-
-Beta regression model using above 8 variables were fitted. Step-wise variable selection was undertaken using Akaike Information Criteria. Likelihood ratio test {lmtest} using function "lrtest" was used to evaluate final model against a null model.
+It was hypothesised that 1. age 2. BMI 3. sex 4. apache II score 5. monitoring group 6. renal replacement therapy 7. duration on ecmo 8. admission period median pH value are likely to affect "time-in-therapeutic range". Beta regression model using above 8 variables were fitted. Variable selected and their impact on final model was reviewed using Akaike Information Criteria. Likelihood ratio test {lmtest} using function "lrtest" was used to evaluate final model against a null model.
 
 Likelihood ratio test confirms that p-value of final model is 0.000171 compared to null model.
 
@@ -275,11 +271,13 @@ Maximum likelihood estimation was used to calculate p-values.
 
 Model assumptions were also evaluated using diagnostic plots; and was graphically satisfacotry for normal assumption, homeoskedasticity, and influential observations effects.
 
-Heteroskedasticity was also checked numerically using studentized Bresuch-Pagan test and demonstrated no evidence of heteroskedasticity.
+Heteroskedasticity was also checked numerically using studentized Bresuch-Pagan test and demonstrated no evidence of heteroskedasticity. Heteroskedasticity is usually well-managed by betaregression given its ability to handle extremes of data with phi coefficient.
 
 Multicollinearity was assessed using variable inflation factors using {car} package function "vif". All variables have VIF score \< 2 demonstrating no evidence of multi collinearity.
 
 Link function of logit is used.
+
+Reporting of effect size was done by exponentiating the model coefficients and reported as 'odds per units of x~i~ as per[@geissinger_case_2022] [@pfarrwaller_dynamics_2023]. 
 
 
 ## Outcome 1b : Variability of Anticoagulation as VGR
@@ -289,7 +287,7 @@ sjPlot::tab_model(mox02, title = "Multivariable analysis of VGR",string.ci = "95
 ```
 
 
-### Model : Multivariable linear regression with outcomoe log transformed and interpreted accordingly
+### Model : Multivariable linear regression with outcome log transformed and interpreted accordingly
 ### Interpretation
 
 Variability of anticoagulation is a measure of quality of anticoagulation, with lower Variability results in better control of anticoagulation. For 1 unit increase in lactate, our variability increases by 10.6% membership in anti Xa decreases variability by 86%.[@noauthor_interpreting_nodate]
@@ -473,13 +471,25 @@ Whilst this is a successful statistical treatment for vitamin K antagonists, whe
 
 Given the minimal impact of VGR in this study and given the ease of interpretability of non-transformed VGR, we have only performed log transformation where relevant as an acceptable trade off to overall assess the impact of VGR and TTR. 
 
-## On Using Poisson models with offset
+## On Using Poisson models
+
+### Offset
 
 Given a significant differences in median duration of ECMO between two population, it is prudent to adjust for this effect whilst analysing events ("counts")
 
 An intuitive treatment would be a simply using ECMO duration as a denominator to the events, however, a simple division assumes linearity (e.g., if 1 circuit change or 1 transfusion of red cells in 3 days, then would expect a 2nd circuit change or 2nd transfuion by day 6)
 
 Therefore, we have modeled using a ECMO duration as *"offset"* in Poisson models. This is a commonly accepted approach and routinely used in analysis of similar circumstances. For example, Nijman (2022) using poisson modes to calculate emergency room attendances during COVID 19 pandemic whilst using population as "offset" to adjust for case-mix differences. [@nijman_presentations_2022]  Kanankege(2022) used a human population as offset in Poisson model of high risk areas for dog-mediated rabies.[@kanankege_identifying_2022]
+
+### Comparison of poisson models with quasipoisson, and zeroinflated poisson models
+
+Poisson models assume 'equidispersion' which in real-world data may not resemble a poisson distribution. Mean and variance of dependent variables of poisson models were manually checked and did not detect a significant over-dispersion. 
+
+However, zero-inflated poisson (ZIP) models is a common alternative along with quasipoisson models offering potentially better fit over poisson models. 
+
+All poisson models were re-fitted with both quasipoisson family of distribution and also with zero-inflated poisson models. Vuong Non-nested hypothesis test was used to compare model fit of poisson models and zero-inflated poisson models using AIC and BIC. 
+
+In our models, ZIP models did not offer any advantage of model fit over poisson models. Thus, poisson models were chosen. 
 
 
 

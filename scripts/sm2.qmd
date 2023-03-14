@@ -26,12 +26,65 @@ load(here::here("data/clean/cout.RData"))
 #for time to first in range, mgo to file gstt_p1.Rmd, 1-eda.R, sptf using dfg2p object.
 ```
 
+# ANTICOAGULATION PROTOCOL: Unfractionated Heparin Infusions for Critically Ill Adult Patients - anticoagulation and anti-Xa testing.
+
+An abbreviated summary of GSTT's anticoagulation protocol is described here. For full clinical guideline, please contact the authors.
+
+The guideline was developed by Dr Andrew Retter, Lynda Cameron and Fraser Hanks and approved by Thrombosis and Thromboprophylaxis committee. The guideline is routinely reviewed yearly for update and amendments. 
+
+This guideline focuses on the use of systemic intravenous unfractionated heparin infusions (UFH) for
+the anticoagulation of patients in Adult Critical Care who are receiving Mechanical Circulatory Support
+(MCS) – including intra-aortic balloon pumps (IABP), Impella devices, VV-ECMO, VA-ECMO and VVAECMO. It excludes patients in whom treatment for venous thromboembolism (VTE) is intended. This
+guideline is for use at Guy’s and St. Thomas’ sites only.
+
+
+## Initiation 
+Baseline monitoring prior to commencing a UFH infusion is done with coagulation screen and full blood count. The initial UFH infusion rate is started at 18 units per kilogram per hour using adjusted body weight (or total body weight if total body weight is less than adjusted weight). No initial loading dose or bolus is to be administered in critically ill patients.
+
+## Monitoring and Titration 
+Anti-Xa level are checked four hours after the initiation of the UFH infusion and /or 4 hours after any rate change.
+
+Once two consecutive, anti-Xa levels are within thereapeutic range, without a pause/interruption to the infusion or a dose adjustment being required, anti-Xa monitoring can be reduced to once a day. At this point, anti-Xa level should be sent with routine monitoring morning bloods. 
+
+## Caveats in Critical illness
+
+In critical illness, there is often a discrepancy between aPTTr and anti-Xa levels. Please measure aPTTr every 2nd day, anti-Xa level is usually consistent with aPTTr between an anti-Xa range of 0.3 to 0.7. 
+
+If the APTTr is more than 3.0, regardless of the anti-Xa level, inform the critical care consultant and seek Thrombosis team advice (consultant on call or specialist bleep 0122).Please measure an antithrombin activity level and repeat the anti-Xa and APTTr levels, ensuring sampling from a non-heparin contaminiated line 
+
+## Troubleshooting : identification of heparin resistance anti-thrombin deficiency
+
+- If the patient is receiving more than 2000 units/ hr of heparin, please send an antithrombin activity. 
+- If two consecutive anti-Xa levels are subtherapeutic, despite increasing heparin rate, please send an anti-thrombin activity level. 
+- if the anti-thrombin level is less than 50 international units, please discuss with the critical care consultant.
+
+
+- If the patient develops a thrombus whilst on heparin, review with consultant and consider switching to an argatroban infusion
+
+- An anti-Xa level more than 1.0units/mL is VERY HIGH, with a concordant risk of spontaneous haemorrhage. The infusion should be paused, consultant informed, and the level should be urgently rechecked. Take care to ensure that the sample is not
+being taken from a heparin contaminated line. Whilst waiting for the repeat result, the infusion must remain STOPPED.
+
+- If the patient has an anti-Xa level within the target range but an APTTr greater than 3.0, please discuss with the thrombosis team. A discrepancy of this size suggests a more severe derangement of the patient’s coagulation secondary to either a consumptive coagulopathy, liver disease or a lupus anticoagulant. Rarely, a large discrepancy between the APTTr and anti-Xa may suggest heparin induced thrombocytopaenia
+
+- Wherever possible, no procedures should be undertaken until the anti-Xa level is less than 0.3units/mL. The heparin infusion should be held and the anti-Xa level checked
+every 4 hours until it is less than 0.3 units/mL, to allow the procedure to take place with minimal risk of bleeding complications. Post procedure, the infusion should be
+restarted as per the initial infusion rate. No bolus should be given. 
+
+
+## Management in relation to VV-ECMO decannulation
+- UFH infusion to be held for 4 hours prior to ECMO decannulation.
+- Once decannulated, the heparin infusion to be restarted 1 to 2 hours provided there are no bleeding concerns. Restart at the same rate as prior to decannulation. Anti-Xa levels should be sent 4 hours after UFH infusion has been started. 
+- Doppler Ultrasound scan of both legs should be completed within 24 hours of decannulation. 
+- Continue the heparin infusion and anti-Xa monitoring until the results of the leg dopplers are available. If no thrombosis, switch to low molecular weight heparin prophylactic dose. 
+- If ongoing therapeutic anticoagulation is indicated, consider switching to therapeutic dose low molecular weight heparin if creatinine clearance is greater than 30ml/min. 
+
+
+
 # VARIABLES  
 
 ## Outcome variables
 
 1.  Bleeding or thrombotic events(BTE) 
-
 
 1a. no BTE
 

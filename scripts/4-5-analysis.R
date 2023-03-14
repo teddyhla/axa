@@ -148,15 +148,66 @@ t2cmp <- left_join(
 )
 
 t3 <- t2cmp
+bt <- t2cmp
+
+
+# bt ----------------------------------------------------------------------
+
+#what we are trying to do here is we are trying to censor at 500 hours
+#so all time would be 500 or less. [0,500]
+#any events that happened afte 500, would be 0 because they happen after 500.
+
+# bt %>% count(value)
+# this showed that there is 114 events 
+
+# bt %>% filter(t > 500) %>% count(value)
+# this showed there are 17 events that happen after 500 hrs.
+# so after the code treatment, there should 114 - 17 = 97 events
+
+bt$cen <- ifelse(bt$t > 500, "cen", NA)
+bt$cen <- as.factor(bt$cen)
+
+bt$e <- ifelse(bt$t > 500 & bt$value >0 , 0 , bt$value )
+bt$t2 <- ifelse(bt$t > 500 , 500, bt$t)
+# bt %>% count(e)
+# 1 is 97 thus it tallies.
+#
+
 # identical(t3,t2cmp)
 
+bsx <- coxph(Surv(t2,e)~age + sex + rrt + bmi + group + apache + ttrg + sigm, data = bt )
+
+bsfit <- survfit(Surv(t2,e)~group, data= bt)
+
+
+bsp1 <- ggsurvplot(bsfit,surv.median.line = "hv",pval=TRUE,conf.int = TRUE,title = "bsTime to first any BTE")
+
+
+
+ftbsx <-cox.zph(bsx)
+
+ggcoxzph(ftbsx)
+ggcoxdiagnostics(bsx,type = ,linear.predictions = TRUE)
+ggcoxdiagnostics(bsx,type = "dfbeta" ,linear.predictions = TRUE)
+
+
+bsxtt <- coxph(Surv(t2,e)~ age + sex + rrt + bmi + group + apache + ttrg + sigm + tt(ttrg),
+              data = bt, tt=function(x,t,...)x*t)
+
+
+# --------- different treatment
 #249 by 12
 t2cmp <- t2cmp %>% filter(t<500)
+
 #198 by 12
 
 # need to examine 
 # 1061663N likely an extreme outlier
 #comp1 dtm is very wrong 2022-03-04
+
+
+
+
 
 # model fit for ANY complications -----------------------------------------
 it <- survdiff(Surv(t,value) ~ group, data = t2cmp)

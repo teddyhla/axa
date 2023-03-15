@@ -150,9 +150,11 @@ t2cmp <- left_join(
 t3 <- t2cmp
 bt <- t2cmp
 
+uat <- t2cmp
+
 
 # bt ----------------------------------------------------------------------
-
+CONSTANT_TIME <- 500
 #what we are trying to do here is we are trying to censor at 500 hours
 #so all time would be 500 or less. [0,500]
 #any events that happened afte 500, would be 0 because they happen after 500.
@@ -164,11 +166,11 @@ bt <- t2cmp
 # this showed there are 17 events that happen after 500 hrs.
 # so after the code treatment, there should 114 - 17 = 97 events
 
-bt$cen <- ifelse(bt$t > 500, "cen", NA)
+bt$cen <- ifelse(bt$t > CONSTANT_TIME, "cen", NA)
 bt$cen <- as.factor(bt$cen)
 
-bt$e <- ifelse(bt$t > 500 & bt$value >0 , 0 , bt$value )
-bt$t2 <- ifelse(bt$t > 500 , 500, bt$t)
+bt$e <- ifelse(bt$t > CONSTANT_TIME & bt$value >0 , 0 , bt$value )
+bt$t2 <- ifelse(bt$t > CONSTANT_TIME , CONSTANT_TIME, bt$t)
 # bt %>% count(e)
 # 1 is 97 thus it tallies.
 #
@@ -192,8 +194,18 @@ ggcoxdiagnostics(bsx,type = "dfbeta" ,linear.predictions = TRUE)
 
 
 bsxtt <- coxph(Surv(t2,e)~ age + sex + rrt + bmi + group + apache + ttrg + sigm + tt(ttrg),
-              data = bt, tt=function(x,t,...)x*t)
+              data = bt, tt=function(x,t2,...)x*t2)
 
+
+## another different treatment ---
+
+app1 <- coxph(Surv(t,value)~age + sex + rrt + bmi + group + apache + ttrg + sigm, data = uat )
+app1timevar <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + sigm + tt(ttrg),
+              data = uat, tt=function(x,t2,...)x*t2)
+
+uafit <- survfit(Surv(t,value)~group, data= uat)
+
+summary(app1)
 
 # --------- different treatment
 #249 by 12
@@ -299,7 +311,7 @@ ggcoxdiagnostics(sx03,type = "dfbeta" ,linear.predictions = TRUE)
 sxtt3 <- coxph(Surv(t,value)~ age + sex + rrt + bmi + group + apache + ttrg + sigm + tt(ttrg),
               data = t3, tt=function(x,t,...)x*t)
 
-#t2 <- seq(50,1100,10)
+t2 <- seq(50,1100,10)
 b2 <- coef(sxtt3)["ttrg"]
 bt2 <- coef(sxtt3)["tt(ttrg)"]
 ahr3 <- exp(b2 + bt2*t2)
@@ -517,6 +529,29 @@ anova(x0,x2,x3)
 
 ####
 
+
+models <- list(
+        approach2 = bsx,
+        approach2tt = bsxtt,
+        approach1 = app1,
+        approach1tt = app1timevar,
+        approach3 = sx,
+        approach3tt =sxtt
+        
+)
+
+modelout <- purrr::map_df(models,broom::tidy,.id="model")
+
+modelout$term <- as.factor(modelout$term)
+modelout$model <- as.factor(modelout$model)
+
+modelout %>% 
+        mutate_if(is.numeric,round,2) %>%
+        arrange(term,model) %>%
+        View()
+
+
+###
 exp <- c(
         "fm",
         "plt1",

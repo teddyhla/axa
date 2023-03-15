@@ -78,6 +78,7 @@ restarted as per the initial infusion rate. No bolus should be given.
 - Continue the heparin infusion and anti-Xa monitoring until the results of the leg dopplers are available. If no thrombosis, switch to low molecular weight heparin prophylactic dose. 
 - If ongoing therapeutic anticoagulation is indicated, consider switching to therapeutic dose low molecular weight heparin if creatinine clearance is greater than 30ml/min. 
 
+{{< pagebreak >}}
 
 
 # VARIABLES  
@@ -544,5 +545,22 @@ All poisson models were re-fitted with both quasipoisson family of distribution 
 
 In our models, ZIP models did not offer any advantage of model fit over poisson models. Thus, poisson models were chosen. 
 
+{{< pagebreak >}}
 
+# STROBE Checklist
+
+{{< pagebreak >}}
+
+
+```{r}
+
+```
+
+{{< pagebreak >}}
+
+{{< pagebreak >}}
+
+{{< pagebreak >}}
+
+{{< pagebreak >}}
 
